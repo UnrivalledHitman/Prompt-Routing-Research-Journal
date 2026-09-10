@@ -1,0 +1,52 @@
+# --- Confidentiality: patent filing pending. Nothing here goes public. ---
+.env
+.env.*
+secrets/
+*.key
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+.ruff_cache/
+.uv-cache/
+
+# --- Models & weights (huge, redistributable from source) ---
+models/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# --- Data & experiment outputs ---
+data/raw/
+data/interim/
+data/processed/
+results/raw/
+results/logs/
+*.jsonl.gz
+hf_cache/
+
+# --- LaTeX build artifacts ---
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.lof
+paper/*.lot
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/*.pdf
+
+# --- OS ---
+Thumbs.db
+desktop.ini
+.DS_Store
