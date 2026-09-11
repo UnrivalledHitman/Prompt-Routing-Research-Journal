@@ -1,0 +1,309 @@
+% =====================================================================
+%  IV. EXPERIMENTATION
+%  Sources: notes/experimental-protocol.md S4, S5, S8, S9, S11; gate 1
+%  result (protocol S6.2, PR #4); gate 2 result (protocol S10.1, PR #5).
+%  Numbers in the two gate subsections are measured. Everything about
+%  labelling and routing describes the plan and must be re-checked against
+%  what was actually run.
+% =====================================================================
+\section{Experimentation}
+\label{sec:experimentation}
+
+\subsection{Hardware and Software}
+\label{sec:hardware}
+
+All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
+16\,GB of system memory and an NVIDIA GeForce RTX~4060 Laptop GPU with
+8\,GB of memory, driver 616.56 and an enforced board power limit of 115\,W.
+Models are served by Ollama 0.34.0 \citeneeded{Ollama} from GGUF weights
+quantised to Q4\_K\_M \citeneeded{llama.cpp / GGUF k-quant documentation}.
+Every model is addressed by an explicit quantisation tag, and the weight
+digest, parameter count, context length and chat template of each are
+recorded in a manifest before any generation, so that a silently updated
+tag cannot change the models between runs. All four models report native
+thinking support and a 40{,}960-token context. The 8\,GB memory limit means
+only one model is loaded at a time. Runs are therefore organised
+\emph{model-major}: each model is loaded once, all prompts are run in both
+modes, and the model is unloaded before the next is loaded. Mode order
+alternates across prompts (ABBA) so that slow drift in temperature or
+background load cannot line up with one mode. The software environment is
+Python 3.11, pinned with a lock file.
+
+\subsection{Decoding}
+\label{sec:decoding}
+
+Greedy decoding is discouraged for Qwen3's thinking mode, so each mode uses
+its recommended sampling settings \citeneeded{Qwen3 model card,
+recommended sampling parameters}: temperature 0.6, top-$p$ 0.95 and top-$k$
+20 for thinking, and temperature 0.7, top-$p$ 0.8 and top-$k$ 20 for
+non-thinking, with min-$p$ 0 in both. Every generation receives its own seed,
+derived deterministically from the prompt, cell and sample index, and the
+seed is stored with the output. The labelling runs draw $k$ samples per
+prompt and cell, and a cell counts as successful on a prompt when a majority
+of its samples succeed \decision{$k = 3$ as planned, or $k = 1$ with a
+$k = 3$ subsample; see Section~\ref{sec:gate-mode}}.
+
+Generation length is capped, and an answer that hits the cap counts as a
+failure, because a truncated answer is of no use in deployment. The caps
+matter more than we expected: the mode-separation gate showed that
+truncation causes most thinking-mode failures at a 4{,}096-token cap
+(Section~\ref{sec:gate-mode}) \decision{final caps; planned 1{,}024
+no-think and 4{,}096 think}. Before measurement, each Ollama server session
+runs one thinking and one non-thinking warm-up generation, which are
+discarded; the gate showed a one-off prefill stall of about 6\,s at the
+start of a session that would otherwise contaminate the first measurements.
+
+\subsection{Corpus}
+\label{sec:corpus}
+
+The corpus covers four task families (Table~\ref{tab:corpus}). Three can be
+graded programmatically. The fourth, open-ended requests, is the traffic
+that motivates the problem and needs a judge.
+
+\begin{table}[!t]
+\centering
+\caption{Corpus composition. Sizes are planned and subject to the budget
+decision in Section~\ref{sec:gate-mode}.}
+\label{tab:corpus}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}l p{2.5cm} p{2.3cm} r@{}}
+\toprule
+Family & Sources & Grading & Pilot / full \\
+\midrule
+Math & GSM8K~\cite{cobbe2021gsm8k}, MATH~\cite{hendrycks2021math} & Normalised final answer & 200 / 800 \\
+Code & HumanEval~\cite{chen2021humaneval}, MBPP~\cite{austin2021mbpp} & Unit tests in a sandbox & 200 / 800 \\
+Multiple choice & MMLU~\cite{hendrycks2021mmlu}, ARC-Challenge~\cite{clark2018arc} & Option letter & 200 / 800 \\
+Open-ended & \decision{source and licence} & Judge (Sec.~\ref{sec:judge}) & 200 / 800 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Prompts are sampled with a fixed, recorded seed and stratified by source
+and by an a-priori difficulty proxy---MATH level, MMLU subject and MBPP task
+band---so that no family is concentrated at one difficulty. Near-duplicates
+are removed by hashing normalised text. Prompts longer than 2{,}048 tokens
+are excluded, so that context length does not vary with the size axis.
+Each source dataset's row count and a content fingerprint are stored with
+the sample. The corpus is split 60/20/20 into training, validation and test
+sets by prompt, stratified by family and by oracle label. Router
+hyperparameters are chosen on the validation split, and the test split is
+used once, at the end.
+
+\subsection{Oracle Labelling and Success Criteria}
+\label{sec:labelling}
+
+Every prompt is run through all eight cells. For each prompt the labelling
+run records the full success vector $s(q, c_1), \dots, s(q, c_8)$ and the
+measured token counts, latency and energy of every cell. The label used for
+the classification ablation is $\cstar(q)$ from \eqref{eq:cstar}, but the
+routers are trained on the vector, which carries more information and is
+what allows $\tau$ to be swept at test time.
+
+Success is decided per family. For math, the final answer is extracted
+(from a boxed expression when present, otherwise the last number), normalised
+by removing thousands separators, units and \LaTeX{} wrappers, and compared
+with the reference. For code, the generated function is executed against
+the dataset's unit tests in a subprocess with a timeout and no network
+access, and it succeeds only if every test passes. For multiple choice, the
+chosen option is parsed from the answer; an unparseable answer is a failure,
+not a reason to resample. Open-ended answers are judged as described next.
+
+\subsection{Judging Open-Ended Answers}
+\label{sec:judge}
+
+A judge drawn from the routed pool would grade its own family, so the
+primary judge comes from a different model family and runs locally
+\decision{judge model; must fit in 8\,GB alongside nothing else}. It scores
+each answer on a 1--5 rubric, against a reference answer where one exists,
+and an answer succeeds with a score of 4 or more. Answers are scored one at
+a time rather than in pairs, and presentation order is randomised, to limit
+the position and verbosity biases documented for model
+judges~\cite{zheng2023judging}.
+
+The judge is validated from two sides before its labels are used. A
+stratified sample of about 200 judged items is re-graded by a frontier model
+accessed through the OpenAI API, and agreement is reported as Cohen's
+$\kappa$ \citeneeded{Cohen 1960}. The first author also labels about 100
+items blind, giving a human anchor and a judge--human $\kappa$. The decision
+rule is fixed in advance: if agreement with the human anchor is poor, the
+open-ended family is reported with an explicit caveat or moved to a
+secondary analysis.
+
+\subsection{Baselines}
+\label{sec:baselines}
+
+Routers are compared with: the eight static policies that always use one
+cell; uniform random assignment; the oracle, which always picks $\cstar(q)$
+and is unreachable in practice; the four manual escalation policies of
+Table~\ref{tab:policies} under both detection regimes; and the reactive
+cascade of Section~\ref{sec:cascade}.
+
+\subsection{Metrics}
+\label{sec:metrics}
+
+\begin{itemize}
+  \item \emph{Cost--quality frontier.} Success rate against cost as $\tau$
+        varies, in tokens, seconds and joules, with the area under the
+        frontier normalised between the weakest and strongest static policy.
+  \item \emph{Escalation tax.} $\Tax$, $\Esc$ and $\Stk$ from
+        \eqref{eq:decomp}, per policy and per router.
+  \item \emph{Net saving.} $S_{\mathrm{net}}$ from \eqref{eq:netsaving}
+        against each baseline.
+  \item \emph{Joules per solved query}, as defined in
+        Section~\ref{sec:energy}.
+  \item \emph{Regret decomposition.} Over-routing cost and under-routing
+        failure rate, reported separately and never combined into one
+        accuracy figure.
+  \item \emph{Router overhead.} Median and 95th-percentile decision latency,
+        peak memory, and joules per decision.
+\end{itemize}
+
+\subsection{Statistical Analysis}
+\label{sec:stats}
+
+Every headline figure carries a 95\% bootstrap confidence interval from
+10{,}000 resamples over prompts \citeneeded{Efron and Tibshirani,
+bootstrap}. Comparisons between policies are paired by prompt, and
+$p$-values across the family of policy comparisons are corrected with the
+Holm--Bonferroni procedure \citeneeded{Holm 1979}. Each trainable router is
+trained with three seeds, and we report the mean and spread.
+
+\subsection{Validation Gate 1: Power Telemetry}
+\label{sec:gate-telemetry}
+
+NVML does not expose board power on every laptop GPU, and a measured-energy
+result is only as good as the sensor behind it, so the telemetry was tested
+before anything else. The test recorded 10\,s idle before any CUDA context
+was created, 8\,s of half-precision $2048 \times 2048$ matrix multiplication
+at about 90\% utilisation, and 8\,s of cool-down, polling both NVML sources
+every 100\,ms. Table~\ref{tab:gate1} gives the result.
+
+\begin{table}[!t]
+\centering
+\caption{Gate 1: the two NVML energy sources on the RTX~4060 Laptop GPU
+(enforced limit 115\,W). Counter values are the mean power implied by the
+counter's increase over each window.}
+\label{tab:gate1}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}l r r r l@{}}
+\toprule
+Source & Idle & Load & Cool-down & Verdict \\
+\midrule
+Sampled power & 2.4\,W & 75.1\,W & 10.5\,W & Usable \\
+Energy counter & 88.3\,W & 127.6\,W & 256.9\,W & Rejected \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sampled power behaves as expected. It is low at idle, follows the step load
+within about a second, and never exceeds the enforced limit; its maximum
+under load was 88.4\,W. The cumulative energy counter is the more
+instructive result. It is reported as supported and it increases
+monotonically, so a routine check accepts it, and our own first-pass check
+did. Yet the power it implies is 88\,W with the GPU idle, 128\,W under load,
+which is above the enforced limit, and 257\,W during cool-down, which is
+higher than under load. A units error would scale the three windows by one
+factor and keep their order; these values do not follow real power draw at
+all. Only the comparison with sampled power exposed the fault, with a 41\%
+disagreement under load and a factor of 36 at idle. We therefore integrate
+sampled power only, and the batch-level method of Section~\ref{sec:energy}
+follows from the 0.5\,s refresh period measured in the same test. For other
+studies on laptop GPUs, the practical lesson is that a supported, monotonic
+counter should still be cross-checked against sampled power and against the
+enforced limit before its readings are trusted.
+
+\subsection{Validation Gate 2: Separation of Thinking Modes}
+\label{sec:gate-mode}
+
+The grid assumes that a model's thinking and non-thinking modes are two
+different operating points. Wang \emph{et al.} found only partial separation
+in hybrid-thinking models~\cite{wang2025demystifying}, so we tested the
+assumption on our own checkpoints before labelling. The test used 60 prompts,
+ten from each of GSM8K, the 500-problem MATH test subset
+\citeneeded{MATH-500 subset, Lightman et al.}, HumanEval, MBPP, MMLU and
+ARC-Challenge, and ran each prompt once per model size in both modes: 480
+generations in 1\,h\,54\,min. Both modes had the same 4{,}096-token cap. An
+asymmetric cap would have built the length difference into the test and
+truncated precisely the long non-thinking answers that indicate leakage.
+
+Three criteria were fixed before the run, and a size counted as separated
+only if it met all three: an area under the ROC curve of at least 0.90 for
+thinking-mode outputs being longer than non-thinking outputs of the same
+prompt; at most 5\% of non-thinking responses containing a thinking trace
+or a literal \texttt{<think>} tag; and a density of reasoning markers
+(``wait'', ``hmm'', ``let me'', ``alternatively'' and eight similar phrases)
+in non-thinking answers no more than half that in thinking traces.
+
+\begin{table}[!t]
+\centering
+\caption{Gate 2: mode separation by model size (60 prompts per size).
+Ratio is the median of per-prompt think/no-think token ratios with a 95\%
+bootstrap interval. Marker ratio is no-think marker density divided by
+think-trace marker density.}
+\label{tab:gate2}
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}l c c c c c@{}}
+\toprule
+Size & AUC & Tokens (think / no) & Ratio (95\% CI) & Leak & Marker \\
+\midrule
+0.6B & 0.964 & 1444 / 195 & 13.9 (9.4--19.7) & 0 & 0.040 \\
+1.7B & 0.954 & 2053 / 184 & 9.1 (7.6--11.9)  & 0 & 0.034 \\
+4B   & 0.928 & 1429 / 149 & 7.0 (5.3--11.5)  & 0 & 0.042 \\
+8B   & 0.953 & 1814 / 180 & 9.7 (7.7--17.0)  & 0 & 0.045 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All four sizes passed (Table~\ref{tab:gate2}). No non-thinking response
+contained a thinking trace or tag, reasoning-marker density in non-thinking
+answers was 3--5\% of that in thinking traces, and the thinking output was
+longer for every prompt at three of the four sizes and for 59 of 60 at 4B
+(Wilcoxon signed-rank $p < 2 \times 10^{-11}$ at every size). On these
+checkpoints, the leakage described by Wang \emph{et al.} does not appear by
+these measures. The measures have limits: marker counting is a lexical proxy
+rather than a semantic judgement, and 60 prompts per size cannot rule out
+leakage on task types we did not sample.
+
+The run also exposed two properties of the grid that shape the labelling
+design. First, thinking dominates the compute budget. Across the eight
+cells, one sample per prompt took 112\,s on average, and the four thinking
+cells accounted for 88\% of that time. Second, the cap turns long thinking
+into failure. Between 22\% and 32\% of thinking responses hit the
+4{,}096-token cap, depending on size, and every capped response on the
+graded families was wrong. On
+the math and multiple-choice prompts, capped responses made up most
+thinking-mode errors from 1.7B upward, and thinking-mode accuracy fell below
+non-thinking accuracy at 1.7B, 4B and 8B; with capped responses excluded,
+thinking was within a point of non-thinking at 8B and ahead at 1.7B. These
+figures come from 40 graded responses per mode and size and approximate
+grading, so they motivate a design check rather than support a claim: the
+oracle label depends on the cap, and the labelling runs include a
+cap-sensitivity analysis on a subsample \decision{confirm cap-sensitivity
+subsample and its size}.
+% Accuracy detail (gate 2, math+MCQ, think / think-uncapped / no-think):
+% 0.6B 0.42/0.52/0.33; 1.7B 0.57/0.79/0.70; 4B 0.68/0.84/0.90;
+% 8B 0.78/0.94/0.95. At 4B, uncapped think (0.84) is still below no-think.
+
+\subsection{Public-Benchmark Arm}
+\label{sec:public-arm}
+
+The local pool stops at 8B parameters, and frontier tiers may behave
+differently. To test whether the escalation-tax analysis carries over, the
+same policy and tax computations are applied, without local inference, to
+published per-model outcomes and costs from routing benchmarks such as
+RouterBench~\cite{hu2024routerbench} and
+LLMRouterBench~\cite{li2026llmrouterbench} \decision{which benchmark(s),
+and whether their cost fields support the resubmission term}. Energy is not
+available for these pools, so this arm reports token cost only.
+
+\subsection{Reproducibility}
+\label{sec:repro}
+
+Each experiment is driven by a configuration file, and no experimental
+constant lives in code. Seeds are set and stored for every generation and
+every training run. Each run writes a manifest with the code commit,
+configuration, package versions, driver version, GPU model and model
+digests. Raw generations are stored with their token counts, timings, seeds
+and energy. \decision{code and data availability statement, given the
+pending patent filing}

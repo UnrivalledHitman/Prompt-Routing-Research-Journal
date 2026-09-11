@@ -1,0 +1,103 @@
+% =====================================================================
+%  main.tex -- ARBITER / escalation-tax routing
+%  CONFIDENTIAL. Patent filing pending. Do not circulate or submit.
+%
+%  DRAFT STATUS
+%  ------------
+%  Written by Claude as a first draft for Indrajeet and his mentor to
+%  rewrite. Sections I--IV are drafted. Sections V--VII are stubs until
+%  the labelling and routing experiments have produced results.
+%
+%  TEMPLATE
+%  --------
+%  IEEEtran (journal mode) is a stand-in because it ships with every TeX
+%  distribution. IEEE Access requires its own ieeeaccess.cls from the IEEE
+%  Author Center. The section files are template-agnostic, so the port is
+%  confined to this file: title block, \history, \doi, \corresp, keywords.
+%
+%  MARKERS
+%  -------
+%  \tbd{...}          number or statement that depends on an unrun experiment
+%  \citeneeded{...}   claim that needs a source not yet verified into refs.bib
+%  \decision{...}     open decision from notes/experimental-protocol.md S12
+% =====================================================================
+
+\documentclass[journal]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{url}
+
+\newcommand{\tbd}[1]{\textcolor{red}{[TBD: #1]}}
+\newcommand{\citeneeded}[1]{\textcolor{red}{[CITATION NEEDED: #1]}}
+\newcommand{\decision}[1]{\textcolor{orange}{[DECISION: #1]}}
+
+% Notation used throughout
+\newcommand{\cells}{\mathcal{C}}
+\newcommand{\cstar}{c^{\star}}
+\newcommand{\cost}{\kappa}
+\newcommand{\Tax}{\mathrm{Tax}}
+\newcommand{\Esc}{\mathrm{Esc}}
+\newcommand{\Stk}{\mathrm{Stk}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\begin{document}
+
+\title{The Escalation Tax: One-Shot Selection of the Minimum Sufficient
+Model Size and Reasoning Mode, with Router Cost Charged}
+
+\author{Indrajeet~Mondal%
+\thanks{\decision{affiliation, department, city and country; mentor
+co-authorship and ordering; ORCID iDs; corresponding-author e-mail}}}
+
+\markboth{Draft for internal review -- not for circulation}{Mondal:
+The Escalation Tax}
+
+\maketitle
+
+\begin{abstract}
+Tiered language-model services leave the user to choose both a model size
+and, increasingly, whether the model should reason before answering. Users
+misallocate in two opposite directions. They start small and escalate after
+each failure, paying in full for every discarded attempt and for resending
+the prompt, or they leave a heavyweight configuration selected and pay a
+premium on prompts that never needed it. We call the resulting excess over
+the cheapest configuration that would have succeeded the \emph{escalation
+tax}, formalise it, and decompose it into an escalation component and a
+stickiness component. We then ask whether a small predictor, placed in
+front of an eight-cell pool of Qwen3 models (0.6B to 8B parameters, each
+with thinking on and off), can select that minimum sufficient configuration
+before any generation, and whether the saving survives once the router is
+charged for its own latency, memory and energy. Every prompt in a
+stratified corpus of mathematics, code, multiple-choice and open-ended
+tasks is run through all eight cells on a consumer laptop GPU with measured
+board power. We compare classical classifiers, fine-tuned encoders and a
+small language model used as a router against manual escalation policies
+and a self-verifying cascade. \tbd{headline tax, net saving of the best
+router, energy per solved query, and the router-family ordering once
+charged}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Large language models, model routing, reasoning effort, test-time compute,
+energy efficiency, inference cost, hybrid thinking.
+\end{IEEEkeywords}
+
+\input{sections/01-introduction}
+\input{sections/02-literature-survey}
+\input{sections/03-methodology}
+\input{sections/04-experimentation}
+\input{sections/05-results}
+\input{sections/06-discussion}
+\input{sections/07-future-scope}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
