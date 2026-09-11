@@ -1,0 +1,66 @@
+[
+  {
+    "size": "0.6b",
+    "tag": "qwen3:0.6b-q4_K_M",
+    "digest": "7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435",
+    "size_bytes": 522653767,
+    "parameter_size": "751.63M",
+    "quantization": "Q4_K_M",
+    "family": "qwen3",
+    "context_length": 40960,
+    "capabilities": [
+      "completion",
+      "tools",
+      "thinking"
+    ],
+    "template_mentions_think": true
+  },
+  {
+    "size": "1.7b",
+    "tag": "qwen3:1.7b-q4_K_M",
+    "digest": "8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+    "size_bytes": 1359293444,
+    "parameter_size": "2.0B",
+    "quantization": "Q4_K_M",
+    "family": "qwen3",
+    "context_length": 40960,
+    "capabilities": [
+      "completion",
+      "tools",
+      "thinking"
+    ],
+    "template_mentions_think": true
+  },
+  {
+    "size": "4b",
+    "tag": "qwen3:4b-q4_K_M",
+    "digest": "2bfd38a7daaf4b1037efe517ccb73d1a3bbd4822cf89f1a82be1569050a114e0",
+    "size_bytes": 2620788260,
+    "parameter_size": "4.0B",
+    "quantization": "Q4_K_M",
+    "family": "qwen3",
+    "context_length": 40960,
+    "capabilities": [
+      "completion",
+      "tools",
+      "thinking"
+    ],
+    "template_mentions_think": true
+  },
+  {
+    "size": "8b",
+    "tag": "qwen3:8b-q4_K_M",
+    "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "size_bytes": 5225388164,
+    "parameter_size": "8.2B",
+    "quantization": "Q4_K_M",
+    "family": "qwen3",
+    "context_length": 40960,
+    "capabilities": [
+      "completion",
+      "tools",
+      "thinking"
+    ],
+    "template_mentions_think": true
+  }
+]

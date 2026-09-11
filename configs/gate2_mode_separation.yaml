@@ -1,0 +1,83 @@
+# Gate 2: think / no-think mode separation (experimental protocol, section 10, phase 0b).
+#
+# PRE-REGISTRATION: the thresholds, reasoning markers, decoding settings and prompt
+# sample below are fixed before any generation is run. Do not edit them after the
+# first record is written; if a change is unavoidable, record why in the protocol.
+
+seed: 20260911
+ollama_host: http://127.0.0.1:11434
+request_timeout_s: 900
+keep_alive: 10m
+num_ctx: 8192
+max_prompt_tokens: 2048
+max_errors: 10
+bootstrap_resamples: 2000
+
+# All Qwen3 sizes share one tokenizer; used for thinking/answer token counts and
+# for the prompt-length filter. Ollama's eval_count remains the authoritative
+# generated-token count.
+tokenizer_id: Qwen/Qwen3-0.6B
+
+paths:
+  prompts: data/processed/gate2_prompts.jsonl            # full text, gitignored
+  prompt_manifest: results/processed/gate2_prompt_manifest.csv
+  prompt_sources: results/processed/gate2_prompt_sources.json
+  raw_generations: results/raw/gate2/generations.jsonl   # full text, gitignored
+  model_manifest: results/processed/gate2_models.json
+  records: results/processed/gate2_records.csv           # metrics only, no text
+  summary: results/processed/gate2_mode_separation.json
+
+# Explicit Q4_K_M tags throughout. The plain qwen3:4b tag lists a 256K context and
+# a different size from qwen3:4b-q4_K_M, which suggests it was re-pointed to a 2507
+# release; expected_context_length is checked against Ollama metadata before any
+# generation to catch exactly that.
+models:
+  - {size: 0.6b, tag: "qwen3:0.6b-q4_K_M", expected_context_length: 40960, min_free_vram_mb: 2000}
+  - {size: 1.7b, tag: "qwen3:1.7b-q4_K_M", expected_context_length: 40960, min_free_vram_mb: 3000}
+  - {size: 4b, tag: "qwen3:4b-q4_K_M", expected_context_length: 40960, min_free_vram_mb: 4500}
+  - {size: 8b, tag: "qwen3:8b-q4_K_M", expected_context_length: 40960, min_free_vram_mb: 6500}
+
+# Qwen3 recommended sampling per mode. num_predict is deliberately IDENTICAL across
+# modes here (the labelling protocol uses 1024 / 4096): an asymmetric cap would
+# manufacture length separation and hide long no-think outputs, which are exactly
+# the leakage this gate looks for. load_config enforces equality.
+decoding:
+  think: {temperature: 0.6, top_p: 0.95, top_k: 20, min_p: 0.0, num_predict: 4096}
+  no_think: {temperature: 0.7, top_p: 0.8, top_k: 20, min_p: 0.0, num_predict: 4096}
+
+# 60 prompts, 10 per source, 20 per family. Open-ended prompts are excluded until
+# the licence-clean source is decided (protocol section 12, decision 1).
+sources:
+  gsm8k: {family: math, hf_id: openai/gsm8k, hf_config: main, split: test, formatter: gsm8k, n: 10}
+  math500: {family: math, hf_id: HuggingFaceH4/MATH-500, hf_config: null, split: test, formatter: math500, n: 10, stratify_by: level}
+  humaneval: {family: code, hf_id: openai/openai_humaneval, hf_config: null, split: test, formatter: humaneval, n: 10}
+  mbpp: {family: code, hf_id: google-research-datasets/mbpp, hf_config: full, split: test, formatter: mbpp, n: 10}
+  mmlu: {family: mcq, hf_id: cais/mmlu, hf_config: all, split: test, formatter: mmlu, n: 10, stratify_by: subject}
+  arc_challenge: {family: mcq, hf_id: allenai/ai2_arc, hf_config: ARC-Challenge, split: test, formatter: arc, n: 10}
+
+# A size counts as "separated" only if all three checks pass; "partial" if length
+# separation reaches auc_partial_min but another check fails.
+thresholds:
+  auc_min: 0.90                   # P(think generates more tokens than no-think)
+  auc_partial_min: 0.75
+  max_nothink_leak_rate: 0.05     # non-empty thinking field or literal <think> in a no-think answer
+  max_marker_density_ratio: 0.50  # no-think answer marker density / think-trace marker density
+
+# Reasoning-style markers, matched case-insensitively on word boundaries.
+reasoning_markers:
+  - "wait"
+  - "hmm"
+  - "let me"
+  - "let's"
+  - "okay, so"
+  - "alternatively"
+  - "double-check"
+  - "double check"
+  - "on second thought"
+  - "i think"
+  - "first,"
+  - "actually,"
+
+gpu_guard:
+  max_util_pct: 15
+  util_window_s: 3

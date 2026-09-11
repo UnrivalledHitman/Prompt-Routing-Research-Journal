@@ -378,11 +378,11 @@ model loads into four and avoids reload thrash on a memory-tight GPU.
 | Phase | What | GPU time | Gate |
 |-------|------|----------|------|
 | 0a | NVML power telemetry check (§6.1) | minutes | **Blocks the energy contribution** |
-| 0b | Mode-separation validation (§10) | ~1-2 h | **Blocks the whole design** |
-| 0c | Per-cell throughput calibration, budget re-estimate | ~1 h | — |
-| 1 | Pilot labelling, 800 prompts x 8 cells x k=3 | ~8-12 h | Validates the pipeline end to end |
+| 0b | Mode-separation validation (§10) | 1 h 54 min (actual) | **Passed 2026-09-11**, see §10.1 |
+| 0c | Per-cell throughput calibration, budget re-estimate | answered by gate 2 data | Budget re-estimated in §10.1 |
+| 1 | Pilot labelling, 800 prompts x 8 cells x k=3 | planned ~8-12 h; **measured rate implies ~75 h** | Validates the pipeline end to end. **[DECISION]** budget, §10.1 |
 | 2 | Router training and evaluation on pilot | ~2-4 h | First real numbers |
-| 3 | Full labelling, 3,200 prompts | ~35-50 h, overnight | Only after phase 1 is clean |
+| 3 | Full labelling, 3,200 prompts | planned ~35-50 h; **measured rate implies ~300 h** | Only after phase 1 is clean |
 | 4 | Full router sweep, ablations, seeds | ~6-10 h | — |
 | 5 | Public-benchmark arm (no local inference) | CPU only | — |
 
@@ -402,6 +402,93 @@ and every energy result inherits it.
 output length, thinking-token count and reasoning-marker frequency. Report separation empirically, with
 effect sizes. **If separation is weak at some sizes, that is a finding and gets published as one** — it
 is not a reason to quietly proceed.
+
+### 10.1 Gate 2 result (run 2026-09-11)
+
+Script `scripts/gate2_mode_separation.py`, config `configs/gate2_mode_separation.yaml`. Summary in
+`results/processed/gate2_mode_separation.json`, per-generation metrics (no text) in
+`results/processed/gate2_records.csv`, model digests in `gate2_models.json`. Procedure: 60 prompts,
+10 each from GSM8K, MATH-500, HumanEval, MBPP, MMLU and ARC-Challenge. Each prompt ran once per size in
+both modes, 480 generations in total, with the **same 4096-token cap in both modes** and mode order
+alternated ABBA across prompts. Wall time 1 h 54 min. All four models ran fully in VRAM, with no errors
+and no retries.
+
+| Size | AUC | Paired dominance | Median tokens, think / no_think | Median ratio (95% CI) | Leak rate | Marker density ratio | Think cap-hit | Status |
+|------|-----|------------------|----------------------------------|-----------------------|-----------|----------------------|---------------|--------|
+| 0.6B | 0.964 | 1.000 | 1444 / 195 | 13.9 (9.4–19.7) | 0 | 0.040 | 21.7% | separated |
+| 1.7B | 0.954 | 1.000 | 2053 / 184 | 9.1 (7.6–11.9) | 0 | 0.034 | 31.7% | separated |
+| 4B | 0.928 | 0.983 | 1429 / 149 | 7.0 (5.3–11.5) | 0 | 0.042 | 25.0% | separated |
+| 8B | 0.953 | 1.000 | 1814 / 180 | 9.7 (7.7–17.0) | 0 | 0.045 | 21.7% | separated |
+
+Wilcoxon signed-rank p < 2e-11 at every size. No no_think response had a non-empty thinking field or a
+literal `<think>` tag. Reasoning-marker density in no_think answers is 3–5% of the density in think traces.
+
+**Status: Gate 2 passed at all four sizes.** The size x mode grid stands. The leakage reported by
+`wang2025demystifying` does not appear on these checkpoints under Ollama's `think=false`, at least by
+these three measures.
+
+**Limits of the check.** Sixty prompts per size. The marker lexicon is a proxy for reasoning-style
+language, not a semantic judgement. Think lengths are right-censored at 4096, which works against
+separation, so the ratios above are underestimates. On one 4B prompt the no_think output was at least as
+long as the think output; the cause has not been examined.
+
+The run also produced three findings that change the labelling plan.
+
+**Finding 1 — the §9 compute budget is about 6-7x too low.** Mean wall time per prompt, one sample:
+
+| Size | no_think | think |
+|------|----------|-------|
+| 0.6B | 0.9 s | 7.6 s |
+| 1.7B | 2.0 s | 15.8 s |
+| 4B | 4.0 s | 27.6 s |
+| 8B | 6.6 s | 47.6 s |
+
+All eight cells together take 112 s per prompt, and the think cells account for 88% of that. At this rate
+the pilot (800 prompts x 8 cells x k=3) needs **~75 h**, against 8-12 h planned. Full labelling (3,200
+prompts) needs **~300 h**, against 35-50 h. With k=1 the figures are ~25 h and ~100 h. These projections
+use the gate 2 family mix and exclude the open-ended family.
+
+**[DECISION]** Options, not mutually exclusive:
+- (a) k=1 instead of k=3, reporting single-sample label noise as a limitation. This cuts the time by 3x.
+- (b) A smaller full corpus, for example 1,600 prompts. Router training needs are modest, so this is
+  probably viable.
+- (c) Concurrent requests (`OLLAMA_NUM_PARALLEL`), which raise aggregate throughput at the cost of KV-cache
+  VRAM. This is compatible with batch-level energy integration (§6.2, added in PR #4) but must be measured
+  first.
+- (d) Keep k=3 only for a subsample, to estimate label noise.
+
+My recommendation is (a), (b) and (d) together. That is ~25 h for the pilot and ~50 h for a
+1,600-prompt corpus, with label noise measured rather than assumed.
+
+**Finding 2 — at a 4096 cap, truncation causes most think-mode failures.** Every think response that hit
+the cap was graded wrong. Capped responses account for 7 of 23 think-mode errors at 0.6B, 11 of 17 at
+1.7B, 8 of 13 at 4B and 7 of 9 at 8B. Graded accuracy on math and MCQ:
+
+| Size | think | think, uncapped only | no_think |
+|------|-------|----------------------|----------|
+| 0.6B | 0.42 | 0.52 | 0.33 |
+| 1.7B | 0.57 | 0.79 | 0.70 |
+| 4B | 0.68 | 0.84 | 0.90 |
+| 8B | 0.78 | 0.94 | 0.95 |
+
+Under the §5.1 rule that a cap hit is a failure, think cells will rarely be the minimum sufficient
+configuration for math and MCQ at 1.7B and above. The label will then reflect the cap as much as the
+model. The rule is defensible, because a truncated answer is useless in deployment, but the result depends
+on the cap and the paper must say so. Caveats: n = 40 graded responses per mode per size, approximate
+grading, and code was not executed.
+
+**[DECISION]** Keep 4096 and report it as a deployment constraint; raise the think cap (8192 roughly
+doubles think-cell time); or keep 4096 and add a cap-sensitivity sweep on a subsample. I recommend the third.
+
+**Finding 3 — the planned no_think cap of 1024 would truncate some correct-length answers.** 2, 3, 5 and 3
+of 60 no_think responses (by size) exceeded 1024 tokens. **[DECISION]** Raise the no_think cap to 2048.
+No_think cells are 12% of wall time, so the cost is small.
+
+**Operational note — warm-up.** Prompt prefill stalled twice in the whole run, 5.5 s and 6.2 s at the
+second and fourth generations of the first model, and never after. Loading a new model did not bring the
+stall back. The labelling and energy harnesses must therefore run one think and one no_think warm-up
+generation per Ollama server session and exclude them from measurement. Throughput in tokens/s,
+think / no_think: 0.6B 269 / 312, 1.7B 146 / 162, 4B 72 / 76, 8B 44 / 46.
 
 **Quantisation confound.** All cells are Q4_K_M, so size comparisons are between quantised models.
 Constant across cells, but it bounds external validity and is stated as a limitation.
