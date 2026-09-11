@@ -71,7 +71,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "ANN", "D"]
-ignore = ["ANN101", "ANN102", "D203", "D213"]
+ignore = ["D203", "D213"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

@@ -1,0 +1,412 @@
+{
+  "gate": "gate1_nvml_telemetry",
+  "timestamp_utc": "2026-09-11T02:59:05.765060+00:00",
+  "git_commit": "d64b19994e181dcc3a36f397a83f8409104fd962",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.11.15",
+  "nvidia_ml_py": null,
+  "config": {
+    "idle_s": 10.0,
+    "load_s": 8.0,
+    "cooldown_s": 8.0,
+    "settle_s": 3.0,
+    "interval_ms": 100,
+    "matrix_size": 2048,
+    "seed": 20260911,
+    "allow_load": true,
+    "busy_util_pct": 15.0,
+    "responsive_delta_w": 5.0,
+    "agreement_tolerance": 0.15,
+    "plausibility_margin": 1.05,
+    "power_refresh_note_s": 0.25,
+    "out_dir": "results/processed"
+  },
+  "device": {
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "616.56",
+    "nvml": "13.616.56",
+    "vram_total_mb": 8188,
+    "vram_used_mb_at_start": 1169
+  },
+  "capabilities": {
+    "power_usage": {
+      "supported": true,
+      "value": 2053,
+      "error": null
+    },
+    "energy_counter": {
+      "supported": true,
+      "value": 1646985573,
+      "error": null
+    },
+    "power_limit": {
+      "supported": false,
+      "value": null,
+      "error": "Not Supported"
+    },
+    "enforced_power_limit": {
+      "supported": true,
+      "value": 115000,
+      "error": null
+    },
+    "performance_state": {
+      "supported": true,
+      "value": 8,
+      "error": null
+    },
+    "field_power_instant_average": {
+      "supported": [
+        true,
+        true
+      ],
+      "value_mw": [
+        2133,
+        2053
+      ]
+    }
+  },
+  "gpu_processes_at_idle": [
+    {
+      "kind": "compute",
+      "pid": 2240,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 10384,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 10160,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 11872,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 12056,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 14332,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 13172,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 18284,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 20760,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 6168,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 8184,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 11828,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 18024,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 7108,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 24876,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 4912,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 28008,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 8244,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 29224,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 23656,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 25068,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 2300,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 25668,
+      "used_mb": null
+    },
+    {
+      "kind": "compute",
+      "pid": 5084,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 2240,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 10384,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 10160,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 11872,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 12056,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 14332,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 13172,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 18284,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 20760,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 6168,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 8184,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 11828,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 18024,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 7108,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 24876,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 4912,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 28008,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 8244,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 29224,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 23656,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 25068,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 2300,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 25668,
+      "used_mb": null
+    },
+    {
+      "kind": "graphics",
+      "pid": 5084,
+      "used_mb": null
+    }
+  ],
+  "gpu_busy_at_idle": false,
+  "windows": {
+    "idle": {
+      "label": "idle",
+      "n_samples": 101,
+      "duration_s": 10.000933000002988,
+      "power_mean_w": 2.4347326732673267,
+      "power_std_w": 0.24564084266653002,
+      "power_min_w": 2.053,
+      "power_max_w": 2.817,
+      "power_n_distinct": 21,
+      "power_update_interval_s": 0.5001134000194725,
+      "energy_trapz_j": 24.350161354604808,
+      "counter_monotonic": true,
+      "counter_delta_j": 883.0529999998398,
+      "counter_mean_power_w": 88.29706188408382,
+      "counter_update_interval_s": 0.10000510001555085,
+      "util_mean_pct": 0.0
+    },
+    "load": {
+      "label": "load",
+      "n_samples": 81,
+      "duration_s": 8.000447600003099,
+      "power_mean_w": 75.14327160493828,
+      "power_std_w": 25.697967929949243,
+      "power_min_w": 10.479,
+      "power_max_w": 88.43,
+      "power_n_distinct": 17,
+      "power_update_interval_s": 0.49999370001023635,
+      "energy_trapz_j": 603.7272819547387,
+      "counter_monotonic": true,
+      "counter_delta_j": 1020.6210000000428,
+      "counter_mean_power_w": 127.57048743118416,
+      "counter_update_interval_s": 0.09997520002070814,
+      "util_mean_pct": 90.06172839506173
+    },
+    "cooldown": {
+      "label": "cooldown",
+      "n_samples": 81,
+      "duration_s": 8.000809500023024,
+      "power_mean_w": 10.539209876543211,
+      "power_std_w": 13.752732938472247,
+      "power_min_w": 2.923,
+      "power_max_w": 88.341,
+      "power_n_distinct": 17,
+      "power_update_interval_s": 0.49996810001903214,
+      "energy_trapz_j": 80.86461098350787,
+      "counter_monotonic": true,
+      "counter_delta_j": 2055.469000000041,
+      "counter_mean_power_w": 256.90762915854026,
+      "counter_update_interval_s": 0.09996079999837093,
+      "util_mean_pct": 2.4691358024691357
+    }
+  },
+  "load_info": {
+    "iterations": 14240,
+    "matrix_size": 2048,
+    "dtype": "float16",
+    "peak_allocated_mb": 40.1,
+    "torch_version": "2.11.0+cu128",
+    "torch_cuda": "12.8"
+  },
+  "verdict": {
+    "notes": [
+      "Power refreshes every ~0.50 s and is smoothed; integrate energy over batched windows with a post-load tail rather than per-query windows."
+    ],
+    "enforced_power_limit_w": 115.0,
+    "power_supported": true,
+    "counter_supported": true,
+    "power_responds": true,
+    "counter_responds": true,
+    "counter_power_rel_diff": 0.4085,
+    "counter_power_agreement": false,
+    "power_plausible": true,
+    "counter_plausible": false,
+    "power_trusted": true,
+    "counter_trusted": false,
+    "counter_rejected_because": [
+      "disagrees with integrated power by 41% under load",
+      "implies 257 W mean power, above the 115 W enforced limit"
+    ],
+    "recommended_method": "power_sampling",
+    "power_update_interval_s": 0.5,
+    "passed": true
+  },
+  "verdict_history": [
+    {
+      "superseded_at_utc": "2026-09-11T03:03:43.906057+00:00",
+      "verdict": {
+        "notes": [],
+        "power_supported": true,
+        "counter_supported": true,
+        "power_responds": true,
+        "counter_responds": true,
+        "counter_power_rel_diff": 0.4085,
+        "counter_power_agreement": false,
+        "recommended_method": "energy_counter",
+        "passed": true
+      }
+    }
+  ],
+  "verdict_recomputed_at_utc": "2026-09-11T03:03:43.906057+00:00"
+}
