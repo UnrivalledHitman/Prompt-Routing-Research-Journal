@@ -79,3 +79,30 @@ def test_resolve_stage_merges_overrides() -> None:
     assert smoke.raw_dir == REPO_ROOT / "results" / "raw" / "labelling_smoke"
     with pytest.raises(KeyError):
         harness.resolve_stage(config, "nope", REPO_ROOT)
+
+
+def test_cells_stage_restricts_prompts_and_cells(tmp_path: Path) -> None:
+    """A cells stage keeps listed prompts and runs only the listed cells."""
+    cells_file = tmp_path / "cells.csv"
+    cells_file.write_text("prompt_id,size,mode\nm1,8b,think\nc2,0.6b,no_think\n", encoding="utf-8")
+    config = harness.load_config(REPO_ROOT / "configs" / "labelling.yaml")
+    config["stages"]["rerun"] = {
+        "select": "cells",
+        "cells_file": str(cells_file),
+        "variant": "cap8192",
+        "num_ctx": 10240,
+        "decoding": {"think": {"num_predict": 8192}},
+    }
+    stage = harness.resolve_stage(config, "rerun", REPO_ROOT)
+    items = [_item(f"m{i}", "math") for i in range(3)] + [_item(f"c{i}", "code") for i in range(3)]
+    assert {item.prompt_id for item in harness.select_items(items, stage, 7)} == {"m1", "c2"}
+    assert stage.allows("m1", "8b", "think")
+    assert not stage.allows("m1", "8b", "no_think")
+    assert stage.num_ctx == 10240
+    assert stage.decoding["think"]["num_predict"] == 8192
+    pilot = harness.resolve_stage(config, "pilot", REPO_ROOT)
+    assert pilot.allows("anything", "4b", "think")
+    assert pilot.num_ctx == config["num_ctx"]
+    del config["stages"]["rerun"]["cells_file"]
+    with pytest.raises(ValueError):
+        harness.resolve_stage(config, "rerun", REPO_ROOT)
