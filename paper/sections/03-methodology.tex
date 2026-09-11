@@ -1,0 +1,313 @@
+% =====================================================================
+%  III. METHODOLOGY
+%  Source: notes/experimental-protocol.md, sections 2, 3, 6, 7 and 8.
+%  Where this text goes beyond the protocol, a comment says so.
+% =====================================================================
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Configuration Grid}
+\label{sec:grid}
+
+The routed pool is a grid, not a ladder. It crosses four model sizes with
+two reasoning modes, giving eight cells
+$\cells = \{c_1, \dots, c_8\}$ (Table~\ref{tab:grid}). All cells come from
+one model family, Qwen3, which offers a size ladder in which every model can
+run with or without a thinking phase~\cite{qwen3}. Using one family means
+that size and mode are the only things that vary between cells: tokenizer,
+training recipe and chat template stay the same. Quantisation is held fixed
+at 4-bit (Q4\_K\_M) for the same reason. The cost of that choice is that
+results describe quantised models, a limitation we return to in
+Section~\ref{sec:discussion}.
+
+\begin{table}[!t]
+\centering
+\caption{The eight-cell configuration grid. Sizes on disk are for the
+Q4\_K\_M weights used in all experiments.}
+\label{tab:grid}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}c l l r@{}}
+\toprule
+Cell & Model & Mode & Weights \\
+\midrule
+$c_1$ & Qwen3-0.6B & no-think & 0.52\,GB \\
+$c_2$ & Qwen3-0.6B & think    & 0.52\,GB \\
+$c_3$ & Qwen3-1.7B & no-think & 1.36\,GB \\
+$c_4$ & Qwen3-1.7B & think    & 1.36\,GB \\
+$c_5$ & Qwen3-4B   & no-think & 2.62\,GB \\
+$c_6$ & Qwen3-4B   & think    & 2.62\,GB \\
+$c_7$ & Qwen3-8B   & no-think & 5.23\,GB \\
+$c_8$ & Qwen3-8B   & think    & 5.23\,GB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cost of a Configuration}
+\label{sec:cost}
+
+We do not assume that cells are ordered by parameter count. A thinking cell
+of one size can cost more than a non-thinking cell of the next size up, and
+whether it does depends on the prompt. Cost is therefore measured per
+prompt $q$ and per cell $c$, in three units:
+\begin{align}
+  \cost_{\mathrm{tok}}(c, q) &= \alpha\, n_{\mathrm{in}}(c, q)
+                              + \beta\, n_{\mathrm{out}}(c, q),
+  \label{eq:tokcost}\\
+  \cost_{\mathrm{lat}}(c, q) &= \text{wall-clock time of the request (s)},
+  \label{eq:latcost}\\
+  \cost_{\mathrm{E}}(c, q)   &= \text{GPU energy attributed to the request (J)},
+  \label{eq:energycost}
+\end{align}
+where $n_{\mathrm{in}}$ and $n_{\mathrm{out}}$ are input and generated
+token counts, the latter including any reasoning trace, and $\alpha$ and
+$\beta$ are per-token prices that make the token cost comparable with
+metered API billing. Energy is measured rather than estimated
+(Section~\ref{sec:energy}). All definitions below apply to any of the three
+units; we write $\cost(c, q)$ when the unit does not matter.
+
+\subsection{Minimum Sufficient Configuration}
+\label{sec:cstar}
+
+Let $s(q, c) \in \{0, 1\}$ indicate whether cell $c$ produces an acceptable
+answer to $q$ under the success criteria of
+Section~\ref{sec:labelling}. The \emph{minimum sufficient configuration}
+is the cheapest cell that succeeds:
+\begin{equation}
+  \cstar(q) = \argmin_{c \in \cells \,:\, s(q, c) = 1} \cost(c, q).
+  \label{eq:cstar}
+\end{equation}
+It is undefined when no cell succeeds. Those prompts are kept and reported
+separately as the \emph{unservable fraction}. Dropping them would flatter
+every policy, since no policy can serve them and all of them pay to find
+that out.
+
+\subsection{Manual Escalation and the Escalation Tax}
+\label{sec:tax}
+
+\emph{Policies.} A manual escalation policy $\pi$ consists of a starting
+cell and an ordered ladder of cells to try next. The user submits $q$ to the
+starting cell; when an answer is judged a failure, the \emph{whole prompt}
+is resubmitted to the next rung, and so on until an answer is accepted or
+the ladder runs out. For a prompt $q$, let $a_1, \dots, a_m$ be the cells
+actually attempted, with $a_m$ the cell whose answer is finally accepted.
+The policy's cost is the sum over every attempt:
+\begin{equation}
+  \mathrm{Cost}(\pi, q) = \sum_{j=1}^{m} \cost(a_j, q).
+  \label{eq:policycost}
+\end{equation}
+Because $n_{\mathrm{in}}$ enters \eqref{eq:tokcost} at every attempt, a
+long prompt makes escalation expensive even when each failed answer is
+short. That resubmission cost is what users notice in practice, and it is
+absent from cascade evaluations that charge only for generated tokens.
+
+\emph{The tax.} The escalation tax is the excess over the minimum
+sufficient configuration:
+\begin{equation}
+  \Tax(\pi, q) = \mathrm{Cost}(\pi, q) - \cost\bigl(\cstar(q), q\bigr).
+  \label{eq:tax}
+\end{equation}
+Splitting the sum in \eqref{eq:policycost} at the final attempt gives an
+exact decomposition into two terms with different causes:
+\begin{align}
+  \Tax(\pi, q) &= \Esc(\pi, q) + \Stk(\pi, q), \label{eq:decomp}\\
+  \Esc(\pi, q) &= \sum_{j=1}^{m-1} \cost(a_j, q), \nonumber\\
+  \Stk(\pi, q) &= \cost(a_m, q) - \cost\bigl(\cstar(q), q\bigr). \nonumber
+\end{align}
+The \emph{escalation} component is the cost of attempts that were thrown
+away. The \emph{stickiness} component is what the user overpays for the
+configuration that finally answered. When failures are always detected,
+$a_m$ succeeded, so by \eqref{eq:cstar} its cost is at least that of
+$\cstar(q)$ and $\Stk \geq 0$; both components are then non-negative. A
+user who begins on the largest thinking cell and never needs to move pays
+only stickiness. A user who climbs from the smallest cell and happens to
+stop exactly at $\cstar(q)$ pays only escalation. Most trajectories pay
+some of each, and the two respond to different remedies, which is why we
+report them separately.
+% NOTE for reviewers: the protocol (S3) describes stickiness as the premium
+% paid when the user starts above c* and never moves. The definition above
+% generalises it to the overshoot of the final cell, which also covers a
+% coarse ladder that jumps past c* after escalating. The two agree for the
+% sticky-high policy. Decomposition is exact either way.
+
+\begin{table}[!t]
+\centering
+\caption{Manual escalation policies. Cells as in Table~\ref{tab:grid}.}
+\label{tab:policies}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}l l p{3.4cm}@{}}
+\toprule
+Policy & Ladder & Behaviour modelled \\
+\midrule
+P1 frugal climb & $c_1 \to c_3 \to c_5 \to c_7 \to c_8$ & Cost-conscious; larger model first, thinking last \\
+P2 think first  & $c_1 \to c_2 \to c_4 \to c_6 \to c_8$ & Turns on thinking before moving up a size \\
+P3 sticky high  & $c_8$ only & Heavyweight left selected from earlier work \\
+P4 sticky mixed & start drawn from usage mix, then P1 & A population of users \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{Policy family.} We construct the comparator ourselves, so we
+construct it generously. Table~\ref{tab:policies} lists four policies that
+range from frugal to wasteful. P4 draws its starting cell from an empirical
+distribution of previously used cells \decision{source of the P4 starting
+distribution}.
+
+\emph{Failure detection.} An escalating user has to notice that an answer
+is wrong. We evaluate two regimes. Under \emph{oracle detection} the user
+always notices, and never discards a correct answer. This regime favours
+the manual policies, so it gives a lower bound on the tax, and it is the
+regime we quote in headline results. Under \emph{imperfect detection} the
+user accepts a wrong answer with probability $p_{\mathrm{acc}}$ and
+rejects a correct one with probability $p_{\mathrm{rej}}$. A prompt then
+may end unsolved, so costs are reported per \emph{solved} prompt,
+\begin{equation}
+  \bar{\cost}_{\mathrm{solved}}(\pi) =
+  \frac{\mathbb{E}_q\bigl[\mathrm{Cost}(\pi, q)\bigr]}
+       {\Pr_q\bigl[\text{$q$ solved under $\pi$}\bigr]},
+  \label{eq:persolved}
+\end{equation}
+and the two probabilities are swept rather than fixed
+\decision{whether $p_{\mathrm{acc}}$ and $p_{\mathrm{rej}}$ can be grounded
+in a citation or a small user study; placeholders 0.15 and 0.05}.
+
+\subsection{Routers as Per-Cell Success Predictors}
+\label{sec:routers}
+
+Every router in this study predicts a vector of success probabilities, one
+per cell, rather than a single class label:
+\begin{equation}
+  f(q) = \bigl(\hat{p}_1(q), \dots, \hat{p}_8(q)\bigr), \qquad
+  \hat{p}_i(q) \approx \Pr\bigl[s(q, c_i) = 1\bigr].
+  \label{eq:router}
+\end{equation}
+A separate rule turns the vector into a decision. Given a quality threshold
+$\tau \in [0, 1]$, the router picks the cheapest cell it believes will
+succeed:
+\begin{equation}
+  \hat{c}_\tau(q) =
+  \begin{cases}
+    \displaystyle\argmin_{i \,:\, \hat{p}_i(q) \geq \tau} \bar{\cost}(c_i)
+      & \text{if some } \hat{p}_i(q) \geq \tau,\\[1.2ex]
+    \displaystyle\argmax_{i} \hat{p}_i(q) & \text{otherwise},
+  \end{cases}
+  \label{eq:selection}
+\end{equation}
+where $\bar{\cost}(c_i)$ is the mean cost of cell $c_i$ on the training
+split, because the true per-prompt cost is unknown before generation.
+% ASSUMPTION beyond the protocol: the fallback when no cell clears tau
+% (argmax of p-hat) and the use of training-split mean cost. Flag for review.
+Separating prediction from decision has two benefits. One trained router
+yields a whole cost--quality curve by sweeping $\tau$, much as Hybrid LLM
+exposes a quality knob at test time~\cite{ding2024hybridllm}. And the
+asymmetry between the two kinds of error can be handled by moving $\tau$
+instead of retraining. Routing one cell too low produces a failure and a
+retry; routing one cell too high only wastes compute. We expect these costs
+to differ by a large factor, which is why accuracy against $\cstar$ is not
+used as the objective. Direct eight-way classification of $\cstar(q)$ is
+kept as an ablation.
+
+\emph{What happens after a misroute.} A router that picks a failing cell
+does not end the interaction; the user still needs an answer. We charge a
+routed policy the same way as a manual one: the routed cell is the first
+attempt, and on failure the prompt is resubmitted to the largest thinking
+cell $c_8$ \decision{recovery rule after a failed routed attempt: direct to
+$c_8$, or continue up the P1 ladder}. The escalation tax of a router is then
+computed with \eqref{eq:tax} exactly as for $\pi$.
+
+We compare three router families, chosen to span four orders of magnitude
+in their own cost.
+
+\emph{R1: classical classifiers.} (a) Logistic regression on TF-IDF word and
+character $n$-grams. (b) Gradient-boosted trees
+\citeneeded{XGBoost and LightGBM} on hand-built features: prompt length,
+digit and operator density, presence of code fences, question type and
+readability. (c) Logistic regression on frozen Sentence-BERT
+embeddings~\cite{reimers2019sbert}. All run on a CPU.
+
+\emph{R2: fine-tuned encoders.} DistilBERT~\cite{sanh2019distilbert} and
+DeBERTa-v3-small~\cite{he2021deberta} with eight sigmoid output heads,
+trained with class-weighted binary cross-entropy.
+
+\emph{R3: a language model as router.} Qwen3-0.6B, the smallest member of
+the pool, prompted zero-shot and few-shot to name a configuration with
+constrained decoding, and a LoRA-tuned
+variant~\citeneeded{LoRA, Hu et al.}. We deliberately use the smallest pool
+member: a router larger than the models it routes between defeats its own
+purpose.
+
+\emph{Cost-sensitive training.} Because misrouting costs are asymmetric, a
+variant of each trainable router weights errors by their realised cost
+consequence, computed from the labelled per-cell costs, instead of treating
+all errors equally.
+
+\subsection{Net-of-Router Accounting}
+\label{sec:net}
+
+A router is itself a workload. Each router's latency, peak memory and
+energy per decision are measured with the same instruments as the pool
+(Section~\ref{sec:energy}) and added to the cost of every query it routes.
+For a router $r$ and a baseline policy $b$, the \emph{net saving} is
+\begin{equation}
+  S_{\mathrm{net}}(r; b) =
+    \mathbb{E}_q\bigl[\mathrm{Cost}(b, q)\bigr]
+  - \mathbb{E}_q\bigl[\mathrm{Cost}(r, q) + \cost_{\mathrm{route}}(r, q)\bigr],
+  \label{eq:netsaving}
+\end{equation}
+where $\cost_{\mathrm{route}}(r, q)$ is the router's own cost for $q$.
+For latency and energy this term is measured directly. For token cost it
+is non-zero only for R3, which consumes input and output tokens of its own.
+Ranking router families by gross saving and by $S_{\mathrm{net}}$ need not
+give the same order, and testing whether it does is one of the aims of the
+study.
+
+\subsection{Reactive Cascade Baseline}
+\label{sec:cascade}
+
+The strongest published alternative to predicting in advance is to try the
+cheap configuration and check. We implement a cascade in the style of
+AutoMix~\cite{aggarwal2024automix}: generate on the cheapest cell, ask the
+same model to verify its answer with few-shot self-verification prompts,
+and escalate along the P1 ladder when verification fails. Verification
+calls are charged like any other generation. This baseline pays for failed
+attempts, as a user does, but decides with information from the answer
+itself. Beating it therefore requires that predicting before generation
+save more than the extra information from generating first is worth.
+\decision{decision rule for the cascade: verification threshold as in
+AutoMix, or its POMDP router}
+
+\subsection{Energy Measurement}
+\label{sec:energy}
+
+GPU board power is read through NVIDIA's management library, NVML
+\citeneeded{NVML documentation}, by a sampling thread that polls
+instantaneous power every 100\,ms. Two properties of the hardware, both
+established by the telemetry gate in Section~\ref{sec:gate-telemetry},
+shape the method. First, the cumulative energy counter that NVML also
+exposes is unusable on this GPU, so energy is always integrated from sampled
+power. Second, reported power refreshes only every 0.5\,s and is smoothed.
+A short no-think answer from the smallest model can finish inside a single
+refresh period, so its energy cannot be read from its own time window.
+
+Energy is therefore integrated over \emph{batches}. Each batch runs many
+prompts on one cell back to back; the batch window is extended by a 2\,s
+tail after the last generation to capture the decay of the smoothed reading.
+The integral is computed with the trapezoidal rule. We report two
+quantities: total energy, the raw integral, and dynamic energy, which
+subtracts an idle baseline measured for 60\,s before the batch. Dynamic
+energy is the figure we attribute to queries. Each query receives a share of
+its batch's dynamic energy in proportion to its share of the batch's
+generation wall time, and on a subsample we check that apportioning by token
+share gives the same result. Routers are measured the same way.
+
+Two derived measures connect energy to the escalation tax. \emph{Joules per
+solved query} divides the energy a policy spends, including failed attempts,
+by the number of prompts it solves, so a cheap configuration that fails and
+triggers a retry is charged for the retry. \emph{Carbon} is reported as
+$\mathrm{gCO_2e} = (E / 3.6 \times 10^{6})\,I$ for a grid intensity $I$ in
+gCO$_2$e/kWh, over a range of regional intensities rather than a single
+value, following the accounting of Lacoste \emph{et
+al.}~\cite{lacoste2019quantifying} and Luccioni \emph{et
+al.}~\cite{luccioni2024powerhungry}. NVML reports whole-board power, so any
+other GPU workload contaminates the reading; measurement windows require an
+otherwise idle GPU, and utilisation is logged throughout to flag windows where
+it does not match the scheduled work.

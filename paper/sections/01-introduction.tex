@@ -1,0 +1,99 @@
+% =====================================================================
+%  I. INTRODUCTION
+% =====================================================================
+\section{Introduction}
+\label{sec:introduction}
+
+\IEEEPARstart{A}{nyone} who uses a tiered language-model service makes an
+allocation decision before typing a word. Providers sell families of models
+that trade capability against price and latency, and a growing number also
+expose a second control: whether the model should produce an extended
+reasoning trace before its answer \citeneeded{vendor documentation of tiered
+model families with user-selectable reasoning effort}. Open-weight families
+now ship the same two axes. Qwen3 offers dense models from 0.6B to 14B
+parameters with a switch between thinking and non-thinking modes and a
+controllable thinking budget~\cite{qwen3}. Reasoning traces raise accuracy
+on hard problems~\cite{wei2022cot,deepseek2025r1}, but they multiply the
+number of generated tokens, and the choice of when to pay for them is left
+to the person holding the keyboard.
+
+People get that choice wrong in two opposite directions. The first is
+under-provisioning: start with a small, cheap configuration, notice a wrong
+answer, and move up. Every failed attempt is billed in full, and so is the
+prompt, which has to be resent at each step. The second is
+over-provisioning. A heavyweight configuration chosen for yesterday's hard
+task stays selected, and today's trivial prompts pay its premium. Reasoning
+models make the second failure worse because they tend to produce long
+traces for questions that need none, a pattern the efficient-reasoning
+literature calls overthinking~\cite{sui2025stopoverthinking,
+alomrani2025reasoningbudget}. Both failures waste tokens, time and energy,
+and neither has been measured against the configuration that would have
+been sufficient.
+
+Model routing is the obvious remedy, and there is a large literature on
+it~\cite{moslem2026routingsurvey}. Cascades query models in order of cost
+and stop when a scorer accepts an answer~\cite{chen2023frugalgpt,
+aggarwal2024automix}. Predictive routers pick a model from the query
+alone~\cite{ding2024hybridllm,ong2024routellm}. More recent work routes over
+reasoning mode~\cite{zhang2025synapseroute,lee2026dart} and over model and
+reasoning strategy jointly~\cite{pan2026routetoreason}. These systems are
+evaluated against static single-model policies, random assignment, an
+oracle, or an automated cascade. None of the work we located evaluates
+them against the policy people actually follow, which is manual escalation
+with the prompt resent at every step. Energy-aware routers do measure power,
+but they route over model choice or processing pipeline rather than
+reasoning mode, and they report savings gross of the router's own
+consumption~\cite{ziller2026greenserv,li2026ecothink}. Routers that control
+reasoning effort report tokens and latency, not
+joules~\cite{lee2026dart}.
+
+This paper studies one-shot selection of the \emph{minimum sufficient
+configuration}: the cheapest cell of a model-size by reasoning-mode grid
+that still answers a prompt correctly, predicted before any generation. We
+define the \emph{escalation tax} as the cost a policy incurs beyond that
+configuration, and we split it into an escalation component, paid for
+attempts that failed, and a stickiness component, paid for finishing on a
+configuration more expensive than necessary. The study runs on hardware
+that most practitioners own: a laptop with an 8\,GB consumer GPU, where
+quantisation is forced, only one model fits in memory at a time, and every
+joule is measured from board power rather than estimated from rated power.
+
+The contributions are as follows.
+\begin{itemize}
+  \item A formal definition of the escalation tax and its decomposition,
+        together with a family of manual escalation policies evaluated under
+        both perfect and imperfect failure detection
+        (Section~\ref{sec:methodology}).
+  \item An oracle-labelled corpus in which every prompt is run through all
+        eight cells of a Qwen3 size-by-mode grid, recording per-cell
+        success, token counts, latency and measured energy
+        (Section~\ref{sec:experimentation}).
+  \item A comparison of three router families---classical classifiers,
+        fine-tuned encoders, and a small language model used as a
+        router---under \emph{net} accounting, in which each router's own
+        latency, memory and energy are subtracted from the saving it
+        produces.
+  \item A measured characterisation of the energy cost of the reasoning-mode
+        axis, reported as joules per \emph{solved} query so that a cheap
+        configuration that fails and forces a retry is not flattered.
+  \item Two validation results that other studies on similar hardware can
+        reuse: an empirical test of whether thinking and non-thinking modes
+        are separate operating points at every model size, and evidence that
+        a supported, monotonic NVML energy counter can nonetheless be
+        non-physical on laptop GPUs.
+\end{itemize}
+
+\tbd{one paragraph stating the headline findings once Sections V and VI
+exist: size of the tax under the conservative detection regime, net saving
+of the best router against the best manual policy and against the cascade,
+whether the router-family ordering changes once routers are charged, and
+where in the grid thinking costs more energy than moving up a size.}
+
+The rest of the paper is organised as follows. Section~\ref{sec:literature}
+surveys routing, reasoning-effort control and energy measurement for
+language-model inference. Section~\ref{sec:methodology} formalises the
+escalation tax and describes the routers and the cost model.
+Section~\ref{sec:experimentation} gives the experimental setup, including
+the corpus, labelling procedure, baselines, metrics and the two validation
+gates. Sections~\ref{sec:results} and~\ref{sec:discussion} present and
+interpret the results, and Section~\ref{sec:future} outlines future work.
