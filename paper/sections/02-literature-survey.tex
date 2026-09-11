@@ -242,7 +242,7 @@ selects; \emph{decision point} is when it commits; \emph{efficiency
 reported} is the cost measure used in the headline result.}
 \label{tab:prior-work}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabular}{@{}l l l l@{}}
+\begin{tabularx}{\textwidth}{@{}l l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
 \toprule
 System & Axis & Decision point & Efficiency reported \\
 \midrule
@@ -261,5 +261,5 @@ QoS edge routing~\cite{yang2025qosrouting} & Edge expert & Before generation & L
 \midrule
 This study & Model size and reasoning mode & Before generation & Tokens, latency, measured energy (net of router) \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table*}
