@@ -38,7 +38,7 @@ import time
 import zlib
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TypeVar
@@ -92,7 +92,12 @@ RecordKey = tuple[str, str, str, int, str]
 
 @dataclass(frozen=True)
 class Stage:
-    """A labelling stage with its overrides merged into the base config."""
+    """A labelling stage with its overrides merged into the base config.
+
+    ``corpus`` replaces the base corpus, as the probe stages for R3 and the cascade do.
+    ``request`` holds extra chat parameters, such as ``logprobs``, sent with every
+    generation.
+    """
 
     name: str
     select: str
@@ -107,6 +112,8 @@ class Stage:
     decoding: dict[str, dict[str, Any]]
     num_ctx: int
     cells: frozenset[tuple[str, str, str]] | None = None
+    corpus: Path | None = None
+    request: dict[str, Any] = field(default_factory=dict)
 
     def allows(self, prompt_id: str, size: str, mode: str) -> bool:
         """Return whether the stage runs this cell; unrestricted stages run every cell."""
@@ -187,6 +194,8 @@ def resolve_stage(cfg: dict[str, Any], name: str, repo_root: Path) -> Stage:
         decoding={mode: {**cfg["decoding"][mode], **overrides.get(mode, {})} for mode in MODES},
         num_ctx=int(spec.get("num_ctx", cfg["num_ctx"])),
         cells=cells,
+        corpus=repo_root / spec["corpus"] if "corpus" in spec else None,
+        request=dict(spec.get("request", {})),
     )
 
 
@@ -538,6 +547,21 @@ def load_model(ctx: Context, spec: dict[str, Any], guard: GpuGuard) -> float | N
     raise RuntimeError(f"{tag}: not fully in VRAM after {retries} attempts")
 
 
+def serialise_logprobs(logprobs: Sequence[Any] | None) -> list[dict[str, Any]]:
+    """Convert Ollama log probabilities into plain dicts for JSONL."""
+    out = []
+    for entry in logprobs or ():
+        top = getattr(entry, "top_logprobs", None) or ()
+        out.append(
+            {
+                "token": entry.token,
+                "logprob": float(entry.logprob),
+                "top_logprobs": [{"token": t.token, "logprob": float(t.logprob)} for t in top],
+            }
+        )
+    return out
+
+
 def generate_one(
     ctx: Context, spec: dict[str, Any], item: PromptItem, mode: str, sample: int
 ) -> dict[str, Any]:
@@ -552,12 +576,13 @@ def generate_one(
         think=mode == "think",
         options=options,
         keep_alive=ctx.cfg["keep_alive"],
+        **stage.request,
     )
     t_end = time.perf_counter()
     content = response.message.content or ""
     thinking = getattr(response.message, "thinking", None) or ""
     ns = 1e-9
-    return {
+    record: dict[str, Any] = {
         "prompt_id": item.prompt_id,
         "family": item.family,
         "source": item.source,
@@ -585,6 +610,9 @@ def generate_one(
         "tokens_content": count_tokens(ctx.tokenizer, content),
         "timestamp_utc": utc_now(),
     }
+    if stage.request.get("logprobs"):
+        record["logprobs"] = serialise_logprobs(getattr(response, "logprobs", None))
+    return record
 
 
 def run_window(
@@ -866,7 +894,8 @@ def run_stage(cfg: dict[str, Any], stage_name: str, repo_root: Path, config_path
         If the stage selects no prompts.
     """
     stage = resolve_stage(cfg, stage_name, repo_root)
-    items = select_items(read_corpus(repo_root / cfg["corpus"]), stage, int(cfg["seed"]))
+    corpus = stage.corpus or repo_root / cfg["corpus"]
+    items = select_items(read_corpus(corpus), stage, int(cfg["seed"]))
     if not items:
         raise ValueError(f"stage {stage.name} selects no prompts")
     stage.raw_dir.mkdir(parents=True, exist_ok=True)
@@ -899,6 +928,10 @@ def run_stage(cfg: dict[str, Any], stage_name: str, repo_root: Path, config_path
             "decoding": stage.decoding,
             "num_ctx": stage.num_ctx,
             "restricted_cells": None if stage.cells is None else len(stage.cells),
+            "corpus": corpus.relative_to(repo_root).as_posix()
+            if corpus.is_relative_to(repo_root)
+            else str(corpus),
+            "request": stage.request,
             "recorded_before": len(records),
         }
         append_jsonl(stage.raw_dir / "runs.jsonl", [run_info])

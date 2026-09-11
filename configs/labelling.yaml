@@ -63,3 +63,13 @@ stages:
   # Cap sensitivity (protocol 13.1): rerun a stratified sample of capped generations with an
   # 8,192-token cap. The context grows so that a 2,048-token prompt still fits.
   cap: {select: cells, cells_file: results/processed/cap_reruns.csv, samples: [0], variant: cap8192, num_ctx: 10240, decoding: {think: {num_predict: 8192}, no_think: {num_predict: 8192}}}
+  # Probes (paper sections III-D and III-F), built by scripts/build_probes.py. Each asks for a
+  # short reply whose first visible token's distribution, returned as log probabilities, is
+  # the result; eight tokens leave room for any leading whitespace. Sampling is untruncated at
+  # temperature 1, so the distribution is the model's own whether Ollama reports it before or
+  # after the sampler's transforms.
+  # Cascade verifier: every no-think answer on the P1 ladder below c8, checked by its own model.
+  verify: {select: cells, corpus: results/raw/probes/verify_corpus.jsonl, cells_file: results/raw/probes/verify_cells.csv, samples: [0], variant: verify, raw_dir: results/raw/verify, batch_size: 50, request: {logprobs: true, top_logprobs: 20}, decoding: {no_think: {temperature: 1.0, top_p: 1.0, top_k: 0, min_p: 0.0, num_predict: 8}}}
+  # R3: Qwen3-0.6B names the cheapest sufficient configuration, zero-shot and few-shot.
+  route_zero: {select: cells, sizes: [0.6b], corpus: results/raw/probes/route_zero_corpus.jsonl, cells_file: results/raw/probes/route_zero_cells.csv, samples: [0], variant: route-zero, raw_dir: results/raw/route, batch_size: 50, request: {logprobs: true, top_logprobs: 20}, decoding: {no_think: {temperature: 1.0, top_p: 1.0, top_k: 0, min_p: 0.0, num_predict: 8}}}
+  route_few: {select: cells, sizes: [0.6b], corpus: results/raw/probes/route_few_corpus.jsonl, cells_file: results/raw/probes/route_few_cells.csv, samples: [0], variant: route-few, raw_dir: results/raw/route, batch_size: 50, request: {logprobs: true, top_logprobs: 20}, decoding: {no_think: {temperature: 1.0, top_p: 1.0, top_k: 0, min_p: 0.0, num_predict: 8}}}

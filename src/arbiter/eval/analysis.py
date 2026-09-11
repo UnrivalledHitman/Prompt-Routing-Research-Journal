@@ -5,7 +5,8 @@ The results section follows the hypotheses, and so does this module:
 * corpus and oracle labels: :func:`label_summary`, :func:`cstar_distribution`;
 * H1, the escalation tax: :func:`policy_table`, :func:`detection_sweep`;
 * H2 and H3, routing gross and net of router cost: :func:`run_router`,
-  :func:`baseline_evaluations`, :func:`compare`, :func:`frontier_table`;
+  :func:`run_cascade`, :func:`baseline_evaluations`, :func:`compare`,
+  :func:`frontier_table`;
 * H4, the cost of the reasoning-mode axis: :func:`mode_signature`;
 * H5, asymmetric misallocation: :func:`asymmetry`.
 
@@ -26,6 +27,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from arbiter.eval.cascade import Verification, cascade_outcome, cascade_sweep
 from arbiter.eval.labels import (
     CELL_NAMES,
     CELLS,
@@ -37,6 +39,7 @@ from arbiter.eval.labels import (
 from arbiter.eval.policies import (
     LADDERS,
     ORACLE,
+    P1,
     TOP,
     Detection,
     Outcome,
@@ -518,6 +521,10 @@ class RouterSpec:
     ``make(seed=..., **params)`` returns an unfitted router. Per-cell routers expose
     ``fit(texts, success, weights)`` and ``predict_proba(texts)``; direct routers expose
     ``fit(texts, cstar)`` and ``predict(texts)``.
+
+    ``overhead(table, unit)``, when given, returns the router's measured cost for each
+    prompt of a split, as for R3, whose decisions were metered on the GPU. Otherwise the
+    router is timed on the CPU and charged by :func:`router_cost`.
     """
 
     name: str
@@ -526,6 +533,8 @@ class RouterSpec:
     grid: tuple[dict[str, Any], ...] = ({},)
     cost_sensitive: bool = False
     direct: bool = False
+    overhead: Callable[[LabelTable, str], np.ndarray] | None = None
+    device: str = "cpu"
 
 
 @dataclass(frozen=True)
@@ -624,6 +633,45 @@ def router_cost(unit: str, decision_s: float, cpu_power_w: float) -> float:
     return decision_s * cpu_power_w
 
 
+def charged_cost(
+    spec: RouterSpec, split: Split, seconds: np.ndarray | None, unit: str, cpu_power_w: float
+) -> float | np.ndarray:
+    """Return a router's cost per prompt on a split in ``unit``.
+
+    A router with measured overhead is charged what was measured for each prompt; a CPU
+    router is charged its mean decision time through :func:`router_cost`.
+    """
+    if spec.overhead is not None:
+        return np.asarray(spec.overhead(split.table, unit), dtype=float)
+    return router_cost(unit, float(np.mean(seconds)), cpu_power_w)
+
+
+def overhead_record(
+    spec: RouterSpec, seed: int, split: Split, seconds: np.ndarray | None, cpu_power_w: float
+) -> dict[str, Any]:
+    """Summarise a router's decision latency and energy on a split."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        if spec.overhead is not None:
+            seconds = np.asarray(spec.overhead(split.table, "latency_s"), dtype=float)
+            joules = float(np.nanmean(spec.overhead(split.table, "energy_j")))
+            vram = float("nan")
+        else:
+            joules = float(np.mean(seconds)) * cpu_power_w
+            vram = 0.0
+        return {
+            "router": spec.name,
+            "family": spec.family,
+            "seed": seed,
+            "device": spec.device,
+            "p50_s": float(np.nanpercentile(seconds, 50)),
+            "p95_s": float(np.nanpercentile(seconds, 95)),
+            "mean_s": float(np.nanmean(seconds)),
+            "peak_vram_mb": vram,
+            "joules_per_decision": joules,
+        }
+
+
 def _view(table: LabelTable, unit: str) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     cost = table.costs[unit]
     return (
@@ -695,29 +743,19 @@ def run_router(
         router = fit_router(spec, params, seed, train, settings.label_unit)
         mean_costs = {unit: mean_cell_cost(train.table.costs[unit]) for unit in settings.units}
         anchor = mean_costs[settings.units[0]]
-        val_s = decision_times(router, spec, val.texts, anchor)
-        test_s = decision_times(router, spec, test.texts, anchor)
-        run.overhead.append(
-            {
-                "router": spec.name,
-                "family": spec.family,
-                "seed": seed,
-                "device": "cpu",
-                "p50_s": float(np.percentile(test_s, 50)),
-                "p95_s": float(np.percentile(test_s, 95)),
-                "mean_s": float(test_s.mean()),
-                "peak_vram_mb": 0.0,
-                "joules_per_decision": float(test_s.mean()) * settings.cpu_power_w,
-            }
-        )
+        val_s = test_s = None
+        if spec.overhead is None:
+            val_s = decision_times(router, spec, val.texts, anchor)
+            test_s = decision_times(router, spec, test.texts, anchor)
+        run.overhead.append(overhead_record(spec, seed, test, test_s, settings.cpu_power_w))
         p_val = None if spec.direct else router.predict_proba(val.texts)
         p_test = None if spec.direct else router.predict_proba(test.texts)
         direct = decide(router, spec, test.texts, anchor, float("nan")) if spec.direct else None
         for unit in settings.units:
             v_success, v_cost, v_cstar, v_best = _view(val.table, unit)
             t_success, t_cost, t_cstar, t_best = _view(test.table, unit)
-            v_overhead = router_cost(unit, float(val_s.mean()), settings.cpu_power_w)
-            t_overhead = router_cost(unit, float(test_s.mean()), settings.cpu_power_w)
+            v_overhead = charged_cost(spec, val, val_s, unit, settings.cpu_power_w)
+            t_overhead = charged_cost(spec, test, test_s, unit, settings.cpu_power_w)
             for recovery in settings.recoveries:
                 for label, detection in settings.detections.items():
                     if spec.direct:
@@ -742,7 +780,7 @@ def run_router(
                             "detection": label,
                             "tau": tau,
                             "params": repr(params),
-                            "router_cost": t_overhead,
+                            "router_cost": float(np.mean(t_overhead)),
                             "single_accuracy": float(t_success[rows, routed].mean()),
                             "single_mean_cost": float(t_cost[rows, routed].mean()),
                             **routing_errors(routed, t_success, t_cost, t_cstar),
@@ -764,6 +802,93 @@ def run_router(
             run.sweeps.append(
                 frame.assign(router=spec.name, family=spec.family, seed=seed, unit=unit)
             )
+    return run
+
+
+CASCADE = "cascade-automix"
+
+
+def run_cascade(
+    val: Split,
+    test: Split,
+    val_checks: Verification,
+    test_checks: Verification,
+    settings: RouterSettings,
+    thresholds: Sequence[float],
+    resamples: Resamples,
+    name: str = CASCADE,
+) -> RouterRun:
+    """Choose the cascade's confidence threshold on validation and evaluate it on test.
+
+    The cascade is run like a router: for every unit, recovery rule and detection model
+    the threshold is chosen on validation, ties going to the higher threshold, and the
+    test split is evaluated once at it. Test sweeps over every threshold use primary
+    recovery and oracle detection. Verification is part of the policy cost, so
+    ``router_cost`` is zero; the overhead record describes one verification call. The
+    cascade is deterministic and runs under the first seed only.
+    """
+    run = RouterRun(name=name)
+    run.selection = [
+        {"router": name, "params": repr({}), "val_objective": float("nan"), "chosen": True}
+    ]
+    seed, primary = settings.seeds[0], settings.recoveries[0]
+    rows = np.arange(len(test.table))
+    for unit in settings.units:
+        v_success, v_cost, v_cstar, v_best = _view(val.table, unit)
+        t_success, t_cost, t_cstar, t_best = _view(test.table, unit)
+        v_inputs = (v_success, v_cost, val_checks.costs[unit], val_checks.confidence)
+        t_inputs = (t_success, t_cost, test_checks.costs[unit], test_checks.confidence)
+        for recovery in settings.recoveries:
+            for label, detection in settings.detections.items():
+                frame = cascade_sweep(*v_inputs, v_cstar, v_best, thresholds, recovery, detection)
+                threshold = choose_tau(frame, settings.objective)
+                outcome, climbed = cascade_outcome(*t_inputs, threshold, recovery, detection)
+                evaluated = evaluate(outcome, t_best, resamples)
+                stop = climbed.stop
+                run.test.append(
+                    {
+                        "router": name,
+                        "family": "cascade",
+                        "seed": seed,
+                        "unit": unit,
+                        "recovery": recovery,
+                        "detection": label,
+                        "tau": threshold,
+                        "params": repr({}),
+                        "router_cost": 0.0,
+                        "single_accuracy": float(t_success[rows, stop].mean()),
+                        "single_mean_cost": float(
+                            (climbed.passed_cost + climbed.cost[rows, stop]).mean()
+                        ),
+                        "rungs_passed": float(climbed.passed.mean()),
+                        **routing_errors(stop, t_success, t_cost, t_cstar),
+                        **evaluated.row,
+                    }
+                )
+                run.evaluated[(unit, recovery, label)] = evaluated
+        frame = cascade_sweep(*t_inputs, t_cstar, t_best, thresholds, primary, ORACLE)
+        run.sweeps.append(frame.assign(router=name, family="cascade", seed=seed, unit=unit))
+    verified = list(P1[:-1])
+    missing = np.array([np.nan])
+    calls = {
+        unit: test_checks.costs[unit][:, verified].ravel() if unit in test_checks.costs else missing
+        for unit in ("latency_s", "energy_j")
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        run.overhead.append(
+            {
+                "router": name,
+                "family": "cascade",
+                "seed": seed,
+                "device": "gpu",
+                "p50_s": float(np.nanpercentile(calls["latency_s"], 50)),
+                "p95_s": float(np.nanpercentile(calls["latency_s"], 95)),
+                "mean_s": float(np.nanmean(calls["latency_s"])),
+                "peak_vram_mb": float("nan"),
+                "joules_per_decision": float(np.nanmean(calls["energy_j"])),
+            }
+        )
     return run
 
 
