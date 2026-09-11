@@ -114,7 +114,8 @@ def build_label_table(
     """
     frame = grades[(grades["sample"] == sample) & (grades["variant"] == variant)].copy()
     if energy is not None:
-        joules = energy[[*KEY, "energy_dyn_j", "energy_board_j"]]
+        extra = [c for c in ("energy_dyn_token_j",) if c in energy.columns]
+        joules = energy[[*KEY, "energy_dyn_j", "energy_board_j", *extra]]
         frame = frame.merge(joules, on=KEY, how="left", validate="one_to_one")
     else:
         frame["energy_dyn_j"] = np.nan
@@ -143,15 +144,19 @@ def build_label_table(
 
     tokens = price_in * wide["prompt_eval_count"] + price_out * wide["eval_count"]
     contaminated = wide["contaminated"].fillna(False).astype(bool)
+    costs = {
+        "tokens": matrix(tokens),
+        "latency_s": matrix("wall_s"),
+        "energy_j": matrix("energy_dyn_j"),
+        "board_j": matrix("energy_board_j"),
+    }
+    if "energy_dyn_token_j" in wide.columns:
+        # Dynamic energy split by generated tokens: a check on wall-time apportioning.
+        costs["energy_token_j"] = matrix("energy_dyn_token_j")
     return LabelTable(
         prompts=prompts,
         success=matrix("correct", bool),
-        costs={
-            "tokens": matrix(tokens),
-            "latency_s": matrix("wall_s"),
-            "energy_j": matrix("energy_dyn_j"),
-            "board_j": matrix("energy_board_j"),
-        },
+        costs=costs,
         capped=matrix(wide["done_reason"] == "length", bool),
         contaminated=matrix(contaminated, bool),
     )

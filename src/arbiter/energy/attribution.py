@@ -66,9 +66,15 @@ def attribute_window(
     board = integrate_energy(t, power_w, window["start_perf"], window["end_perf"])
     dynamic = board - baseline_w * duration
     weights = [r["wall_s"] for r in records]
+    tokens = [r.get("eval_count") or 0 for r in records]
+    token_weights = tokens if sum(tokens) > 0 else weights
     rows = []
-    for record, e_board, e_dyn in zip(
-        records, apportion(board, weights), apportion(dynamic, weights), strict=True
+    for record, e_board, e_dyn, e_dyn_tokens in zip(
+        records,
+        apportion(board, weights),
+        apportion(dynamic, weights),
+        apportion(dynamic, token_weights),
+        strict=True,
     ):
         rows.append(
             {
@@ -83,6 +89,7 @@ def attribute_window(
                 "wall_s": record["wall_s"],
                 "energy_board_j": e_board,
                 "energy_dyn_j": e_dyn,
+                "energy_dyn_token_j": e_dyn_tokens,
                 "baseline_w": baseline_w,
                 "window_s": duration,
                 "window_board_j": board,
