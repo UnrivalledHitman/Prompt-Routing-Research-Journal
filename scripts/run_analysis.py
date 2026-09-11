@@ -31,7 +31,7 @@ import pandas as pd  # noqa: E402
 import yaml  # noqa: E402
 
 from arbiter.data.corpus import read_corpus  # noqa: E402
-from arbiter.eval import analysis  # noqa: E402
+from arbiter.eval import analysis, robustness  # noqa: E402
 from arbiter.eval.labels import (  # noqa: E402
     CELL_NAMES,
     SPLIT_PATTERN,
@@ -157,6 +157,28 @@ def label_analyses(
     write(out, "asymmetry", pd.concat(asymmetry, ignore_index=True))
 
 
+def robustness_analyses(
+    out: Path, grades: pd.DataFrame, table: LabelTable, cfg: dict[str, Any]
+) -> None:
+    """Write label-noise, cap-sensitivity and apportioning checks for the data that exist."""
+    prices = cfg["token_prices"]["primary"]
+    if {1, 2} <= set(grades["sample"].unique()):
+        cells, cstar = robustness.label_noise(grades, (0, 1, 2), "tokens")
+        write(out, "label_noise_cells", cells)
+        write(out, "label_noise_cstar", cstar)
+    else:
+        LOGGER.info("no repeated samples; label noise skipped")
+    variant = "cap8192"  # the cap stage in configs/labelling.yaml
+    if (grades["variant"] == variant).any():
+        write(
+            out, "cap_sensitivity", robustness.cap_sensitivity(grades, variant, "tokens", **prices)
+        )
+    else:
+        LOGGER.info("no %s reruns; cap sensitivity skipped", variant)
+    if np.isfinite(table.costs.get("energy_token_j", np.array([np.nan]))).any():
+        write(out, "energy_apportioning", robustness.apportioning_check(table))
+
+
 def router_analyses(
     out: Path,
     table: LabelTable,
@@ -277,6 +299,7 @@ def main() -> None:
     splits = assign(table, units, cfg["split_unit"], cfg["seed"])
     write(args.out, "splits", splits)
     label_analyses(args.out, table, units, cfg, n_boot)
+    robustness_analyses(args.out, grades, table, cfg)
     if not args.skip_routers:
         router_analyses(args.out, table, splits, router_units, primary, cfg, n_boot)
 

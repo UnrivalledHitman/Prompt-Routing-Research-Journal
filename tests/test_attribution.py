@@ -40,13 +40,18 @@ def test_attribute_window_splits_board_and_dynamic_energy_by_wall_time() -> None
     window = {"window_id": "w", "session_id": "s", "start_perf": 10.0, "end_perf": 30.0}
     records = [
         {"prompt_id": f"p{i}", "tag": "q", "size": "1b", "mode": "think", "sample": 0,
-         "variant": "base", "wall_s": wall}
-        for i, wall in enumerate([1.0, 3.0])
+         "variant": "base", "wall_s": wall, "eval_count": tokens}
+        for i, (wall, tokens) in enumerate([(1.0, 300), (3.0, 100)])
     ]  # fmt: skip
     rows = attribution.attribute_window(t, p, window, records, IDLE_W)
     assert rows[0]["window_board_j"] == pytest.approx(BUSY_W * 20.0)
     assert [r["energy_dyn_j"] for r in rows] == pytest.approx([100.0, 300.0])
+    assert [r["energy_dyn_token_j"] for r in rows] == pytest.approx([300.0, 100.0])
     assert sum(r["energy_board_j"] for r in rows) == pytest.approx(rows[0]["window_board_j"])
+    for record in records:
+        del record["eval_count"]
+    rows = attribution.attribute_window(t, p, window, records, IDLE_W)
+    assert [r["energy_dyn_token_j"] for r in rows] == pytest.approx([100.0, 300.0])
 
 
 def test_attribute_stage_reads_a_stage_directory(tmp_path: Path) -> None:
