@@ -27,6 +27,7 @@ incomplete window.
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import logging
@@ -54,7 +55,7 @@ from arbiter.utils.jsonl import append_jsonl, read_jsonl
 LOGGER = logging.getLogger("arbiter.labelling")
 T = TypeVar("T")
 MODES: tuple[str, str] = ("no_think", "think")
-SELECTIONS = ("pilot", "main", "noise", "all")
+SELECTIONS = ("pilot", "main", "noise", "all", "cells")
 PLACEMENT_FULL = 0.999
 RETRYABLE: tuple[type[Exception], ...] = (
     ollama.ResponseError,
@@ -104,6 +105,32 @@ class Stage:
     baseline_s: float
     end_baseline_s: float
     decoding: dict[str, dict[str, Any]]
+    num_ctx: int
+    cells: frozenset[tuple[str, str, str]] | None = None
+
+    def allows(self, prompt_id: str, size: str, mode: str) -> bool:
+        """Return whether the stage runs this cell; unrestricted stages run every cell."""
+        return self.cells is None or (prompt_id, size, mode) in self.cells
+
+
+def read_cells(path: Path) -> frozenset[tuple[str, str, str]]:
+    """Read the (prompt_id, size, mode) cells that a restricted stage reruns.
+
+    Raises
+    ------
+    ValueError
+        If a column is missing or a row names an unknown mode.
+    """
+    with path.open(encoding="utf-8", newline="") as fh:
+        reader = csv.DictReader(fh)
+        missing = {"prompt_id", "size", "mode"} - set(reader.fieldnames or ())
+        if missing:
+            raise ValueError(f"{path}: missing columns {sorted(missing)}")
+        rows = [(row["prompt_id"], row["size"], row["mode"]) for row in reader]
+    unknown = {mode for _, _, mode in rows} - set(MODES)
+    if unknown:
+        raise ValueError(f"{path}: unknown modes {sorted(unknown)}")
+    return frozenset(rows)
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -141,6 +168,11 @@ def resolve_stage(cfg: dict[str, Any], name: str, repo_root: Path) -> Stage:
         raise ValueError(f"stage {name}: select must be one of {SELECTIONS}")
     overrides = spec.get("decoding", {})
     sizes = spec.get("sizes")
+    cells = None
+    if spec["select"] == "cells":
+        if "cells_file" not in spec:
+            raise ValueError(f"stage {name}: select 'cells' needs a cells_file")
+        cells = read_cells(repo_root / spec["cells_file"])
     return Stage(
         name=name,
         select=spec["select"],
@@ -153,6 +185,8 @@ def resolve_stage(cfg: dict[str, Any], name: str, repo_root: Path) -> Stage:
         baseline_s=float(spec.get("baseline_s", cfg["session"]["baseline_s"])),
         end_baseline_s=float(spec.get("end_baseline_s", cfg["session"]["end_baseline_s"])),
         decoding={mode: {**cfg["decoding"][mode], **overrides.get(mode, {})} for mode in MODES},
+        num_ctx=int(spec.get("num_ctx", cfg["num_ctx"])),
+        cells=cells,
     )
 
 
@@ -166,6 +200,9 @@ def select_items(items: Sequence[PromptItem], stage: Stage, seed: int) -> list[P
         chosen = [item for item in items if item.noise]
     elif stage.select == "all":
         chosen = list(items)
+    elif stage.select == "cells":
+        listed = {prompt_id for prompt_id, _, _ in stage.cells or ()}
+        chosen = [item for item in items if item.prompt_id in listed]
     else:
         chosen = [item for item in items if item.subset == stage.select]
     if stage.per_family is not None:
@@ -460,7 +497,7 @@ def warm_up(ctx: Context, tag: str) -> None:
             think=mode == "think",
             options={
                 "num_predict": spec["num_predict"],
-                "num_ctx": ctx.cfg["num_ctx"],
+                "num_ctx": ctx.stage.num_ctx,
                 "seed": ctx.cfg["seed"],
             },
             keep_alive=ctx.cfg["keep_alive"],
@@ -507,7 +544,7 @@ def generate_one(
     """Generate one response and record its text, token counts and timings."""
     stage = ctx.stage
     seed = cell_seed(ctx.cfg["seed"], item.prompt_id, spec["tag"], mode, sample, stage.variant)
-    options = {**stage.decoding[mode], "seed": seed, "num_ctx": ctx.cfg["num_ctx"]}
+    options = {**stage.decoding[mode], "seed": seed, "num_ctx": stage.num_ctx}
     t_start = time.perf_counter()
     response = ctx.client.chat(
         model=spec["tag"],
@@ -725,11 +762,13 @@ def run_batch_mode(
 
 def run_session(ctx: Context, spec: dict[str, Any], items: Sequence[PromptItem]) -> None:
     """Run every outstanding generation of one model for the current stage."""
-    cfg, stage, tag = ctx.cfg, ctx.stage, spec["tag"]
+    cfg, stage, tag, size = ctx.cfg, ctx.stage, spec["tag"], spec["size"]
+    items = [item for item in items if any(stage.allows(item.prompt_id, size, m) for m in MODES)]
     keys = [
         (item.prompt_id, tag, mode, sample, stage.variant)
         for item in items
         for mode in MODES
+        if stage.allows(item.prompt_id, size, mode)
         for sample in stage.samples
     ]
     remaining = sum(key not in ctx.done for key in keys)
@@ -775,6 +814,7 @@ def run_session(ctx: Context, spec: dict[str, Any], items: Sequence[PromptItem])
                 todo = [
                     (item, sample)
                     for item in batch
+                    if stage.allows(item.prompt_id, size, mode)
                     for sample in stage.samples
                     if (item.prompt_id, tag, mode, sample, stage.variant) not in ctx.done
                 ]
@@ -857,6 +897,8 @@ def run_stage(cfg: dict[str, Any], stage_name: str, repo_root: Path, config_path
             "samples": list(stage.samples),
             "variant": stage.variant,
             "decoding": stage.decoding,
+            "num_ctx": stage.num_ctx,
+            "restricted_cells": None if stage.cells is None else len(stage.cells),
             "recorded_before": len(records),
         }
         append_jsonl(stage.raw_dir / "runs.jsonl", [run_info])

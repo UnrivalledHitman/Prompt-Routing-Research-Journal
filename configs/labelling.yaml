@@ -60,3 +60,6 @@ stages:
   pilot: {select: pilot, samples: [0]}
   main: {select: main, samples: [0]}
   noise: {select: noise, samples: [1, 2]}
+  # Cap sensitivity (protocol 13.1): rerun a stratified sample of capped generations with an
+  # 8,192-token cap. The context grows so that a 2,048-token prompt still fits.
+  cap: {select: cells, cells_file: results/processed/cap_reruns.csv, samples: [0], variant: cap8192, num_ctx: 10240, decoding: {think: {num_predict: 8192}, no_think: {num_predict: 8192}}}
