@@ -380,13 +380,20 @@ model loads into four and avoids reload thrash on a memory-tight GPU.
 | 0a | NVML power telemetry check (§6.1) | minutes | **Blocks the energy contribution** |
 | 0b | Mode-separation validation (§10) | 1 h 54 min (actual) | **Passed 2026-09-11**, see §10.1 |
 | 0c | Per-cell throughput calibration, budget re-estimate | answered by gate 2 data | Budget re-estimated in §10.1 |
-| 1 | Pilot labelling, 800 prompts x 8 cells x k=3 | planned ~8-12 h; **measured rate implies ~75 h** | Validates the pipeline end to end. **[DECISION]** budget, §10.1 |
+| 1 | Pilot labelling, 800 prompts x 8 cells x k=3 | planned ~8-12 h; **measured rate implies ~75 h** | Superseded by §13 |
+| 1' | Smoke stage, 6 prompts x 0.6B/1.7B | 5 min (actual) | **Passed 2026-09-11**, §13.3 |
+| 1'' | Pilot labelling, 300 gradable prompts x 8 cells x k=1 | ~9.3 h estimated from gate 2 rates | Started 2026-09-11 |
 | 2 | Router training and evaluation on pilot | ~2-4 h | First real numbers |
-| 3 | Full labelling, 3,200 prompts | planned ~35-50 h; **measured rate implies ~300 h** | Only after phase 1 is clean |
+| 3 | Main labelling, 900 further gradable prompts | ~28 h | After the pilot is clean |
+| 3a | Noise subset, 75 prompts x 2 extra samples | ~4.7 h | — |
+| 3b | Cap sensitivity, think cap 8192 on cap-hit prompts | ~5 h | — |
+| 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Needs download approval |
 | 4 | Full router sweep, ablations, seeds | ~6-10 h | — |
-| 5 | Public-benchmark arm (no local inference) | CPU only | — |
+| 5 | Public-benchmark arm (no local inference) | CPU only | Needs a non-pickle source |
 
-Every GPU phase is requested individually, with expected VRAM and duration, before it starts.
+GPU use for the study was granted on 2026-09-11. The harness still waits for an otherwise idle GPU
+before loading a model and reruns any window touched by another workload, so the user's own GPU jobs are
+never co-run with labelling.
 
 ---
 
@@ -527,3 +534,70 @@ silicon and will not be claimed to.
 3. **`p_accept` / `p_retry`** — cite, measure, or sweep and label as assumed. Blocks the headline tax number.
 4. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship
    and ORCID. Needed for the LaTeX template, not for any experiment.
+
+Items 1-3 are resolved provisionally in §13. Item 4 and a code/data availability statement remain with
+Indrajeet and the mentor.
+
+---
+
+## 13. Adopted decisions (2026-09-11)
+
+These defaults were adopted to run the study within the measured compute budget. Each is recorded before
+any routing result exists, and each can be revisited; where a choice could move a headline number, a
+sensitivity analysis is planned.
+
+### 13.1 Budget-driven changes to §4 and §5
+
+**Samples per cell: k = 1, with a label-noise subset.** Gate 2 measured 112 s to answer one prompt in all
+eight cells, so k = 3 on 3,200 prompts would take about 300 GPU-hours. Instead each (prompt, cell) is
+sampled once, and a noise subset of 25 prompts per family is sampled twice more. On that subset the
+disagreement between samples bounds the label noise, and the majority label is compared with the
+single-sample label to show how often k = 1 changes `c*`.
+
+**Corpus: 400 prompts per family, 100 of them in a nested pilot.** The pilot is the first 100 prompts
+selected per family, so pilot results are a strict subset of the final data. Gate 2 prompts are excluded.
+Code takes all 154 remaining HumanEval problems plus 246 MBPP problems. Selection is in
+`configs/corpus.yaml`; the manifest, without prompt text, is `results/processed/corpus_manifest.csv`.
+
+**Token caps.** Think mode keeps 4,096 tokens including the trace. No-think mode is raised from 1,024 to
+2,048 so that truncation does not stand in for failure on code and multi-step math. A cap hit is a
+failure. Because the think cap could make larger models look worse than they are, a cap-sensitivity stage
+reruns prompts that hit the cap with an 8,192-token cap, and the paper reports how many oracle labels
+change.
+
+### 13.2 Open-ended family and judge (pending downloads)
+
+Proposed source: `databricks/databricks-dolly-15k` (CC BY-SA 3.0, 12.5 MB), stratified by category,
+human-written responses as references. Proposed judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GB,
+out-of-family). The judge runs after labelling, never loaded alongside a routed model. Neither is
+downloaded until Indrajeet approves it. Until then the corpus has 1,200 gradable prompts, and every result
+states that the open-ended family is not yet included.
+
+### 13.3 Energy windows, from the smoke stage
+
+The smoke stage (6 prompts at 0.6B and 1.7B) showed:
+
+- Reported power takes about 5 s to decay after generation stops. The tail of each window is therefore
+  6 s, not the 2 s planned in §6.2, so a window's decay is not charged to the next window.
+- One 588 W sample, between 1.2 W neighbours, appeared as telemetry started. The GPU cannot draw that, so
+  readings above 200 W are dropped as read errors.
+- Idle power with the model loaded is about 1.5 W once settled. The baseline is measured for 60 s after
+  warm-up and 30 s at the end of each model session, and dynamic energy subtracts their mean.
+- A window is rerun if utilisation at the end of its tail shows another workload, or if any generation in
+  it had to reload the model.
+
+### 13.4 Resolving the open decisions of §12
+
+**`p_accept` / `p_retry` (§3).** Swept over a grid and labelled as assumed. The headline tax figure uses
+oracle detection, which is the conservative case for the baseline. One point, `p_accept = 0.15` and
+`p_retry = 0.05`, is shown as an illustration only.
+
+**Recovery after a router misroute.** Primary: a failed routed answer escalates straight to c8. Sensitivity:
+it continues up the frugal-climb ladder (P1) from the routed cell.
+
+**Reactive cascade baseline.** AutoMix-style: the small model answers, the same model self-verifies, and the
+query escalates when verification confidence is below a threshold tuned on the validation split. The POMDP
+meta-verifier of `aggarwal2024automix` is omitted, which favours no method, and this is stated.
+
+**Starting distribution of the sticky-mixed policy (P4).** Uniform over cells as the primary; a skewed
+distribution with 50% of queries starting at c8 as a sensitivity. Both are labelled as assumptions.

@@ -1,0 +1,30 @@
+# Labelling corpus (experimental protocol, section 4; decisions in section 13).
+#
+# 400 prompts per family in the full corpus, 100 of them in the nested pilot. Gate 2
+# prompts are excluded. HumanEval has 164 rows, 154 after that exclusion, so code
+# takes all of them and makes up the rest from MBPP. The noise subset (25 prompts per
+# family) receives two extra samples per cell for the label-noise estimate.
+#
+# The open-ended family (Dolly-15k) stays disabled until its download is approved.
+# Every source uses its own random stream, so enabling it does not change what the
+# other sources select.
+
+seed: 20260911
+tokenizer_id: Qwen/Qwen3-0.6B
+max_prompt_tokens: 2048
+exclude_manifests:
+  - results/processed/gate2_prompt_manifest.csv
+
+paths:
+  corpus: data/processed/corpus.jsonl                # full text, gitignored
+  manifest: results/processed/corpus_manifest.csv    # no text
+  sources: results/processed/corpus_sources.json
+
+sources:
+  gsm8k: {family: math, hf_id: openai/gsm8k, hf_config: main, split: test, formatter: gsm8k, licence: MIT, pilot: 50, main: 150, noise: 12}
+  math500: {family: math, hf_id: HuggingFaceH4/MATH-500, hf_config: null, split: test, formatter: math500, licence: MIT, stratify_by: level, pilot: 50, main: 150, noise: 13}
+  humaneval: {family: code, hf_id: openai/openai_humaneval, hf_config: null, split: test, formatter: humaneval, licence: MIT, pilot: 38, main: 116, noise: 10}
+  mbpp: {family: code, hf_id: google-research-datasets/mbpp, hf_config: full, split: test, formatter: mbpp, licence: CC-BY-4.0, stratify_by: task_id, stratify_bin: 100, pilot: 62, main: 184, noise: 15}
+  mmlu: {family: mcq, hf_id: cais/mmlu, hf_config: all, split: test, formatter: mmlu, licence: MIT, stratify_by: subject, pilot: 50, main: 150, noise: 12}
+  arc_challenge: {family: mcq, hf_id: allenai/ai2_arc, hf_config: ARC-Challenge, split: test, formatter: arc, licence: CC-BY-SA-4.0, pilot: 50, main: 150, noise: 13}
+  dolly: {enabled: false, family: open, hf_id: databricks/databricks-dolly-15k, hf_config: null, split: train, formatter: dolly, licence: CC-BY-SA-3.0, stratify_by: category, pilot: 100, main: 300, noise: 25}
