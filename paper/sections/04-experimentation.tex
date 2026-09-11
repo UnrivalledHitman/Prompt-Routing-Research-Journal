@@ -62,20 +62,21 @@ that motivates the problem and needs a judge.
 
 \begin{table}[!t]
 \centering
-\caption{Corpus composition. Sizes are planned and subject to the budget
-decision in Section~\ref{sec:gate-mode}.}
+\caption{Corpus composition. Each family contributes 200 prompts to the
+pilot and 800 to the full corpus, subject to the budget decision in
+Section~\ref{sec:gate-mode}.}
 \label{tab:corpus}
 \renewcommand{\arraystretch}{1.1}
-\begin{tabular}{@{}l p{2.5cm} p{2.3cm} r@{}}
+\begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
 \toprule
-Family & Sources & Grading & Pilot / full \\
+Family & Sources & Grading \\
 \midrule
-Math & GSM8K~\cite{cobbe2021gsm8k}, MATH~\cite{hendrycks2021math} & Normalised final answer & 200 / 800 \\
-Code & HumanEval~\cite{chen2021humaneval}, MBPP~\cite{austin2021mbpp} & Unit tests in a sandbox & 200 / 800 \\
-Multiple choice & MMLU~\cite{hendrycks2021mmlu}, ARC-Challenge~\cite{clark2018arc} & Option letter & 200 / 800 \\
-Open-ended & \decision{source and licence} & Judge (Sec.~\ref{sec:judge}) & 200 / 800 \\
+Math & GSM8K~\cite{cobbe2021gsm8k}, MATH~\cite{hendrycks2021math} & Normalised final answer \\
+Code & HumanEval~\cite{chen2021humaneval}, MBPP~\cite{austin2021mbpp} & Unit tests in a sandbox \\
+Multiple choice & MMLU~\cite{hendrycks2021mmlu}, ARC-Challenge~\cite{clark2018arc} & Option letter \\
+Open-ended & \decision{source and licence} & Judge (Sec.~\ref{sec:judge}) \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 Prompts are sampled with a fixed, recorded seed and stratified by source
@@ -230,7 +231,7 @@ Three criteria were fixed before the run, and a size counted as separated
 only if it met all three: an area under the ROC curve of at least 0.90 for
 thinking-mode outputs being longer than non-thinking outputs of the same
 prompt; at most 5\% of non-thinking responses containing a thinking trace
-or a literal \texttt{<think>} tag; and a density of reasoning markers
+or a literal \texttt{\textless think\textgreater} tag; and a density of reasoning markers
 (``wait'', ``hmm'', ``let me'', ``alternatively'' and eight similar phrases)
 in non-thinking answers no more than half that in thinking traces.
 
@@ -242,7 +243,7 @@ bootstrap interval. Marker ratio is no-think marker density divided by
 think-trace marker density.}
 \label{tab:gate2}
 \renewcommand{\arraystretch}{1.1}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{@{}l c c c c c@{}}
 \toprule
 Size & AUC & Tokens (think / no) & Ratio (95\% CI) & Leak & Marker \\
