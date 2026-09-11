@@ -1,4 +1,4 @@
-r"""Rule-based grading of labelling generations (experimental protocol, section 5.2).
+r"""Grading of labelling generations (experimental protocol, sections 5.2 and 5.4).
 
 A generation succeeds only if it finished within its token cap and its final answer
 is correct. The rules per family:
@@ -13,6 +13,10 @@ is correct. The rules per family:
   separate interpreter, in a temporary directory, with a timeout. Destructive file,
   process and network functions are disabled before the candidate code runs, as in
   the HumanEval harness. This is a guard against accidents, not a security sandbox.
+* **Open-ended.** The local judge (:mod:`arbiter.eval.judge`) scores the visible answer
+  from 1 to 5 against the reference, and a score of 4 or more is a success. An empty
+  answer fails without a judgement, and a judgement whose score cannot be read counts
+  as a failure.
 """
 
 from __future__ import annotations
@@ -36,6 +40,7 @@ MCQ_ANSWER = re.compile(r"(?i:answer)\s*(?i:is)?\s*[:：]?\s*\**\s*\(?([A-H])\)?
 ERROR_TYPE = re.compile(r"^(\w+(?:Error|Exception|Exit|Interrupt|Warning))\b")
 BOXED_LETTER = re.compile(r"\\boxed\{\s*(?:\\text\{)?\s*\(?([A-H])\)?\s*\}?\s*\}")
 CODE_TIMEOUT_S = 10.0
+JUDGE_SUCCESS_SCORE = 4  # an open-ended answer succeeds at this judge score or above
 
 GUARD = textwrap.dedent(
     """
@@ -290,17 +295,61 @@ def grade_code(record: dict[str, Any], item: PromptItem) -> Grade:
 
 
 # ---------------------------------------------------------------------------
-# Dispatch
+# Open-ended
 # ---------------------------------------------------------------------------
 
 
-def grade(record: dict[str, Any], item: PromptItem) -> Grade:
-    """Grade one generation; a response cut off by its token cap always fails.
+def open_precheck(record: dict[str, Any]) -> Grade | None:
+    """Fail an open-ended answer that needs no judgement: cut off by its cap, or empty.
+
+    Returns
+    -------
+    Grade or None
+        The failure, or None if the answer goes to the judge.
+    """
+    if record.get("done_reason") == "length":
+        return Grade(False, "cap_hit", None)
+    if not final_text(record):
+        return Grade(False, "no_answer", None)
+    return None
+
+
+def grade_open(record: dict[str, Any], judgement: dict[str, Any] | None) -> Grade:
+    """Grade an open-ended answer from the judge's score; an unreadable score fails.
 
     Raises
     ------
     ValueError
-        If the item's family has no rule-based grader.
+        If the answer needs a judgement and has none.
+    """
+    failed = open_precheck(record)
+    if failed is not None:
+        return failed
+    if judgement is None:
+        raise ValueError(f"{record.get('prompt_id')}: open-ended answer has not been judged")
+    score = judgement.get("score")
+    if score is None:
+        return Grade(False, "judge_unreadable", None)
+    return Grade(score >= JUDGE_SUCCESS_SCORE, f"judge_{score}", str(score))
+
+
+# ---------------------------------------------------------------------------
+# Dispatch
+# ---------------------------------------------------------------------------
+
+
+def grade(
+    record: dict[str, Any], item: PromptItem, judgement: dict[str, Any] | None = None
+) -> Grade:
+    """Grade one generation; a response cut off by its token cap always fails.
+
+    ``judgement`` is the judge's record for an open-ended answer, and is ignored for
+    the other families.
+
+    Raises
+    ------
+    ValueError
+        If the family is unknown, or an open-ended answer needs a judgement and has none.
     """
     if record.get("done_reason") == "length":
         return Grade(False, "cap_hit", None)
@@ -310,4 +359,6 @@ def grade(record: dict[str, Any], item: PromptItem) -> Grade:
         return grade_mcq(record, item)
     if item.family == "code":
         return grade_code(record, item)
-    raise ValueError(f"family {item.family} needs the judge, not a rule-based grader")
+    if item.family == "open":
+        return grade_open(record, judgement)
+    raise ValueError(f"unknown family {item.family}")

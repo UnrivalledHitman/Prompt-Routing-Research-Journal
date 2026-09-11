@@ -1,0 +1,41 @@
+# Open-ended judge (experimental protocol, sections 5.4 and 13.2).
+#
+# Llama 3.1 8B Instruct at Q4_K_M, outside the routed Qwen3 family, scores each open-ended
+# answer from 1 to 5 against the Dolly reference; 4 or more is a success. One answer per
+# request, greedy decoding, a JSON schema for the reply, and a seeded random order. The
+# judge runs only while no routed model is loaded, and holds while another workload uses
+# the GPU.
+
+seed: 20260912
+ollama_host: http://127.0.0.1:11434
+request_timeout_s: 600
+keep_alive: 30m
+corpus: data/processed/corpus.jsonl
+labelling_config: configs/labelling.yaml   # the routed tags, which must not be loaded
+
+model: {tag: "llama3.1:8b-instruct-q4_K_M", expected_family: llama, min_free_vram_mb: 6500}
+
+decoding:
+  temperature: 0.0
+  num_ctx: 10240           # request (<= 2,048 tokens) + answer (<= 4,096) + reference + rubric
+  num_predict: 384         # a one- or two-sentence reason and the score
+  retry_num_predict: 1024  # used once if the score cannot be read from the first reply
+
+batch_size: 25
+tail_s: 3.0                # idle hold after a batch before checking for another workload
+tail_check_s: 2.0
+max_attempts: 4
+
+telemetry:
+  interval_ms: 500         # utilisation for the GPU guard only; judge energy is not measured
+
+gpu_guard:
+  max_util_pct: 15
+  idle_required_s: 30
+  poll_s: 5
+  log_every_s: 600
+  placement_retries: 5
+
+server:
+  wait_s: 3600
+  poll_s: 30

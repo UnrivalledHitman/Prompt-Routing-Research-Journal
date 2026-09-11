@@ -139,3 +139,36 @@ def test_run_program_times_out_and_blocks_file_removal() -> None:
     assert grading.run_program("while True:\n    pass\n", timeout_s=2.0) == (False, "timeout")
     passed, reason = grading.run_program("import os\nos.remove('anything')\n")
     assert (passed, reason) == (False, "PermissionError")
+
+
+OPEN = PromptItem("dolly-1", "open", "dolly", "Name a colour.", "Blue.", "pilot")
+
+
+@pytest.mark.parametrize(
+    ("score", "correct", "reason"),
+    [
+        (5, True, "judge_5"),
+        (4, True, "judge_4"),
+        (3, False, "judge_3"),
+        (1, False, "judge_1"),
+        (None, False, "judge_unreadable"),
+    ],
+)
+def test_open_answer_succeeds_at_a_judge_score_of_four(
+    score: int | None, correct: bool, reason: str
+) -> None:
+    """A score of 4 or more succeeds, and an unreadable score fails."""
+    result = grading.grade(_record("Red."), OPEN, {"score": score})
+    assert (result.correct, result.reason) == (correct, reason)
+
+
+def test_open_answer_can_fail_before_judging() -> None:
+    """A cut-off or empty answer fails without a judgement."""
+    assert grading.grade(_record("Red.", "length"), OPEN).reason == "cap_hit"
+    assert grading.grade(_record("<think>hmm</think> "), OPEN).reason == "no_answer"
+
+
+def test_unjudged_open_answer_is_an_error() -> None:
+    """A judgeable answer with no judgement is not silently graded."""
+    with pytest.raises(ValueError, match="not been judged"):
+        grading.grade(_record("Red."), OPEN)
