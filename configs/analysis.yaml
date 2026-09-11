@@ -1,0 +1,45 @@
+# Analysis of oracle labels, policies and routers (experimental protocol, sections 3, 7, 8, 13).
+
+seed: 20260911
+corpus: data/processed/corpus.jsonl
+processed_dir: results/processed
+
+# Token cost = price_in * prompt tokens + price_out * generated tokens (reasoning included).
+# Primary: every token counts once. Sensitivity: output priced at 4x input, typical of API
+# price sheets.
+token_prices:
+  primary: {price_in: 1.0, price_out: 1.0}
+  output_heavy: {price_in: 1.0, price_out: 4.0}
+
+primary_unit: energy_j        # headline numbers, direct-router labels and cost-sensitive weights
+split_unit: tokens            # c* used to stratify splits; deterministic given the generations
+units: [energy_j, tokens, latency_s, board_j]
+
+detection:
+  oracle: {p_accept_wrong: 0.0, p_reject_right: 0.0}
+  illustrative: {p_accept_wrong: 0.15, p_reject_right: 0.05}   # labelled as assumed
+  sweep:
+    p_accept_wrong: [0.0, 0.05, 0.10, 0.15, 0.20, 0.30]
+    p_reject_right: [0.0, 0.05, 0.10]
+
+p4_start_weights:
+  uniform: [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]
+  skewed_c8: [0.0714286, 0.0714286, 0.0714286, 0.0714286, 0.0714286, 0.0714286, 0.0714284, 0.5]
+
+recovery:
+  primary: top
+  sensitivity: climb
+
+routers:
+  taus: {start: 0.0, stop: 1.0, step: 0.02}
+  selection_objective: net_cost_per_solved
+  seeds: [0, 1, 2]
+  tfidf_c_grid: [0.1, 1.0, 10.0]
+  boost_backends: [lightgbm, xgboost]
+  # CPU routers are not metered. Their energy is bounded above by decision time x the
+  # processor's configurable TDP (Ryzen 7 8845HS: 35-54 W; the upper value is used).
+  cpu_power_w: 54.0
+
+bootstrap:
+  n_boot: 10000
+  level: 0.95
