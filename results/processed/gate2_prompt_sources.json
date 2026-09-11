@@ -1,0 +1,44 @@
+{
+  "gsm8k": {
+    "hf_id": "openai/gsm8k",
+    "hf_config": "main",
+    "split": "test",
+    "n_rows": 1319,
+    "fingerprint": "59ec1b7f9357c7a2"
+  },
+  "math500": {
+    "hf_id": "HuggingFaceH4/MATH-500",
+    "hf_config": null,
+    "split": "test",
+    "n_rows": 500,
+    "fingerprint": "f3124375297911ba"
+  },
+  "humaneval": {
+    "hf_id": "openai/openai_humaneval",
+    "hf_config": null,
+    "split": "test",
+    "n_rows": 164,
+    "fingerprint": "2e5aa734ef24e324"
+  },
+  "mbpp": {
+    "hf_id": "google-research-datasets/mbpp",
+    "hf_config": "full",
+    "split": "test",
+    "n_rows": 500,
+    "fingerprint": "44206dd27b0bf01d"
+  },
+  "mmlu": {
+    "hf_id": "cais/mmlu",
+    "hf_config": "all",
+    "split": "test",
+    "n_rows": 14042,
+    "fingerprint": "436299c1c09696bb"
+  },
+  "arc_challenge": {
+    "hf_id": "allenai/ai2_arc",
+    "hf_config": "ARC-Challenge",
+    "split": "test",
+    "n_rows": 1172,
+    "fingerprint": "a4361c3f3e560fcd"
+  }
+}
