@@ -1,0 +1,62 @@
+{
+  "gsm8k": {
+    "hf_id": "openai/gsm8k",
+    "hf_config": "main",
+    "split": "test",
+    "licence": "MIT",
+    "n_rows": 1319,
+    "fingerprint": "59ec1b7f9357c7a2",
+    "taken": 200,
+    "excluded": 2
+  },
+  "math500": {
+    "hf_id": "HuggingFaceH4/MATH-500",
+    "hf_config": null,
+    "split": "test",
+    "licence": "MIT",
+    "n_rows": 500,
+    "fingerprint": "f3124375297911ba",
+    "taken": 200,
+    "excluded": 5
+  },
+  "humaneval": {
+    "hf_id": "openai/openai_humaneval",
+    "hf_config": null,
+    "split": "test",
+    "licence": "MIT",
+    "n_rows": 164,
+    "fingerprint": "2e5aa734ef24e324",
+    "taken": 154,
+    "excluded": 10
+  },
+  "mbpp": {
+    "hf_id": "google-research-datasets/mbpp",
+    "hf_config": "full",
+    "split": "test",
+    "licence": "CC-BY-4.0",
+    "n_rows": 500,
+    "fingerprint": "44206dd27b0bf01d",
+    "taken": 246,
+    "excluded": 3,
+    "too_long": 1
+  },
+  "mmlu": {
+    "hf_id": "cais/mmlu",
+    "hf_config": "all",
+    "split": "test",
+    "licence": "MIT",
+    "n_rows": 14042,
+    "fingerprint": "436299c1c09696bb",
+    "taken": 200
+  },
+  "arc_challenge": {
+    "hf_id": "allenai/ai2_arc",
+    "hf_config": "ARC-Challenge",
+    "split": "test",
+    "licence": "CC-BY-SA-4.0",
+    "n_rows": 1172,
+    "fingerprint": "a4361c3f3e560fcd",
+    "taken": 200,
+    "excluded": 3
+  }
+}
