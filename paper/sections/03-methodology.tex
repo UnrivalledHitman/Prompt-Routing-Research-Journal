@@ -234,8 +234,7 @@ We compare three router families, chosen to span four orders of magnitude
 in their own cost.
 
 \emph{R1: classical classifiers.} (a) Logistic regression on TF-IDF word and
-character $n$-grams. (b) Gradient-boosted trees
-\citeneeded{XGBoost and LightGBM} on hand-built features: prompt length,
+character $n$-grams. (b) Gradient-boosted trees~\cite{chen2016xgboost,ke2017lightgbm} on hand-built features: prompt length,
 digit and operator density, presence of code fences, question type and
 readability. (c) Logistic regression on frozen Sentence-BERT
 embeddings~\cite{reimers2019sbert}. All run on a CPU.
@@ -247,7 +246,7 @@ trained with class-weighted binary cross-entropy.
 \emph{R3: a language model as router.} Qwen3-0.6B, the smallest member of
 the pool, prompted zero-shot and few-shot to name a configuration with
 constrained decoding, and a LoRA-tuned
-variant~\citeneeded{LoRA, Hu et al.}. We deliberately use the smallest pool
+variant~\cite{hu2022lora}. We deliberately use the smallest pool
 member: a router larger than the models it routes between defeats its own
 purpose.
 
@@ -302,8 +301,7 @@ than the extra information from generating first is worth.
 \subsection{Energy Measurement}
 \label{sec:energy}
 
-GPU board power is read through NVIDIA's management library, NVML
-\citeneeded{NVML documentation}, by a sampling thread that polls
+GPU board power is read through NVIDIA's management library, NVML~\cite{nvidia_nvml}, by a sampling thread that polls
 instantaneous power every 100\,ms. Two properties of the hardware, both
 established by the telemetry gate in Section~\ref{sec:gate-telemetry},
 shape the method. First, the cumulative energy counter that NVML also

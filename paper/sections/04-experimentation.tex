@@ -15,8 +15,8 @@
 All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
 16\,GB of system memory and an NVIDIA GeForce RTX~4060 Laptop GPU with
 8\,GB of memory, driver 616.56 and an enforced board power limit of 115\,W.
-Models are served by Ollama 0.34.0 \citeneeded{Ollama} from GGUF weights
-quantised to Q4\_K\_M \citeneeded{llama.cpp / GGUF k-quant documentation}.
+Models are served by Ollama 0.34.0~\cite{ollama} from GGUF weights
+quantised to Q4\_K\_M~\cite{gerganov2023llamacpp}.
 Every model is addressed by an explicit quantisation tag, and the weight
 digest, parameter count, context length and chat template of each are
 recorded in a manifest before any generation, so that a silently updated
@@ -24,31 +24,47 @@ tag cannot change the models between runs. All four models report native
 thinking support and a 40{,}960-token context. The 8\,GB memory limit means
 only one model is loaded at a time. Runs are therefore organised
 \emph{model-major}: each model is loaded once, all prompts are run in both
-modes, and the model is unloaded before the next is loaded. Mode order
-alternates across prompts (ABBA) so that slow drift in temperature or
-background load cannot line up with one mode. The software environment is
-Python 3.11, pinned with a lock file.
+modes, and the model is unloaded before the next is loaded. Within a model,
+prompts are processed in batches of 20, and each batch runs its two modes as
+separate measurement windows. Which mode goes first alternates from batch to
+batch, so that slow drift in temperature or background load cannot line up
+with one mode. Other GPU workloads share the machine, so the harness waits
+for 30\,s of continuous GPU idleness before loading a model or repeating a
+window, and it checks that the whole model is placed on the GPU. The
+software environment is Python 3.11, pinned with a lock file.
 
 \subsection{Decoding}
 \label{sec:decoding}
 
 Greedy decoding is discouraged for Qwen3's thinking mode, so each mode uses
-its recommended sampling settings \citeneeded{Qwen3 model card,
-recommended sampling parameters}: temperature 0.6, top-$p$ 0.95 and top-$k$
+its recommended sampling settings~\cite{qwen2025modelcard}: temperature 0.6, top-$p$ 0.95 and top-$k$
 20 for thinking, and temperature 0.7, top-$p$ 0.8 and top-$k$ 20 for
 non-thinking, with min-$p$ 0 in both. Every generation receives its own seed,
-derived deterministically from the prompt, cell and sample index, and the
-seed is stored with the output. The labelling runs draw $k$ samples per
-prompt and cell, and a cell counts as successful on a prompt when a majority
-of its samples succeed \decision{$k = 3$ as planned, or $k = 1$ with a
-$k = 3$ subsample; see Section~\ref{sec:gate-mode}}.
+derived deterministically from the prompt, cell, sample index and run
+variant, and the seed is stored with the output.
+
+The labelling runs draw one sample per prompt and cell ($k = 1$). One sample
+makes $s(q, c)$ a noisy estimate of the cell's chance of success on that
+prompt, so a noise subset of 25 prompts per family receives two further
+samples in every cell, and the disagreement between samples measures how
+often a label would change on resampling. Three samples throughout were the
+original plan, but gate 2 put one sample across the eight cells at about
+112\,s per prompt (Section~\ref{sec:gate-mode}), and tripling that would have
+tripled a labelling run that already takes days on this machine.
 
 Generation length is capped, and an answer that hits the cap counts as a
-failure, because a truncated answer is of no use in deployment. The caps
-matter more than we expected: the mode-separation gate showed that
-truncation causes most thinking-mode failures at a 4{,}096-token cap
-(Section~\ref{sec:gate-mode}) \decision{final caps; planned 1{,}024
-no-think and 4{,}096 think}. Before measurement, each Ollama server session
+failure, because a truncated answer is of no use in deployment. Thinking
+mode is capped at 4{,}096 new tokens, trace included, and non-thinking mode
+at 2{,}048. The caps matter more than we expected: gate 2 showed that
+truncation causes most thinking-mode failures at 4{,}096 tokens
+(Section~\ref{sec:gate-mode}), and a longer cap would lengthen the run most on
+exactly the prompts where thinking struggles. The oracle label therefore
+depends on the caps, and we measure by how much. A sample of capped
+generations, up to 40 per size and mode and spread evenly over families, is
+rerun with an 8{,}192-token cap and a 10{,}240-token context, and we report
+how often the longer cap turns a failure into a success and how often that
+success would move $\cstar(q)$ to a cheaper cell. Before measurement, each
+Ollama server session
 runs one thinking and one non-thinking warm-up generation, which are
 discarded; the gate showed a one-off prefill stall of about 6\,s at the
 start of a session that would otherwise contaminate the first measurements.
@@ -62,33 +78,42 @@ that motivates the problem and needs a judge.
 
 \begin{table}[!t]
 \centering
-\caption{Corpus composition. Each family contributes 200 prompts to the
-pilot and 800 to the full corpus, subject to the budget decision in
-Section~\ref{sec:gate-mode}.}
+\caption{Corpus composition. Each gradable family has 400 prompts, of which
+100 form a nested pilot; prompt counts per source are in parentheses. The
+open-ended family has not yet been sampled (Section~\ref{sec:judge}).}
 \label{tab:corpus}
 \renewcommand{\arraystretch}{1.1}
 \begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
 \toprule
 Family & Sources & Grading \\
 \midrule
-Math & GSM8K~\cite{cobbe2021gsm8k}, MATH~\cite{hendrycks2021math} & Normalised final answer \\
-Code & HumanEval~\cite{chen2021humaneval}, MBPP~\cite{austin2021mbpp} & Unit tests in a sandbox \\
-Multiple choice & MMLU~\cite{hendrycks2021mmlu}, ARC-Challenge~\cite{clark2018arc} & Option letter \\
-Open-ended & \decision{source and licence} & Judge (Sec.~\ref{sec:judge}) \\
+Math & GSM8K~\cite{cobbe2021gsm8k} (200), MATH-500~\cite{hendrycks2021math,lightman2024verify} (200) & Normalised final answer \\
+Code & HumanEval~\cite{chen2021humaneval} (154), MBPP~\cite{austin2021mbpp} (246) & Unit tests in a sandbox \\
+Multiple choice & MMLU~\cite{hendrycks2021mmlu} (200), ARC-Challenge~\cite{clark2018arc} (200) & Option letter \\
+Open-ended & Dolly-15k~\cite{conover2023dolly} (pending) & Judge (Sec.~\ref{sec:judge}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Prompts are sampled with a fixed, recorded seed and stratified by source
-and by an a-priori difficulty proxy---MATH level, MMLU subject and MBPP task
-band---so that no family is concentrated at one difficulty. Near-duplicates
-are removed by hashing normalised text. Prompts longer than 2{,}048 tokens
-are excluded, so that context length does not vary with the size axis.
-Each source dataset's row count and a content fingerprint are stored with
-the sample. The corpus is split 60/20/20 into training, validation and test
-sets by prompt, stratified by family and by oracle label. Router
-hyperparameters are chosen on the validation split, and the test split is
-used once, at the end.
+Prompts are drawn with a fixed, recorded seed. Each source is walked in a
+round-robin order over strata of an a-priori difficulty proxy where the
+source has one---MATH level, MMLU subject and MBPP task band---so that any
+prefix of the order is balanced across strata. The pilot takes the first
+rows of that order and is therefore nested in the full corpus, and the first
+25 pilot prompts of each family form the noise subset. The 60 prompts used in
+gate 2 are excluded. HumanEval then has 154 problems, so the code family takes
+all of them and the remaining 246 from MBPP. Near-duplicates are removed by
+hashing normalised prompt text, across sources as well as within them.
+Prompts longer than 2{,}048 tokens under the Qwen3 tokenizer are excluded,
+so that context length does not vary with the size axis; in the sampled
+corpus the median prompt has 83 tokens and the longest 862. Each source
+dataset's row count and a content fingerprint are stored with the sample.
+
+After labelling, the corpus is split 60/20/20 into training, validation and
+test sets by prompt, stratified by family and by $\cstar(q)$. The label used
+for stratification is computed in tokens, so that every cost unit is
+evaluated on the same split. Router hyperparameters and $\tau$ are chosen on
+the validation split, and the test split is used once, at the end.
 
 \subsection{Oracle Labelling and Success Criteria}
 \label{sec:labelling}
@@ -114,7 +139,10 @@ not a reason to resample. Open-ended answers are judged as described next.
 
 A judge drawn from the routed pool would grade its own family, so the
 primary judge comes from a different model family and runs locally
-\decision{judge model; must fit in 8\,GB alongside nothing else}. It scores
+\decision{judge model, pending approval to download: Llama~3.1 8B Instruct
+or Gemma~3 4B at Q4\_K\_M}. The open-ended family is labelled after the
+three gradable families, and results in Section~\ref{sec:results} cover the
+gradable families unless stated otherwise. The judge scores
 each answer on a 1--5 rubric, against a reference answer where one exists,
 and an answer succeeds with a score of 4 or more. Answers are scored one at
 a time rather than in pairs, and presentation order is randomised, to limit
@@ -124,7 +152,7 @@ judges~\cite{zheng2023judging}.
 The judge is validated from two sides before its labels are used. A
 stratified sample of about 200 judged items is re-graded by a frontier model
 accessed through the OpenAI API, and agreement is reported as Cohen's
-$\kappa$ \citeneeded{Cohen 1960}. The first author also labels about 100
+$\kappa$~\cite{cohen1960kappa}. The first author also labels about 100
 items blind, giving a human anchor and a judge--human $\kappa$. The decision
 rule is fixed in advance: if agreement with the human anchor is poor, the
 open-ended family is reported with an explicit caveat or moved to a
@@ -143,18 +171,21 @@ cascade of Section~\ref{sec:cascade}.
 \label{sec:metrics}
 
 \begin{itemize}
-  \item \emph{Cost--quality frontier.} Success rate against cost as $\tau$
-        varies, in tokens, seconds and joules, with the area under the
-        frontier normalised between the weakest and strongest static policy.
+  \item \emph{Cost--quality frontier.} Solved rate against net mean cost as
+        $\tau$ varies, in tokens, seconds and joules. The area under a
+        frontier is the best solved rate achievable within a cost budget,
+        averaged over budgets from the cheapest to the most expensive static
+        policy, so it lies between 0 and 1 in every unit.
   \item \emph{Escalation tax.} $\Tax$, $\Esc$ and $\Stk$ from
-        \eqref{eq:decomp}, per policy and per router.
+        \eqref{eq:decomp}, per policy and per router, in absolute terms and
+        relative to the cost of $\cstar(q)$.
   \item \emph{Net saving.} $S_{\mathrm{net}}$ from \eqref{eq:netsaving}
-        against each baseline.
-  \item \emph{Joules per solved query}, as defined in
-        Section~\ref{sec:energy}.
-  \item \emph{Regret decomposition.} Over-routing cost and under-routing
-        failure rate, reported separately and never combined into one
-        accuracy figure.
+        against each baseline, with the gross saving beside it.
+  \item \emph{Cost per solved query} in each unit, including joules per
+        solved query as defined in Section~\ref{sec:energy}.
+  \item \emph{Regret decomposition.} The over-routing rate and its cost
+        premium, and the under-routing rate and the cost of recovering from
+        it, reported separately and never combined into one accuracy figure.
   \item \emph{Router overhead.} Median and 95th-percentile decision latency,
         peak memory, and joules per decision.
 \end{itemize}
@@ -162,12 +193,21 @@ cascade of Section~\ref{sec:cascade}.
 \subsection{Statistical Analysis}
 \label{sec:stats}
 
-Every headline figure carries a 95\% bootstrap confidence interval from
-10{,}000 resamples over prompts \citeneeded{Efron and Tibshirani,
-bootstrap}. Comparisons between policies are paired by prompt, and
-$p$-values across the family of policy comparisons are corrected with the
-Holm--Bonferroni procedure \citeneeded{Holm 1979}. Each trainable router is
-trained with three seeds, and we report the mean and spread.
+Every headline figure carries a 95\% percentile bootstrap confidence
+interval from 10{,}000 resamples over prompts~\cite{efron1993bootstrap}. All policies and routers evaluated on the same
+prompts share one matrix of resampled prompt indices, so every comparison is
+paired by prompt and its interval is taken over the resampled differences.
+Two-sided $p$-values are obtained by inverting the percentile interval, as
+twice the smaller share of resampled differences on either side of zero,
+with a floor of $10^{-4}$. The Holm--Bonferroni procedure~\cite{holm1979simple} corrects the $p$-values within each group of
+comparisons that share a cost unit, recovery rule and detection regime. For
+routers, $\tau$ is fixed on the validation split before the test split is
+resampled, so the intervals do not include the uncertainty of that choice.
+Each trainable router is trained with three seeds; intervals are reported
+for the first seed and the spread across seeds beside them. Label noise is
+estimated on the noise subset, from how often the three samples of a cell
+disagree and how often $\cstar(q)$ changes when it is computed from a
+different sample.
 
 \subsection{Validation Gate 1: Power Telemetry}
 \label{sec:gate-telemetry}
@@ -220,8 +260,7 @@ The grid assumes that a model's thinking and non-thinking modes are two
 different operating points. Wang \emph{et al.} found only partial separation
 in hybrid-thinking models~\cite{wang2025demystifying}, so we tested the
 assumption on our own checkpoints before labelling. The test used 60 prompts,
-ten from each of GSM8K, the 500-problem MATH test subset
-\citeneeded{MATH-500 subset, Lightman et al.}, HumanEval, MBPP, MMLU and
+ten from each of GSM8K, the 500-problem MATH test subset~\cite{lightman2024verify}, HumanEval, MBPP, MMLU and
 ARC-Challenge, and ran each prompt once per model size in both modes: 480
 generations in 1\,h\,54\,min. Both modes had the same 4{,}096-token cap. An
 asymmetric cap would have built the length difference into the test and
@@ -279,9 +318,11 @@ non-thinking accuracy at 1.7B, 4B and 8B; with capped responses excluded,
 thinking was within a point of non-thinking at 8B and ahead at 1.7B. These
 figures come from 40 graded responses per mode and size and approximate
 grading, so they motivate a design check rather than support a claim: the
-oracle label depends on the cap, and the labelling runs include a
-cap-sensitivity analysis on a subsample \decision{confirm cap-sensitivity
-subsample and its size}.
+oracle label depends on the cap, and the labelling runs therefore include
+the cap-sensitivity reruns described in Section~\ref{sec:decoding}. The
+thinking cap stays at 4{,}096 tokens. The non-thinking cap is set at
+2{,}048, more than ten times the median non-thinking answer length in
+Table~\ref{tab:gate2}.
 % Accuracy detail (gate 2, math+MCQ, think / think-uncapped / no-think):
 % 0.6B 0.42/0.52/0.33; 1.7B 0.57/0.79/0.70; 4B 0.68/0.84/0.90;
 % 8B 0.78/0.94/0.95. At 4B, uncapped think (0.84) is still below no-think.
@@ -292,11 +333,16 @@ subsample and its size}.
 The local pool stops at 8B parameters, and frontier tiers may behave
 differently. To test whether the escalation-tax analysis carries over, the
 same policy and tax computations are applied, without local inference, to
-published per-model outcomes and costs from routing benchmarks such as
-RouterBench~\cite{hu2024routerbench} and
-LLMRouterBench~\cite{li2026llmrouterbench} \decision{which benchmark(s),
-and whether their cost fields support the resubmission term}. Energy is not
-available for these pools, so this arm reports token cost only.
+the per-model outcomes and costs published with
+LLMRouterBench~\cite{li2026llmrouterbench}. Each of its records stores a
+score, prompt and completion token counts, a dollar cost and a latency for
+one model on one query, which is what the resubmission term needs: a
+re-asked query pays its prompt tokens again at the stronger model's price.
+RouterBench~\cite{hu2024routerbench} carries similar fields, but it is
+distributed as serialised Python objects, which execute code when loaded,
+so we do not use it. Energy is not available for these pools, so this arm
+reports tokens, dollars and latency only. \tbd{public-benchmark arm: run
+once the data download is approved}
 
 \subsection{Reproducibility}
 \label{sec:repro}
@@ -306,5 +352,9 @@ constant lives in code. Seeds are set and stored for every generation and
 every training run. Each run writes a manifest with the code commit,
 configuration, package versions, driver version, GPU model and model
 digests. Raw generations are stored with their token counts, timings, seeds
-and energy. \decision{code and data availability statement, given the
-pending patent filing}
+and energy. The processed tables that every result is computed from contain
+prompt identifiers but no prompt text, and the corpus can be rebuilt from
+the public source datasets with the recorded seed and fingerprints.
+\decision{code and data availability statement and release timing, given
+the pending patent filing; a conservative draft is ``available from the
+corresponding author on reasonable request''}
