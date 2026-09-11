@@ -20,7 +20,7 @@ from collections.abc import Callable, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
-from arbiter.eval.policies import ORACLE, Detection, Outcome, routed_policy, select_cells
+from arbiter.eval.policies import ORACLE, TOP, Detection, Outcome, routed_policy, select_cells
 
 N_BOOT = 10_000
 
@@ -65,20 +65,46 @@ def routing_errors(
     -------
     dict
         ``under_rate``: share of servable prompts routed to a failing cell.
-        ``over_cost``: mean premium over ``c*`` where the routed cell succeeded.
-        ``over_rate``: share of servable prompts routed to a successful cell costlier
-        than ``c*``. ``exact_rate``: share routed exactly to ``c*``.
+        ``under_cost``: mean premium over ``c*`` on those prompts, when the failure is
+        recovered at c8. ``over_cost``: mean premium over ``c*`` where the routed cell
+        succeeded. ``over_rate``: share of servable prompts routed to a successful cell
+        costlier than ``c*``. ``exact_rate``: share routed exactly to ``c*``.
     """
     rows = np.arange(len(routed))
     servable = cstar >= 0
     ok = success[rows, routed]
-    premium = cost[rows, routed] - cost[rows, np.maximum(cstar, 0)]
+    best = cost[rows, np.maximum(cstar, 0)]
+    premium = cost[rows, routed] - best
     over = servable & ok & (premium > 0)
+    under = servable & ~ok
+    recovered = premium + np.where(routed == TOP, 0.0, cost[:, TOP])
     return {
         "under_rate": float(np.mean(~ok[servable])) if servable.any() else float("nan"),
+        "under_cost": float(np.mean(recovered[under])) if under.any() else 0.0,
         "over_rate": float(np.mean(over[servable])) if servable.any() else float("nan"),
         "over_cost": float(np.mean(premium[servable & ok])) if (servable & ok).any() else 0.0,
         "exact_rate": float(np.mean(routed[servable] == cstar[servable])),
+    }
+
+
+def evaluate_routed(
+    routed: np.ndarray,
+    success: np.ndarray,
+    cost: np.ndarray,
+    cstar: np.ndarray,
+    cstar_cost: np.ndarray,
+    recovery: str = "top",
+    detection: Detection = ORACLE,
+    router_cost: np.ndarray | float = 0.0,
+) -> dict[str, float]:
+    """Evaluate fixed routing decisions, single-shot and with recovery."""
+    rows = np.arange(len(routed))
+    recovered = routed_policy(success, cost, routed, recovery, detection)
+    return {
+        "single_accuracy": float(success[rows, routed].mean()),
+        "single_mean_cost": float(cost[rows, routed].mean()),
+        **summarise(recovered, cstar_cost, router_cost),
+        **routing_errors(routed, success, cost, cstar),
     }
 
 
@@ -95,19 +121,13 @@ def sweep(
     router_cost: np.ndarray | float = 0.0,
 ) -> pd.DataFrame:
     """Evaluate a router at every threshold, single-shot and with recovery."""
-    rows = np.arange(len(p_hat))
     records = []
     for tau in taus:
         routed = select_cells(p_hat, mean_cost, tau)
-        recovered = routed_policy(success, cost, routed, recovery, detection)
-        record = {
-            "tau": float(tau),
-            "single_accuracy": float(success[rows, routed].mean()),
-            "single_mean_cost": float(cost[rows, routed].mean()),
-            **summarise(recovered, cstar_cost, router_cost),
-            **routing_errors(routed, success, cost, cstar),
-        }
-        records.append(record)
+        record = evaluate_routed(
+            routed, success, cost, cstar, cstar_cost, recovery, detection, router_cost
+        )
+        records.append({"tau": float(tau), **record})
     return pd.DataFrame.from_records(records)
 
 

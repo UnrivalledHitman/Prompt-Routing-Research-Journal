@@ -25,6 +25,7 @@ def test_routing_errors_separate_under_and_over_routing() -> None:
     cstar = minimum_sufficient(SUCCESS, COST)
     errors = routing.routing_errors(np.full(4, 2), SUCCESS, COST, cstar)
     assert errors["under_rate"] == pytest.approx(1 / 3)
+    assert errors["under_cost"] == pytest.approx(3.0 + 8.0 - 8.0)
     assert errors["over_rate"] == pytest.approx(1 / 3)
     assert errors["over_cost"] == pytest.approx((2.0 + 0.0) / 2)
     assert errors["exact_rate"] == pytest.approx(1 / 3)
