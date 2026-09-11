@@ -55,7 +55,7 @@ prompt $q$ and per cell $c$, in three units:
   \label{eq:tokcost}\\
   \cost_{\mathrm{lat}}(c, q) &= \text{wall-clock time of the request (s)},
   \label{eq:latcost}\\
-  \cost_{\mathrm{E}}(c, q)   &= \text{GPU energy attributed to the request (J)},
+  \cost_{\mathrm{E}}(c, q)   &= \text{GPU energy of the request (J)},
   \label{eq:energycost}
 \end{align}
 where $n_{\mathrm{in}}$ and $n_{\mathrm{out}}$ are input and generated
@@ -134,16 +134,17 @@ report them separately.
 \caption{Manual escalation policies. Cells as in Table~\ref{tab:grid}.}
 \label{tab:policies}
 \renewcommand{\arraystretch}{1.1}
-\begin{tabular}{@{}l l p{3.4cm}@{}}
+\small
+\begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}p{2.9cm} >{\raggedright\arraybackslash}X@{}}
 \toprule
 Policy & Ladder & Behaviour modelled \\
 \midrule
-P1 frugal climb & $c_1 \to c_3 \to c_5 \to c_7 \to c_8$ & Cost-conscious; larger model first, thinking last \\
-P2 think first  & $c_1 \to c_2 \to c_4 \to c_6 \to c_8$ & Turns on thinking before moving up a size \\
-P3 sticky high  & $c_8$ only & Heavyweight left selected from earlier work \\
-P4 sticky mixed & start drawn from usage mix, then P1 & A population of users \\
+P1 & $c_1{\to}c_3{\to}c_5{\to}c_7{\to}c_8$ & \emph{Frugal climb}: cost-conscious; larger model first, thinking last \\
+P2 & $c_1{\to}c_2{\to}c_4{\to}c_6{\to}c_8$ & \emph{Think first}: turns on thinking before moving up a size \\
+P3 & $c_8$ only & \emph{Sticky high}: heavyweight left selected from earlier work \\
+P4 & Start sampled from past usage, then the P1 ladder & \emph{Sticky mixed}: a population of users \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \emph{Policy family.} We construct the comparator ourselves, so we
