@@ -272,6 +272,48 @@ If unsupported, fallbacks in order of preference:
 
 **Option 3 costs the paper a contribution.** The check is one short script and must run first.
 
+### 6.2 Gate 1 result (run 2026-09-11)
+
+Script `scripts/gate1_nvml_telemetry.py`. Raw output in `results/processed/gate1_nvml_telemetry.json`
+and `results/processed/gate1_nvml_samples.csv`. Hardware: RTX 4060 Laptop GPU, driver 616.56,
+NVML 13.616.56, enforced power limit 115 W. Procedure: 10 s idle before any CUDA context, 8 s of fp16
+2048x2048 matrix multiplication at ~90% utilisation (40 MB peak allocation), 8 s cooldown, 100 ms polling.
+
+| Source | Supported | Idle | Load | Cooldown | Verdict |
+|--------|-----------|------|------|----------|---------|
+| `nvmlDeviceGetPowerUsage` | yes | 2.43 W | 75.1 W mean, 88.4 W max | 10.5 W | **Usable** |
+| `nvmlDeviceGetTotalEnergyConsumption` | yes, monotonic | implies 88.3 W | implies 127.6 W | implies 256.9 W | **Rejected — non-physical** |
+
+**Instantaneous power passes.** It is plausible at P8 idle, tracks a step load within about a second, and
+never exceeds the enforced limit.
+
+**The energy counter fails, and would have silently corrupted every energy result.** It is supported and
+strictly monotonic, so a naive check accepts it, and the script's first-pass verdict did exactly that.
+Its implied mean power is 88 W with the GPU idle at P8, 128 W under load, which is above the 115 W enforced
+limit, and 257 W during cooldown, which is higher than under load. A units error would scale all three
+windows by the same factor and preserve their ordering; this ordering does not follow real draw at all.
+Only the cross-check between the two sources exposed it: 41% disagreement under load and a factor of 36
+at idle. The verdict rules now require agreement with sampled power and a plausibility bound against the
+enforced limit before the counter can be trusted.
+
+**Temporal resolution constrains the design.** Reported power refreshes every 0.5 s and is smoothed.
+Under a step load it climbs 10.5, 31.8, 63.4, then 88 W over roughly a second, and it still reads 88 W at
+the start of the cooldown window. A 0.6B no-think answer to a multiple-choice question can finish inside a
+single refresh period, so its energy cannot be attributed from its own window.
+
+**Amendment to §6 Method.** Energy is integrated over *batches*, not individual queries. Each
+(cell, batch) window runs many prompts back to back and is extended by a 2 s tail after the last
+generation to capture the smoothed decay, with the idle baseline subtracted. Energy is apportioned to
+queries within the batch by each query's share of generation wall time, and that apportionment is
+validated against token share on a subsample. Routers are measured the same way.
+
+**Confound recorded.** NVML reports whole-board power, so any other GPU workload during a labelling run
+contaminates the measurement. Runs require an otherwise idle GPU; the harness records utilisation
+throughout and flags any window where it is inconsistent with the scheduled work.
+
+**Status: Gate 1 passed, for instantaneous power sampling only.** The energy contribution survives. The
+cumulative counter is excluded from the study.
+
 ---
 
 ## 7. Router families
