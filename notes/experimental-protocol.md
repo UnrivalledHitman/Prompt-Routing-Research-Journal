@@ -344,6 +344,22 @@ larger than the models it routes to is self-defeating.
 **Cost-sensitive training.** Because misallocation is asymmetric (H5), a variant weights errors by their
 realised cost consequence rather than treating all misroutes equally.
 
+**Implementation (2026-09-12).** `src/arbiter/routers/neural.py`, configured under `routers.neural` in
+`configs/analysis.yaml`. Weights are read from the local Hugging Face cache at pinned revisions.
+- R1c: normalised all-MiniLM-L6-v2 embeddings into per-cell logistic regression, over the R1a `C` grid.
+- R2: first-token pooling into eight sigmoid outputs. Per-cell balanced class weights, multiplied by
+  the cost-sensitive weights in the `-cs` variant. AdamW with linear warm-up and decay, bfloat16
+  autocast on the GPU, grid over learning rate and epochs. Decisions run on the CPU and are timed and
+  charged like R1. DeBERTa-v3's vocabulary is read with `sentencepiece` directly, because the
+  Transformers tokenizer needs protobuf or tiktoken.
+- R3-LoRA: adapters (rank 16, alpha 32) on every attention and MLP projection. Cross-entropy over the
+  eight letters at the first answer position of the zero-shot prompt, with thinking off. The label
+  is `c*` in mean-cost order, or the costliest cell for unservable prompts. No cost-sensitive
+  variant, since the weights are per cell. Charged the zero-shot probe's metered cost per prompt, an
+  upper bound (the probe decodes up to 8 tokens), and left out until that probe exists. Decisions
+  are computed in bfloat16, while the probe ran Q4_K_M.
+- Training waits for an otherwise idle GPU with 5 GB free, using the labelling harness's guard.
+
 ---
 
 ## 8. Baselines and metrics

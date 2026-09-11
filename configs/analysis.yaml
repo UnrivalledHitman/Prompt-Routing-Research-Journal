@@ -39,6 +39,45 @@ routers:
   # CPU routers are not metered. Their energy is bounded above by decision time x the
   # processor's configurable TDP (Ryzen 7 8845HS: 35-54 W; the upper value is used).
   cpu_power_w: 54.0
+  # R1c, R2 and R3-LoRA (protocol section 7). Weights are read from the local Hugging Face
+  # cache at these revisions and never downloaded. R2 and R3-LoRA train on the GPU once it
+  # is otherwise idle; R1c and R2 decide on the CPU. Grids are searched on validation.
+  neural:
+    enabled: true
+    gpu_guard:
+      max_util_pct: 15
+      idle_required_s: 30
+      poll_s: 5
+      log_every_s: 600
+      min_free_vram_mb: 5000
+    embedding:
+      model_id: sentence-transformers/all-MiniLM-L6-v2
+      revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
+    encoders:
+      distilbert:
+        model_id: distilbert/distilbert-base-uncased
+        revision: 12040accade4e8a0f71eabdb258fecc2e7e948be
+        tokenizer: auto
+      deberta-v3-small:
+        model_id: microsoft/deberta-v3-small
+        revision: a36c739020e01763fe789b4b85e2df55d6180012
+        tokenizer: sentencepiece   # read with sentencepiece alone; no protobuf or tiktoken
+    encoder_training: {batch_size: 16, max_length: 512, weight_decay: 0.01, warmup_ratio: 0.1}
+    encoder_grid:
+      - {learning_rate: 2.0e-5, epochs: 4}
+      - {learning_rate: 5.0e-5, epochs: 4}
+      - {learning_rate: 5.0e-5, epochs: 8}
+    lora:
+      model_id: Qwen/Qwen3-0.6B
+      revision: c1899de289a04d12100db370d81485cdf75e47ca
+      rank: 16
+      alpha: 32
+      lora_dropout: 0.05
+      batch_size: 8
+      max_request_tokens: 768
+    lora_grid:
+      - {learning_rate: 1.0e-4, epochs: 2}
+      - {learning_rate: 2.0e-4, epochs: 3}
 
 # Probe tables from scripts/collect_probes.py; each analysis is skipped until its table exists.
 probes:

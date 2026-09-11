@@ -1,7 +1,9 @@
-"""Run the study analyses on graded, energy-attributed labels. CPU only.
+"""Run the study analyses on graded, energy-attributed labels.
 
 Writes one text-free CSV per results block, the split assignment, and ``summary.json``
-to the output directory.
+to the output directory. Everything runs on the CPU except the training of R2 and
+R3-LoRA, which waits for an otherwise idle GPU; ``--skip-neural`` leaves out those
+routers and R1c.
 
 Usage::
 
@@ -29,9 +31,11 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+import torch  # noqa: E402
 import yaml  # noqa: E402
 
 from arbiter.data.corpus import read_corpus  # noqa: E402
+from arbiter.energy.telemetry import TelemetryRecorder  # noqa: E402
 from arbiter.eval import analysis, probes, robustness  # noqa: E402
 from arbiter.eval.labels import (  # noqa: E402
     CELL_NAMES,
@@ -42,6 +46,8 @@ from arbiter.eval.labels import (  # noqa: E402
     minimum_sufficient,
 )
 from arbiter.eval.policies import ORACLE, Detection  # noqa: E402
+from arbiter.labeling.harness import GpuGuard  # noqa: E402
+from arbiter.routers import neural  # noqa: E402
 from arbiter.routers.classical import (  # noqa: E402
     DirectClassifier,
     FeatureBoostRouter,
@@ -100,6 +106,66 @@ def router_specs(cfg: dict[str, Any]) -> list[analysis.RouterSpec]:
         )
     )
     return specs
+
+
+def neural_router_specs(
+    rcfg: dict[str, Any], route: pd.DataFrame | None, mean_cost: np.ndarray
+) -> tuple[list[analysis.RouterSpec], set[str]]:
+    """Build R1c, R2 and their cost-sensitive variants, and R3-LoRA when it can be charged.
+
+    R3-LoRA decides with the prompt and base model of the zero-shot R3 probe, so it is
+    charged that probe's metered cost per prompt. This is an upper bound, since the probe
+    decodes several tokens where the adapter reads one distribution. Without the probe,
+    R3-LoRA is left out. ``mean_cost`` orders its letters as for R3.
+
+    Returns
+    -------
+    tuple
+        The specs, and the names of those that train on the GPU.
+    """
+    ncfg = rcfg["neural"]
+    c_grid = tuple({"c": c} for c in rcfg["tfidf_c_grid"])
+    embedding = partial(neural.EmbeddingRouter, **ncfg["embedding"])
+    specs = [analysis.RouterSpec("R1c-minilm-lr", "R1", embedding, c_grid)]
+    encoder_grid = tuple(dict(point) for point in ncfg["encoder_grid"])
+    for label, model in ncfg["encoders"].items():
+        name = f"R2-{label}"
+        make = partial(neural.EncoderRouter, **model, **ncfg["encoder_training"], name=name)
+        specs.append(analysis.RouterSpec(name, "R2", make, encoder_grid))
+    specs += [replace(spec, name=f"{spec.name}-cs", cost_sensitive=True) for spec in list(specs)]
+    zero = None if route is None else route[route["variant"] == "route-zero"]
+    if zero is None or zero.empty:
+        LOGGER.info("no zero-shot R3 probe to charge R3-LoRA with; skipped")
+    else:
+        specs.append(
+            analysis.RouterSpec(
+                "R3-qwen3-0.6b-lora",
+                "R3",
+                partial(neural.LoraRouter, mean_cost, **ncfg["lora"]),
+                tuple(dict(point) for point in ncfg["lora_grid"]),
+                overhead=partial(probes.prompt_costs, zero),
+                device="gpu",
+            )
+        )
+    return specs, {spec.name for spec in specs if spec.family != "R1"}
+
+
+def wait_for_gpu(gcfg: dict[str, Any], reason: str) -> None:
+    """Wait, as the labelling harness does, for an otherwise idle GPU with free memory.
+
+    Without CUDA, training runs on the CPU and nothing is waited for.
+    """
+    if not torch.cuda.is_available():
+        return
+    torch.cuda.empty_cache()
+    recorder = TelemetryRecorder(REPO_ROOT / "results/logs/router_training_telemetry.csv", 0.5)
+    recorder.start()
+    try:
+        guard = GpuGuard(recorder, gcfg)
+        guard.wait_until_idle(float(gcfg["idle_required_s"]), reason)
+        guard.wait_for_vram(float(gcfg["min_free_vram_mb"]), reason)
+    finally:
+        recorder.stop()
 
 
 def load_probes(cfg: dict[str, Any], kind: str, units: list[str]) -> pd.DataFrame | None:
@@ -245,6 +311,7 @@ def router_analyses(
     primary: str,
     cfg: dict[str, Any],
     n_boot: int,
+    neural_routers: bool,
 ) -> None:
     """Evaluate routers and the cascade, and write their results and comparisons."""
     items = {item.prompt_id: item.text for item in read_corpus(REPO_ROOT / cfg["corpus"])}
@@ -279,12 +346,18 @@ def router_analyses(
 
     specs = router_specs(rcfg)
     route = load_probes(cfg, "route", units)
+    label_costs = analysis.mean_cell_cost(parts["train"].table.costs[primary])
     if route is not None:
-        label_costs = analysis.mean_cell_cost(parts["train"].table.costs[primary])
         specs += llm_router_specs(route, items, label_costs)
+    gpu_trained: set[str] = set()
+    if neural_routers:
+        extra, gpu_trained = neural_router_specs(rcfg, route, label_costs)
+        specs += extra
     runs: dict[str, analysis.RouterRun] = {}
     families: dict[str, str] = {}
     for spec in specs:
+        if spec.name in gpu_trained:
+            wait_for_gpu(rcfg["neural"]["gpu_guard"], spec.name)
         started = time.time()
         runs[spec.name] = analysis.run_router(
             spec, parts["train"], parts["val"], parts["test"], settings, resamples
@@ -318,7 +391,7 @@ def router_analyses(
     frames = []
     per_cell = [name for name in runs if families[name] == "R1"]
     direct = [name for name in runs if families[name] == "R1-direct"]
-    one_shot = [name for name in runs if families[name] in ("R1", "R3")]
+    one_shot = [name for name in runs if families[name] in ("R1", "R2", "R3")]
     for unit in units:
         for recovery in settings.recoveries:
             for label in detections:
@@ -360,6 +433,7 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/analysis.yaml")
     parser.add_argument("--n-boot", type=int, help="override the configured resample count")
     parser.add_argument("--skip-routers", action="store_true")
+    parser.add_argument("--skip-neural", action="store_true", help="leave out R1c, R2 and R3-LoRA")
     args = parser.parse_args()
 
     log_path = REPO_ROOT / "results/logs" / f"analysis_{args.out.name}.log"
@@ -387,8 +461,9 @@ def main() -> None:
     write(args.out, "splits", splits)
     label_analyses(args.out, table, units, cfg, n_boot)
     robustness_analyses(args.out, grades, table, cfg)
+    neural_routers = cfg["routers"]["neural"]["enabled"] and not args.skip_neural
     if not args.skip_routers:
-        router_analyses(args.out, table, splits, router_units, primary, cfg, n_boot)
+        router_analyses(args.out, table, splits, router_units, primary, cfg, n_boot, neural_routers)
 
     summary = {
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -407,6 +482,7 @@ def main() -> None:
         "capped_share": float(table.capped.mean()),
         "contaminated_share": float(table.contaminated.mean()),
         "routers": not args.skip_routers,
+        "neural_routers": neural_routers and not args.skip_routers,
         "probes": {
             kind: (REPO_ROOT / path).exists() for kind, path in cfg.get("probes", {}).items()
         },
