@@ -7,7 +7,15 @@
 %  read off a live arXiv abstract page, the ACL Anthology, the ACM Digital
 %  Library, JMLR, or a NeurIPS/ICLR proceedings record during this project.
 %  Nothing in this file was written from recall alone. Where a field could
-%  not be confirmed, the entry carries an explicit TODO in its note.
+%  not be confirmed, the entry carries an explicit TODO in its annote.
+%
+%  NOTE VS ANNOTE
+%  --------------
+%  IEEEtran.bst prints `note' but ignores `annote'. Keep `note' to what a
+%  reader of the reference list should see (the arXiv identifier, an
+%  acceptance status). Provenance, version dates, record ids, summaries
+%  and TODOs go in `annote'. IEEEtran.bst does not print `eprint', so
+%  arXiv preprints repeat the identifier in `note'.
 %
 %  Verification passes: 2026-09-10
 %  Entries: 47
@@ -26,7 +34,8 @@
   eprint        = {2305.05176},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  doi           = {10.48550/arXiv.2305.05176}
+  doi           = {10.48550/arXiv.2305.05176},
+  note          = {arXiv:2305.05176}
 }
 
 @inproceedings{aggarwal2024automix,
@@ -38,7 +47,8 @@
   booktitle = {Advances in Neural Information Processing Systems 38
                (NeurIPS 2024)},
   year      = {2024},
-  note      = {arXiv:2310.12963, v1 2023-10-19, v5 2025-01-19}
+  note      = {arXiv:2310.12963},
+  annote    = {v1 2023-10-19, v5 2025-01-19}
 }
 
 @misc{hu2024routerbench,
@@ -50,8 +60,9 @@
   eprint        = {2403.12031},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  note          = {36,497-prompt zero-shot split, 11 candidate LLMs, per-inference
-                   costs and oracle optimal-model labels}
+  note          = {arXiv:2403.12031},
+  annote        = {36,497-prompt zero-shot split, 11 candidate LLMs,
+                   per-inference costs and oracle optimal-model labels}
 }
 
 @inproceedings{ding2024hybridllm,
@@ -62,7 +73,8 @@
   booktitle = {Proceedings of the Twelfth International Conference on Learning
                Representations (ICLR)},
   year      = {2024},
-  note      = {OpenReview id 02f3mUtqnM; arXiv:2404.14618}
+  note      = {arXiv:2404.14618},
+  annote    = {OpenReview id 02f3mUtqnM}
 }
 
 @misc{ong2024routellm,
@@ -74,7 +86,8 @@
   eprint        = {2406.18665},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  note          = {Submitted 2024-06-26}
+  note          = {arXiv:2406.18665},
+  annote        = {Submitted 2024-06-26}
 }
 
 @inproceedings{chen2024routerdc,
@@ -85,7 +98,8 @@
   booktitle = {Advances in Neural Information Processing Systems 38
                (NeurIPS 2024)},
   year      = {2024},
-  note      = {arXiv:2409.19886, submitted 2024-09-30}
+  note      = {arXiv:2409.19886},
+  annote    = {submitted 2024-09-30}
 }
 
 @misc{jitkrittum2025universal,
@@ -99,8 +113,9 @@
   eprint        = {2502.08773},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {v1 2025-02-12, v2 2025-07-22. UniRoute; routing to previously
-                   unseen LLMs with an excess-risk bound}
+  note          = {arXiv:2502.08773},
+  annote        = {v1 2025-02-12, v2 2025-07-22. UniRoute; routing to
+                   previously unseen LLMs with an excess-risk bound}
 }
 
 @misc{huang2025routereval,
@@ -113,8 +128,9 @@
   eprint        = {2503.10657},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {v1 2025-03-08, v2 2025-05-20. Over 8,500 candidate models and
-                   200M+ performance records across 12 evaluations}
+  note          = {arXiv:2503.10657},
+  annote        = {v1 2025-03-08, v2 2025-05-20. Over 8,500 candidate models
+                   and 200M+ performance records across 12 evaluations}
 }
 
 @misc{tran2025archrouter,
@@ -123,7 +139,8 @@
   year          = {2025},
   eprint        = {2506.16655},
   archivePrefix = {arXiv},
-  note          = {Submitted 2025-06-19. 1.5B preference-aligned router mapping
+  note          = {arXiv:2506.16655},
+  annote        = {Submitted 2025-06-19. 1.5B preference-aligned router mapping
                    queries to domain and action preferences}
 }
 
@@ -134,9 +151,10 @@
   booktitle = {Advances in Neural Information Processing Systems 39
                (NeurIPS 2025)},
   year      = {2025},
-  note      = {arXiv:2506.09033, submitted 2025-06-10. Stateful multi-round
-               routing: interleaves internal deliberation with model invocation
-               and accumulates context across rounds}
+  note      = {arXiv:2506.09033},
+  annote    = {submitted 2025-06-10. Stateful multi-round routing: interleaves
+               internal deliberation with model invocation and accumulates
+               context across rounds}
 }
 
 @article{yang2025qosrouting,
@@ -146,8 +164,9 @@
              Guo, Deke and Chen, Xu},
   journal = {IEEE Transactions on Mobile Computing},
   year    = {2025},
-  note    = {arXiv:2508.00234, submitted 2025-08-01; accepted to IEEE TMC.
-             TODO -- obtain volume, issue and page numbers from the IEEE record}
+  note    = {arXiv:2508.00234; accepted to IEEE TMC},
+  annote  = {submitted 2025-08-01; TODO -- obtain volume, issue and page
+             numbers from the IEEE record}
 }
 
 @misc{ziller2026greenserv,
@@ -159,7 +178,8 @@
   eprint        = {2601.17551},
   archivePrefix = {arXiv},
   primaryClass  = {cs.PF},
-  note          = {v1 2026-01-24, v2 2026-02-27. Routes 16 open-access LLMs on
+  note          = {arXiv:2601.17551},
+  annote        = {v1 2026-01-24, v2 2026-02-27. Routes 16 open-access LLMs on
                    observed accuracy and energy usage}
 }
 
@@ -173,8 +193,9 @@
   year          = {2026},
   eprint        = {2601.07206},
   archivePrefix = {arXiv},
-  note          = {Submitted 2026-01-12. 400K+ instances, 21 datasets, 33 models;
-                   code and data released publicly}
+  note          = {arXiv:2601.07206},
+  annote        = {Submitted 2026-01-12. 400K+ instances, 21 datasets, 33
+                   models; code and data released publicly}
 }
 
 @misc{moslem2026routingsurvey,
@@ -184,7 +205,8 @@
   year          = {2026},
   eprint        = {2603.04445},
   archivePrefix = {arXiv},
-  note          = {v1 2026-02-23, v2 2026-04-21. Trinity College Dublin}
+  note          = {arXiv:2603.04445},
+  annote        = {v1 2026-02-23, v2 2026-04-21. Trinity College Dublin}
 }
 
 
@@ -201,7 +223,8 @@
   booktitle = {Advances in Neural Information Processing Systems 35
                (NeurIPS 2022)},
   year      = {2022},
-  note      = {arXiv:2201.11903; DBLP conf/nips/Wei0SBIXCLZ22}
+  note      = {arXiv:2201.11903},
+  annote    = {DBLP conf/nips/Wei0SBIXCLZ22}
 }
 
 @inproceedings{wang2023selfconsistency,
@@ -226,8 +249,10 @@
   eprint        = {2501.19393},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {Submitted 2025-01-31. Introduces budget forcing: terminating or
-                   extending the thinking process to control test-time compute}
+  note          = {arXiv:2501.19393},
+  annote        = {Submitted 2025-01-31. Introduces budget forcing: terminating
+                   or extending the thinking process to control test-time
+                   compute}
 }
 
 @article{deepseek2025r1,
@@ -240,7 +265,7 @@
   pages   = {633--638},
   year    = {2025},
   doi     = {10.1038/s41586-025-09422-z},
-  note    = {ADS bibcode 2025Natur.645..633G (first author surname begins Guo).
+  annote  = {ADS bibcode 2025Natur.645..633G (first author surname begins Guo).
              TODO -- transcribe the full author list from the Nature record
              before submission}
 }
@@ -253,7 +278,8 @@
              Zhong, Shaochen and Zou, Na and Chen, Hanjie and Hu, Xia},
   journal = {Transactions on Machine Learning Research (TMLR)},
   year    = {2025},
-  note    = {arXiv:2503.16419, v1 2025-03-20; accepted by TMLR 2025}
+  note    = {arXiv:2503.16419; accepted by TMLR 2025},
+  annote  = {v1 2025-03-20}
 }
 
 @misc{alomrani2025reasoningbudget,
@@ -268,7 +294,8 @@
   year          = {2025},
   eprint        = {2507.02076},
   archivePrefix = {arXiv},
-  note          = {Submitted 2025-07-02. Two-tier taxonomy: L1 controllability
+  note          = {arXiv:2507.02076},
+  annote        = {Submitted 2025-07-02. Two-tier taxonomy: L1 controllability
                    under fixed budgets, L2 adaptiveness to input difficulty}
 }
 
@@ -283,10 +310,11 @@
   eprint        = {2507.02822},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {Submitted 2025-07-03. Routes medical queries to thinking or
+  note          = {arXiv:2507.02822},
+  annote        = {Submitted 2025-07-03. Routes medical queries to thinking or
                    non-thinking mode; introduces the Accuracy-Inference-Token
-                   (AIT) index. Reports 36.8\% inference-time and 39.66\%
-                   token reduction, and that ~58\% of medical questions need no
+                   (AIT) index. Reports 36.8\% inference-time and 39.66\% token
+                   reduction, and that ~58\% of medical questions need no
                    reasoning mode}
 }
 
@@ -299,10 +327,11 @@
   eprint        = {2510.12680},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  note          = {Submitted 2025-10-14. Finds only PARTIAL mode separation in
-                   hybrid-thinking LLMs: reasoning behaviour leaks into no-think
-                   mode. Directly relevant to the internal validity of any
-                   think/no-think routing experiment}
+  note          = {arXiv:2510.12680},
+  annote        = {Submitted 2025-10-14. Finds only PARTIAL mode separation in
+                   hybrid-thinking LLMs: reasoning behaviour leaks into
+                   no-think mode. Directly relevant to the internal validity of
+                   any think/no-think routing experiment}
 }
 
 @inproceedings{guo2026thinkwhenneeded,
@@ -314,7 +343,8 @@
                Research and Development in Information Retrieval (SIGIR '26)},
   year      = {2026},
   doi       = {10.1145/3805712.3809709},
-  note      = {arXiv:2601.18146, submitted 2026-01-26}
+  note      = {arXiv:2601.18146},
+  annote    = {submitted 2026-01-26}
 }
 
 @inproceedings{lee2026dart,
@@ -327,10 +357,11 @@
   booktitle = {Findings of the Association for Computational Linguistics: EMNLP
                2026},
   year      = {2026},
-  note      = {arXiv:2606.23181, submitted 2026-06-22. Training-free; two no-think
-               drafts probe difficulty, draft entropy sets the thinking budget.
-               Reports 32--73\% thinking-token reduction. Reports tokens and
-               latency only -- NOT energy}
+  note      = {arXiv:2606.23181},
+  annote    = {submitted 2026-06-22. Training-free; two no-think drafts probe
+               difficulty, draft entropy sets the thinking budget. Reports
+               32--73\% thinking-token reduction. Reports tokens and latency
+               only -- NOT energy}
 }
 
 @inproceedings{pan2026routetoreason,
@@ -340,9 +371,10 @@
   booktitle = {Proceedings of the ACM Web Conference 2026 (WWW '26)},
   pages     = {5568--5578},
   year      = {2026},
-  note      = {arXiv:2505.19435, submitted 2025-05-26. Joint routing over seven
-               open-source models and four reasoning strategies; >60\% token
-               reduction. Closest prior art to joint tier-and-effort routing}
+  note      = {arXiv:2505.19435},
+  annote    = {submitted 2025-05-26. Joint routing over seven open-source
+               models and four reasoning strategies; >60\% token reduction.
+               Closest prior art to joint tier-and-effort routing}
 }
 
 @inproceedings{li2026ecothink,
@@ -351,10 +383,11 @@
   author    = {Li, Linxiao and Lu, Zhixiang},
   booktitle = {Proceedings of the ACM Web Conference 2026 (WWW '26)},
   year      = {2026},
-  note      = {arXiv:2603.25498, submitted 2026-03-26. Distillation-based router
-               choosing between chain-of-thought and direct retrieval; reports
-               40.4\% average energy reduction across 9 benchmarks. TODO --
-               confirm from the PDF whether energy is hardware-measured}
+  note      = {arXiv:2603.25498},
+  annote    = {submitted 2026-03-26. Distillation-based router choosing between
+               chain-of-thought and direct retrieval; reports 40.4\% average
+               energy reduction across 9 benchmarks. TODO -- confirm from the
+               PDF whether energy is hardware-measured}
 }
 
 @misc{ning2026hrbench,
@@ -365,9 +398,11 @@
   year          = {2026},
   eprint        = {2605.28398},
   archivePrefix = {arXiv},
-  note          = {Submitted 2026-05-27. Benchmarks prompt-based, external-routing
-                   and speculative switch strategies across four training regimes
-                   and six models on five reasoning benchmarks}
+  note          = {arXiv:2605.28398},
+  annote        = {Submitted 2026-05-27. Benchmarks prompt-based,
+                   external-routing and speculative switch strategies across
+                   four training regimes and six models on five reasoning
+                   benchmarks}
 }
 
 @misc{kassenaar2026learningwhentothink,
@@ -377,9 +412,10 @@
   year          = {2026},
   eprint        = {2608.20256},
   archivePrefix = {arXiv},
-  note          = {v1 2026-08-20, v2 2026-08-21. Selects NoThink / Short / Long as
-                   the first response token, trained with GRPO and per-mode token
-                   caps; 41\% mean response-length reduction}
+  note          = {arXiv:2608.20256},
+  annote        = {v1 2026-08-20, v2 2026-08-21. Selects NoThink / Short / Long
+                   as the first response token, trained with GRPO and per-mode
+                   token caps; 41\% mean response-length reduction}
 }
 
 
@@ -397,7 +433,8 @@
   eprint        = {1803.05457},
   archivePrefix = {arXiv},
   primaryClass  = {cs.AI},
-  note          = {Submitted 2018-03-14}
+  note          = {arXiv:1803.05457},
+  annote        = {Submitted 2018-03-14}
 }
 
 @misc{chen2021humaneval,
@@ -407,7 +444,8 @@
   eprint        = {2107.03374},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  note          = {Introduces HumanEval. 58 authors in total; the full list is
+  note          = {arXiv:2107.03374},
+  annote        = {Introduces HumanEval. 58 authors in total; the full list is
                    given on the arXiv record and should be reproduced or
                    truncated according to the venue's style}
 }
@@ -422,7 +460,8 @@
   eprint        = {2108.07732},
   archivePrefix = {arXiv},
   primaryClass  = {cs.PL},
-  note          = {Introduces MBPP. Submitted 2021-08-16}
+  note          = {arXiv:2108.07732},
+  annote        = {Introduces MBPP. Submitted 2021-08-16}
 }
 
 @misc{cobbe2021gsm8k,
@@ -435,7 +474,8 @@
   eprint        = {2110.14168},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  note          = {Introduces GSM8K, 8.5K grade-school math word problems.
+  note          = {arXiv:2110.14168},
+  annote        = {Introduces GSM8K, 8.5K grade-school math word problems.
                    Submitted 2021-10-27}
 }
 
@@ -446,7 +486,8 @@
   booktitle = {Proceedings of the Ninth International Conference on Learning
                Representations (ICLR)},
   year      = {2021},
-  note      = {arXiv:2009.03300. 57 tasks; 15,908 multiple-choice questions}
+  note      = {arXiv:2009.03300},
+  annote    = {57 tasks; 15,908 multiple-choice questions}
 }
 
 @inproceedings{hendrycks2021math,
@@ -457,8 +498,9 @@
   booktitle = {Advances in Neural Information Processing Systems 34 (NeurIPS
                2021) Datasets and Benchmarks Track},
   year      = {2021},
-  note      = {arXiv:2103.03874, v1 2021-03-05, v2 2021-11-08. 12,500 competition
-               problems with step-by-step solutions}
+  note      = {arXiv:2103.03874},
+  annote    = {v1 2021-03-05, v2 2021-11-08. 12,500 competition problems with
+               step-by-step solutions}
 }
 
 @inproceedings{zheng2023judging,
@@ -470,8 +512,9 @@
   booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS
                2023) Datasets and Benchmarks Track},
   year      = {2023},
-  note      = {arXiv:2306.05685. GPT-4 judge reaches ~85\% agreement with human
-               preference against 81\% human--human agreement}
+  note      = {arXiv:2306.05685},
+  annote    = {GPT-4 judge reaches ~85\% agreement with human preference
+               against 81\% human--human agreement}
 }
 
 
@@ -486,9 +529,10 @@
   eprint        = {2505.09388},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {2025-05-15. Dense models at 0.6B, 1.7B, 4B, 8B and 14B plus
-                   Qwen3-30B-A3B MoE; unified thinking and non-thinking modes with
-                   a controllable thinking token budget}
+  note          = {arXiv:2505.09388},
+  annote        = {2025-05-15. Dense models at 0.6B, 1.7B, 4B, 8B and 14B plus
+                   Qwen3-30B-A3B MoE; unified thinking and non-thinking modes
+                   with a controllable thinking token budget}
 }
 
 @misc{sanh2019distilbert,
@@ -500,8 +544,9 @@
   eprint        = {1910.01108},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {40\% smaller than BERT, 60\% faster, retaining 97\% of language
-                   understanding performance}
+  note          = {arXiv:1910.01108},
+  annote        = {40\% smaller than BERT, 60\% faster, retaining 97\% of
+                   language understanding performance}
 }
 
 @misc{he2021deberta,
@@ -513,8 +558,10 @@
   eprint        = {2006.03654},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CL},
-  note          = {Submitted 2020-06-05. Later presented at ICLR 2021 -- TODO,
-                   confirm the proceedings record if citing the conference version}
+  note          = {arXiv:2006.03654},
+  annote        = {Submitted 2020-06-05. Later presented at ICLR 2021 -- TODO,
+                   confirm the proceedings record if citing the conference
+                   version}
 }
 
 @inproceedings{reimers2019sbert,
@@ -538,8 +585,9 @@
   number  = {120},
   pages   = {1--39},
   year    = {2022},
-  note    = {arXiv:2101.03961. Intra-model expert routing, contrasted here with
-             inter-model routing}
+  note    = {arXiv:2101.03961},
+  annote  = {Intra-model expert routing, contrasted here with inter-model
+             routing}
 }
 
 @inproceedings{kwon2023vllm,
@@ -551,8 +599,9 @@
   booktitle = {Proceedings of the 29th ACM Symposium on Operating Systems
                Principles (SOSP '23)},
   year      = {2023},
-  note      = {arXiv:2309.06180, submitted 2023-09-12. 2--4x throughput over
-               FasterTransformer and Orca}
+  note      = {arXiv:2309.06180},
+  annote    = {submitted 2023-09-12. 2--4x throughput over FasterTransformer
+               and Orca}
 }
 
 
@@ -568,8 +617,9 @@
   eprint        = {1910.09700},
   archivePrefix = {arXiv},
   primaryClass  = {cs.CY},
-  note          = {v1 2019-10-21, v2 2019-11-04. Introduces the Machine Learning
-                   Emissions Calculator}
+  note          = {arXiv:1910.09700},
+  annote        = {v1 2019-10-21, v2 2019-11-04. Introduces the Machine
+                   Learning Emissions Calculator}
 }
 
 @inproceedings{strubell2019energy,
@@ -592,7 +642,8 @@
   number  = {12},
   pages   = {54--63},
   year    = {2020},
-  note    = {arXiv:1907.10597, v1 2019-07-22, v3 2019-08-13}
+  note    = {arXiv:1907.10597},
+  annote  = {v1 2019-07-22, v3 2019-08-13}
 }
 
 @misc{patterson2021carbon,
@@ -604,7 +655,8 @@
   eprint        = {2104.10350},
   archivePrefix = {arXiv},
   primaryClass  = {cs.LG},
-  note          = {Submitted 2021-04-21}
+  note          = {arXiv:2104.10350},
+  annote        = {Submitted 2021-04-21}
 }
 
 @inproceedings{luccioni2024powerhungry,
@@ -617,7 +669,7 @@
   year      = {2024},
   address   = {Rio de Janeiro, Brazil},
   doi       = {10.1145/3630106.3658542},
-  note      = {DBLP record LuccioniJS24. Measures inference-stage energy and
+  annote    = {DBLP record LuccioniJS24. Measures inference-stage energy and
                carbon per 1,000 queries by task type}
 }
 
@@ -630,7 +682,8 @@
   eprint        = {2508.09173},
   archivePrefix = {arXiv},
   primaryClass  = {cs.NI},
-  note          = {Submitted 2025-08-07. Optimises GPU frequency and batch size on
-                   an NVIDIA Jetson AGX Orin. Single-model optimisation, NOT
+  note          = {arXiv:2508.09173},
+  annote        = {Submitted 2025-08-07. Optimises GPU frequency and batch size
+                   on an NVIDIA Jetson AGX Orin. Single-model optimisation, NOT
                    multi-model routing}
 }
