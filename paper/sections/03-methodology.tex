@@ -244,11 +244,21 @@ DeBERTa-v3-small~\cite{he2021deberta} with eight sigmoid output heads,
 trained with class-weighted binary cross-entropy.
 
 \emph{R3: a language model as router.} Qwen3-0.6B, the smallest member of
-the pool, prompted zero-shot and few-shot to name a configuration with
-constrained decoding, and a LoRA-tuned
-variant~\cite{hu2022lora}. We deliberately use the smallest pool
-member: a router larger than the models it routes between defeats its own
-purpose.
+the pool, is shown the eight configurations, labelled A to H in grid
+order, and asked which is the cheapest that will answer the request
+correctly. It is prompted zero-shot and few-shot; the few-shot prompt adds
+one training prompt for each configuration that is the $\cstar$ of some
+training prompt. Rather than decode a letter, we read the model's
+next-token distribution at the first answer token, keep the mass on the
+eight letters and renormalise it. This constrains the answer to a valid
+configuration, as constrained decoding would, and yields a distribution
+over $\cstar(q)$ instead of a single guess. Treating success as monotone
+in mean cost, we set $\hat{p}_i(q)$ in \eqref{eq:router} to the mass on
+configurations whose mean cost does not exceed that of $c_i$. A LoRA-tuned
+variant~\cite{hu2022lora} is planned
+\tbd{needs the full-precision weights, not yet downloaded}. We
+deliberately use the smallest pool member: a router larger than the models
+it routes between defeats its own purpose.
 
 \emph{Cost-sensitive training.} Because misrouting costs are asymmetric, a
 variant of each trainable router weights errors by their realised cost
@@ -258,8 +268,8 @@ all errors equally.
 \subsection{Net-of-Router Accounting}
 \label{sec:net}
 
-A router is itself a workload. Each router's latency, peak memory and
-energy per decision are measured with the same instruments as the pool
+A router is itself a workload. Each router's latency and energy per
+decision are measured with the same instruments as the pool
 (Section~\ref{sec:energy}) and added to the cost of every query it routes.
 For a router $r$ and a baseline policy $b$, the \emph{net saving} is
 \begin{equation}
@@ -271,8 +281,10 @@ For a router $r$ and a baseline policy $b$, the \emph{net saving} is
 where $\cost_{\mathrm{route}}(r, q)$ is the router's own cost for $q$.
 Latency is measured directly, one decision at a time, as a deployed router
 would make them. For token cost the term is non-zero only for R3, which
-consumes input and output tokens of its own. Energy is measured with NVML
-for routers that run on the GPU. NVML cannot see a CPU router, so its energy
+consumes input and output tokens of its own. R3's decisions run through the
+labelling harness as short generations, so their tokens, latency and energy
+are metered per prompt exactly as the pool's are. NVML cannot see a CPU
+router, so its energy
 per decision is bounded above by its decision time multiplied by the upper
 end of the processor's configurable power range (54\,W), and that bound is
 what we charge.
@@ -287,13 +299,20 @@ The strongest published alternative to predicting in advance is to try the
 cheap configuration and check. We implement a cascade in the style of
 AutoMix~\cite{aggarwal2024automix}: generate on the cheapest cell, ask the
 same model to verify its answer with a few-shot self-verification prompt,
-and escalate along the P1 ladder when verification fails. The verifier's
-confidence is the probability it assigns to the answer being correct, and a
-query escalates when that confidence falls below a threshold chosen on the
-validation split. AutoMix's POMDP meta-verifier is omitted. That
-simplification may weaken the cascade relative to the original method, and
-we keep it in view wherever the cascade is compared. Verification calls are
-charged like any other generation. This baseline pays for failed attempts,
+and escalate along the P1 ladder when verification fails. The prompt's
+four worked examples are generic, and none is drawn from the corpus. The
+verifier's confidence is read from a single forward pass as
+$P(\text{Yes}) / \bigl(P(\text{Yes}) + P(\text{No})\bigr)$ at its first
+answer token, and a query escalates when that confidence falls below a
+threshold chosen on the validation split, as $\tau$ is for a router. The
+answer from $c_8$, the top rung, is kept without verification. AutoMix's
+POMDP meta-verifier is omitted. That simplification may weaken the cascade
+relative to the original method, and we keep it in view wherever the
+cascade is compared. Verification calls are metered and charged like any
+other generation: the check on the answer the cascade returns is part of
+that attempt, and the answers and checks it passes over are escalation.
+The returned answer then meets the user's check and recovery as a routed
+answer does. This baseline pays for failed attempts,
 as a user does, but decides with information from the answer itself.
 Beating it therefore requires that predicting before generation save more
 than the extra information from generating first is worth.

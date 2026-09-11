@@ -17,6 +17,7 @@ import logging
 import subprocess
 import sys
 import time
+from collections.abc import Mapping
 from dataclasses import replace
 from datetime import UTC, datetime
 from functools import partial
@@ -31,7 +32,7 @@ import pandas as pd  # noqa: E402
 import yaml  # noqa: E402
 
 from arbiter.data.corpus import read_corpus  # noqa: E402
-from arbiter.eval import analysis, robustness  # noqa: E402
+from arbiter.eval import analysis, probes, robustness  # noqa: E402
 from arbiter.eval.labels import (  # noqa: E402
     CELL_NAMES,
     SPLIT_PATTERN,
@@ -46,8 +47,10 @@ from arbiter.routers.classical import (  # noqa: E402
     FeatureBoostRouter,
     TfidfRouter,
 )
+from arbiter.routers.llm import LookupRouter  # noqa: E402
 
 LOGGER = logging.getLogger("arbiter.run_analysis")
+LLM_ROUTERS = {"route-zero": "R3-qwen3-0.6b-zero-shot", "route-few": "R3-qwen3-0.6b-few-shot"}
 
 
 def load_table(
@@ -97,6 +100,61 @@ def router_specs(cfg: dict[str, Any]) -> list[analysis.RouterSpec]:
         )
     )
     return specs
+
+
+def load_probes(cfg: dict[str, Any], kind: str, units: list[str]) -> pd.DataFrame | None:
+    """Load a probe table with costs in every unit; None if absent or missing a unit."""
+    relative = cfg.get("probes", {}).get(kind)
+    path = REPO_ROOT / relative if relative else None
+    if path is None or not path.exists():
+        LOGGER.info("no %s probe table (%s); skipped", kind, relative)
+        return None
+    frame = probes.unit_costs(pd.read_csv(path), cfg["token_prices"])
+    unmeasured = [unit for unit in units if not np.isfinite(frame[unit]).any()]
+    if unmeasured:
+        LOGGER.warning("%s probes have no measurements in %s; skipped", kind, unmeasured)
+        return None
+    return frame
+
+
+def llm_router_specs(
+    frame: pd.DataFrame, texts: Mapping[str, str], mean_cost: np.ndarray
+) -> list[analysis.RouterSpec]:
+    """Build R3 from its measured label distributions, one spec per prompting variant.
+
+    ``mean_cost`` orders the configurations when label mass is accumulated into per-cell
+    success, in the label unit on the training split.
+    """
+    specs = []
+    for variant, name in LLM_ROUTERS.items():
+        sub = frame[frame["variant"] == variant]
+        if sub.empty:
+            continue
+        parsed = sub[sub["parsed"].astype(bool)]
+        LOGGER.info("%s: %d of %d label distributions parsed", name, len(parsed), len(sub))
+        labels = parsed[list(probes.LABEL_COLUMNS)].to_numpy(dtype=float)
+        distributions = {
+            texts[pid]: row
+            for pid, row in zip(parsed["prompt_id"], labels, strict=True)
+            if pid in texts
+        }
+        specs.append(
+            analysis.RouterSpec(
+                name,
+                "R3",
+                partial(LookupRouter, distributions, mean_cost, name=name),
+                overhead=partial(probes.prompt_costs, sub),
+                device="gpu",
+            )
+        )
+    return specs
+
+
+def cascade_thresholds(ccfg: dict[str, Any]) -> list[float]:
+    """Return the cascade's threshold grid, with its extra points near one."""
+    grid = ccfg["thresholds"]
+    values = np.arange(grid["start"], grid["stop"] + 1e-9, grid["step"])
+    return sorted({round(float(v), 6) for v in [*values, *ccfg.get("extra_thresholds", [])]})
 
 
 def git_commit() -> str:
@@ -188,7 +246,7 @@ def router_analyses(
     cfg: dict[str, Any],
     n_boot: int,
 ) -> None:
-    """Train and evaluate routers; write selection, test, sweep, overhead and comparison tables."""
+    """Evaluate routers and the cascade, and write their results and comparisons."""
     items = {item.prompt_id: item.text for item in read_corpus(REPO_ROOT / cfg["corpus"])}
     parts = {}
     for name in ("train", "val", "test"):
@@ -219,13 +277,35 @@ def router_analyses(
     )
     write(out, "baselines_test", baselines)
 
+    specs = router_specs(rcfg)
+    route = load_probes(cfg, "route", units)
+    if route is not None:
+        label_costs = analysis.mean_cell_cost(parts["train"].table.costs[primary])
+        specs += llm_router_specs(route, items, label_costs)
     runs: dict[str, analysis.RouterRun] = {}
-    for spec in router_specs(rcfg):
+    families: dict[str, str] = {}
+    for spec in specs:
         started = time.time()
         runs[spec.name] = analysis.run_router(
             spec, parts["train"], parts["val"], parts["test"], settings, resamples
         )
+        families[spec.name] = spec.family
         LOGGER.info("%s in %.0f s", spec.name, time.time() - started)
+    verify = load_probes(cfg, "verify", units)
+    if verify is not None:
+        checks = {
+            name: probes.verification(verify, parts[name].table, units) for name in ("val", "test")
+        }
+        runs[analysis.CASCADE] = analysis.run_cascade(
+            parts["val"],
+            parts["test"],
+            checks["val"],
+            checks["test"],
+            settings,
+            cascade_thresholds(cfg["cascade"]),
+            resamples,
+        )
+        families[analysis.CASCADE] = "cascade"
     write(
         out, "routers_selection", pd.DataFrame([r for run in runs.values() for r in run.selection])
     )
@@ -236,8 +316,9 @@ def router_analyses(
     write(out, "frontier_area", analysis.frontier_table(sweeps, baselines))
 
     frames = []
-    per_cell = [name for name, run in runs.items() if not name.startswith("R1-direct")]
-    direct = [name for name in runs if name.startswith("R1-direct")]
+    per_cell = [name for name in runs if families[name] == "R1"]
+    direct = [name for name in runs if families[name] == "R1-direct"]
+    one_shot = [name for name in runs if families[name] in ("R1", "R3")]
     for unit in units:
         for recovery in settings.recoveries:
             for label in detections:
@@ -257,6 +338,12 @@ def router_analyses(
                         resamples,
                     ),
                 }
+                if analysis.CASCADE in runs:
+                    blocks["routers_vs_cascade"] = analysis.compare(
+                        {name: candidates[name] for name in one_shot},
+                        {analysis.CASCADE: candidates[analysis.CASCADE]},
+                        resamples,
+                    )
                 for block, frame in blocks.items():
                     frames.append(
                         frame.assign(block=block, unit=unit, recovery=recovery, detection=label)
@@ -320,6 +407,9 @@ def main() -> None:
         "capped_share": float(table.capped.mean()),
         "contaminated_share": float(table.contaminated.mean()),
         "routers": not args.skip_routers,
+        "probes": {
+            kind: (REPO_ROOT / path).exists() for kind, path in cfg.get("probes", {}).items()
+        },
         "seconds": round(time.time() - started, 1),
         "config": cfg,
     }

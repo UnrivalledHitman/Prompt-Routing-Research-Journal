@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from functools import partial
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from arbiter.eval import analysis
+from arbiter.eval.cascade import Verification
 from arbiter.eval.labels import LabelTable, assign_splits, cstar_cost
 from arbiter.eval.policies import ORACLE, Detection, manual_policy
 from arbiter.eval.routing import summarise
 from arbiter.routers.classical import DirectClassifier, TfidfRouter
+from arbiter.routers.llm import LookupRouter
 
 BASE = np.array([1.0, 3.0, 2.0, 6.0, 4.0, 12.0, 8.0, 24.0])
 SCALE = {"tokens": 100.0, "latency_s": 0.5, "energy_j": 10.0, "board_j": 15.0}
@@ -214,3 +218,78 @@ def test_frontier_table_normalises_over_static_costs() -> None:
     assert frame.loc["R", "area"] == pytest.approx((0.5 * 4 + 1.0 * 4) / 8)
     assert frame.loc["static", "area"] == pytest.approx(0.5)
     assert frame.loc["oracle", "area"] == pytest.approx(7 / 8)
+
+
+def _constant_overhead(per_unit: dict[str, float], table: LabelTable, unit: str) -> np.ndarray:
+    return np.full(len(table), per_unit[unit])
+
+
+def test_run_router_charges_measured_overhead() -> None:
+    """A metered router pays what was measured for each prompt, not a CPU timing bound."""
+    table, texts = make_table(per_family=16)
+    parts = _splits(table, texts)
+    settings = analysis.RouterSettings(
+        units=("tokens", "latency_s", "energy_j"),
+        label_unit="energy_j",
+        taus=(0.5,),
+        seeds=(0,),
+        detections={"oracle": ORACLE},
+        recoveries=("top",),
+    )
+    resamples = analysis.Resamples.draw(len(parts["test"].table), 50, seed=0)
+    per_unit = {"tokens": 40.0, "latency_s": 0.02, "energy_j": 3.0}
+    make = partial(LookupRouter, {text: np.eye(8)[7] for text in texts}, np.arange(1.0, 9.0))
+    overhead = partial(_constant_overhead, per_unit)
+    spec = analysis.RouterSpec("R3", "R3", make, overhead=overhead, device="gpu")
+    run = analysis.run_router(
+        spec, parts["train"], parts["val"], parts["test"], settings, resamples
+    )
+    test = pd.DataFrame(run.test).set_index("unit")
+    assert test.loc["tokens", "router_cost"] == pytest.approx(40.0)
+    energy = test.loc["energy_j"]
+    assert energy["net_mean_cost"] == pytest.approx(energy["mean_cost"] + 3.0)
+    record = run.overhead[0]
+    assert record["device"] == "gpu"
+    assert record["p50_s"] == pytest.approx(0.02)
+    assert record["joules_per_decision"] == pytest.approx(3.0)
+
+
+def test_run_cascade_with_a_perfect_free_verifier_matches_p1() -> None:
+    """A verifier that is always right and costs nothing stops where oracle P1 stops."""
+    table, texts = make_table(per_family=16)
+    parts = _splits(table, texts)
+    settings = analysis.RouterSettings(
+        units=("tokens", "energy_j"),
+        label_unit="energy_j",
+        taus=(),
+        seeds=(0, 1),
+        detections={"oracle": ORACLE, "illustrative": Detection(0.15, 0.05)},
+    )
+    checks = {
+        name: Verification(
+            split.table.success.astype(float),
+            {unit: np.zeros((len(split.table), 8)) for unit in settings.units},
+        )
+        for name, split in parts.items()
+    }
+    test = parts["test"].table
+    resamples = analysis.Resamples.draw(len(test), 50, seed=0)
+    run = analysis.run_cascade(
+        parts["val"], parts["test"], checks["val"], checks["test"], settings, (0.5, 1.0), resamples
+    )
+    frame = pd.DataFrame(run.test)
+    assert len(frame) == 2 * 2 * 2
+    assert set(frame["tau"]) == {1.0}
+    assert (frame["router_cost"] == 0.0).all()
+    assert len(run.evaluated) == 2 * 2 * 2
+    assert len(pd.concat(run.sweeps)) == 2 * 2
+    row = frame[
+        (frame["unit"] == "energy_j")
+        & (frame["recovery"] == "top")
+        & (frame["detection"] == "oracle")
+    ].iloc[0]
+    p1 = manual_policy(test.success, test.costs["energy_j"], "P1")
+    assert row["mean_cost"] == pytest.approx(p1.cost.mean())
+    assert row["solved_rate"] == pytest.approx(p1.solved.mean())
+    assert row["escalation"] > 0.0
+    assert run.overhead[0]["device"] == "gpu"
