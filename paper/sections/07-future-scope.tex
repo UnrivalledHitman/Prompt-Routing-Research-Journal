@@ -1,13 +1,53 @@
 % =====================================================================
-%  VII. FUTURE SCOPE  --  STUB
-%  Candidate directions, to be kept only if the results support them:
-%    - an observational study of real escalation behaviour, to replace the
-%      constructed policies and the swept detection probabilities
-%    - routing over a continuous thinking budget rather than on/off
-%    - pools that mix model families and hosted frontier tiers
-%    - online adaptation as the pool changes
+%  VII. FUTURE SCOPE
+%  The directions below follow from the design and its limitations
+%  (Section VI-B). Directions that depend on the results are added, and
+%  any of these that the results undercut are dropped, once Section V
+%  exists.
 % =====================================================================
 \section{Future Scope}
 \label{sec:future}
 
-\tbd{Section to be written once results exist.}
+Several directions follow from the limitations in
+Section~\ref{sec:limitations}.
+
+\emph{Observing escalation.} The constructed policies and the swept
+detection probabilities are the least grounded part of the comparator. A
+study that records how people move between the configurations of a tiered
+service, including where they start, how often they notice a wrong answer
+and when they give up, would replace those assumptions with estimates. It
+would turn the computed tax into a measured one and give P4 an observed
+starting distribution.
+
+\emph{Continuous reasoning budgets.} Qwen3 and several hosted services let
+the amount of reasoning be set as a token budget or an effort level rather
+than switched on or off. Treating the budget as a continuous axis would turn
+the eight-cell grid into a surface, and the router's decision into a choice
+of size and budget. The dependence of our labels on the thinking cap points
+the same way, since the cap is a budget fixed once for every prompt.
+
+\emph{Conversations and switching costs.} A cost model in which a retry
+carries the conversation so far, and in which moving to another size pays
+for loading it, would bring the tax closer to what users of memory-limited
+hardware pay. It would also make the best choice for a query depend on the
+model already loaded, which a one-shot router of the kind studied here does
+not consider.
+
+\emph{Wider pools.} Pools that mix model families, quantisation levels and
+hosted frontier tiers would test whether the minimum sufficient
+configuration can still be predicted when cells differ in more than size
+and mode, and whether the tax grows with the price gap between tiers.
+
+\emph{Whole-system energy.} Measuring processor and memory power alongside
+the GPU would close the energy boundary, and it would give CPU routers a
+measured cost in place of an upper bound.
+
+\emph{Online adaptation.} Providers change models and prices, and a router
+trained on one pool's labels goes stale. The outcomes of routed queries,
+as revealed by whether the user accepts an answer or retries, could keep a
+router current without relabelling every prompt in every cell. That is a
+partial-feedback problem, because only the routed cell's outcome is ever
+observed.
+
+\tbd{Add directions motivated by the results, and drop any of the above
+that the results undercut, once Section~\ref{sec:results} exists.}

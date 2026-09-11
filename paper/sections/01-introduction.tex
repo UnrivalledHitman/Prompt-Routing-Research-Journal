@@ -7,9 +7,9 @@
 \IEEEPARstart{A}{nyone} who uses a tiered language-model service makes an
 allocation decision before typing a word. Providers sell families of models
 that trade capability against price and latency, and a growing number also
-expose a second control: whether the model should produce an extended
-reasoning trace before its answer \citeneeded{vendor documentation of tiered
-model families with user-selectable reasoning effort}. Open-weight families
+expose a second control: whether, and how much, the model should reason
+before it answers~\cite{openai_reasoning,anthropic_effort,google_thinking}.
+Open-weight families
 now ship the same two axes. Qwen3 offers dense models from 0.6B to 14B
 parameters with a switch between thinking and non-thinking modes and a
 controllable thinking budget~\cite{qwen3}. Reasoning traces raise accuracy
@@ -71,7 +71,7 @@ The contributions are as follows.
   \item A comparison of three router families---classical classifiers,
         fine-tuned encoders, and a small language model used as a
         router---under \emph{net} accounting, in which each router's own
-        latency, memory and energy are subtracted from the saving it
+        tokens, latency and energy are subtracted from the saving it
         produces.
   \item A measured characterisation of the energy cost of the reasoning-mode
         axis, reported as joules per \emph{solved} query so that a cheap

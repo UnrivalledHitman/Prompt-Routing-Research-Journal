@@ -1,20 +1,129 @@
 % =====================================================================
-%  VI. DISCUSSION  --  STUB
-%  Planned content:
-%    A. Why the observed effects occur, including failure cases.
-%    B. Limitations, stated plainly:
-%       - all cells are Q4_K_M quantised models; size comparisons are
-%         between quantised models
-%       - the largest cell is 8B; frontier tiers may behave differently
-%         (addressed in part by the public-benchmark arm)
-%       - escalation policies are constructed, not observed
-%       - one machine and one GPU; energy figures do not transfer to other
-%         silicon and are not claimed to
-%       - labels depend on the generation caps (gate 2, finding 2)
-%       - judge validity for the open-ended family
-%    C. Implications for providers and for users.
+%  VI. DISCUSSION
+%  Sources: notes/experimental-protocol.md S10 (threats to validity) and
+%  S13 (decisions); prior-art register S-F.
+%  Subsection B is written from the design and does not depend on results.
+%  Subsections A and C wait for Section V.
 % =====================================================================
 \section{Discussion}
 \label{sec:discussion}
 
-\tbd{Section to be written once results exist.}
+\subsection{Why the Effects Occur}
+\label{sec:why}
+
+\tbd{Written once Section~\ref{sec:results} exists: where the tax comes from
+in the grid (escalation against stickiness, by family), why the router
+families order as they do once charged, the prompts on which every router
+fails, and whether the cascade's extra information from generating first is
+worth its verification cost.}
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+The limitations below are grouped by what they threaten: the comparator,
+the labels, the cost measurements, and how far the findings generalise.
+
+\emph{The comparator is constructed.} The manual escalation policies of
+Table~\ref{tab:policies} are not observed behaviour. We have no logs of how
+users of language-model services move between configurations, so the
+ladders, the starting distribution of P4 and the detection probabilities
+$p_{\mathrm{acc}}$ and $p_{\mathrm{rej}}$ are all assumptions. We limit the
+damage in three ways: by reporting a family of policies that ranges from
+frugal to wasteful, by quoting headline figures under oracle detection,
+which favours the manual policies, and by sweeping the detection
+probabilities instead of fixing them. The tax we report is therefore the
+tax these policies would pay. It is not a measurement of what real users
+pay, and it is the part of the study that most needs evidence from outside
+it.
+
+\emph{Attempts are independent single-turn requests.} Each rung of a ladder
+is costed by \eqref{eq:policycost} as a fresh request carrying only the
+prompt, and it succeeds or fails as that cell did during labelling. A user
+who escalates within one conversation also resends the earlier answers,
+which lengthens every retry, and the stronger configuration may be helped
+or misled by seeing a failed attempt. Neither effect is modelled. The first
+would make escalation more expensive than we report; the direction of the
+second is unknown.
+
+\emph{Model loading is not charged.} Labelling is model-major, and a window
+in which any generation reloaded the model is rerun
+(Section~\ref{sec:energy}), so every cost is that of a model already in
+memory. On an 8\,GB GPU that holds one model at a time, a user who escalates
+across sizes, or a router that sends consecutive queries to different sizes,
+also pays the time and energy of loading a model. Our costs understate both,
+and they understate most for whichever policy or router changes size most
+often.
+
+\emph{Labels come from one sample under fixed caps.} With $k = 1$, each
+$s(q, c)$ is a single draw of a stochastic outcome, and $\cstar(q)$ inherits
+its noise. The noise subset measures how often a label changes on
+resampling (Section~\ref{sec:decoding}). The bootstrap, however, resamples
+prompts with their labels held fixed, so its intervals do not include that
+uncertainty. The labels also depend on the generation caps. A thinking
+answer cut off at 4{,}096 tokens counts as a failure, which is the right
+rule for deployment but makes thinking cells look worse than they would with
+a longer budget. The cap reruns measure how often a longer cap would move
+$\cstar(q)$, but on a sample of capped generations rather than on all of
+them. Finally, the labels are tied to the recommended sampling settings of
+each mode, and other settings could change them.
+
+\emph{Grading is imperfect.} Math answers are compared after extraction and
+normalisation, which can reject a correct answer written in an unusual form.
+An unparseable multiple-choice answer counts as a failure even when the
+intended option is clear to a reader. Code is judged by the datasets' own
+unit tests, which can pass an incorrect function. The open-ended family
+depends on a model judge whose agreement with a stronger model and with
+human labels bounds how far its labels can be trusted
+(Section~\ref{sec:judge}), and results cover the gradable families unless
+stated otherwise.
+
+\emph{The energy boundary is the GPU board.} NVML reports GPU board power,
+so our joules exclude the processor, system memory, storage and display,
+all of which draw power while a query is served. Each query's energy is
+also apportioned rather than measured: reported power refreshes only every
+0.5\,s, so a window's dynamic energy is shared among its queries by
+generation time, with token share as a check. CPU routers are charged an
+upper bound on their energy, not a measurement. That bound works against R1
+in any comparison with a router measured on the GPU.
+
+\emph{One model family, quantised, up to 8B.} Every cell is a Q4\_K\_M
+quantisation of a Qwen3 model, so size comparisons are between quantised
+models, and quantisation need not degrade every size equally. The largest
+cell has 8B parameters. Thinking is either on or off, although Qwen3 also
+accepts a thinking budget, and the separation of the two modes was checked
+on 60 prompts per size with a lexical proxy
+(Section~\ref{sec:gate-mode}). Hosted frontier tiers differ from this pool
+in capability, in price and in how reasoning effort is exposed. The
+public-benchmark arm (Section~\ref{sec:public-arm}) is designed to test
+whether the tax analysis carries over to such pools, but it has no energy
+data.
+
+\emph{One machine.} All measurements come from one laptop and one GPU.
+Other workloads that share the machine are kept out of the measurements by
+waiting for the GPU to be idle, not by isolating it. Latency and energy
+depend on this silicon, driver and serving stack, and we do not claim that
+the figures transfer to other hardware.
+
+\emph{Public, English, single-turn prompts.} The gradable families come from
+public benchmarks, in English and single-turn. Such benchmarks may appear
+in the models' training data, which would raise success rates across the
+grid; how far that would change which cell is cheapest is unknown.
+Benchmark prompts are also more uniform than live traffic, which is one
+reason the corpus includes an open-ended family.
+
+\emph{The comparators are simplified.} The cascade follows AutoMix without
+its POMDP meta-verifier, reads its confidence from a single forward pass,
+and climbs only the P1 ladder. R3 reads its choice from next-token
+probabilities and is not trained for routing. Both simplifications may
+understate what a stronger cascade or a trained language-model router could
+achieve. All routers are trained and evaluated on one split, and $\tau$ is
+fixed on its validation part, so the reported intervals exclude the
+uncertainty of that choice (Section~\ref{sec:stats}).
+
+\subsection{Implications}
+\label{sec:implications}
+
+\tbd{Written once Section~\ref{sec:results} exists: what the size of the
+tax implies for providers that expose size and reasoning mode as separate
+controls, whether a default of routing before generation is justified once
+the router is charged, and what a user without a router should do.}
