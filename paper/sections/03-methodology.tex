@@ -142,16 +142,20 @@ Policy & Ladder & Behaviour modelled \\
 P1 & $c_1{\to}c_3{\to}c_5{\to}c_7{\to}c_8$ & \emph{Frugal climb}: cost-conscious; larger model first, thinking last \\
 P2 & $c_1{\to}c_2{\to}c_4{\to}c_6{\to}c_8$ & \emph{Think first}: turns on thinking before moving up a size \\
 P3 & $c_8$ only & \emph{Sticky high}: heavyweight left selected from earlier work \\
-P4 & Start sampled from past usage, then the P1 ladder & \emph{Sticky mixed}: a population of users \\
+P4 & Start drawn from an assumed distribution over cells, then the P1 ladder & \emph{Sticky mixed}: a population of users \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \emph{Policy family.} We construct the comparator ourselves, so we
 construct it generously. Table~\ref{tab:policies} lists four policies that
-range from frugal to wasteful. P4 draws its starting cell from an empirical
-distribution of previously used cells \decision{source of the P4 starting
-distribution}.
+range from frugal to wasteful. P4 models a population of users who start
+wherever they left off. We have no usage logs from which to estimate where
+that is, so its starting distribution is an assumption: uniform over the
+eight cells in the primary analysis, and, as a sensitivity analysis, a
+distribution in which half of all queries start at $c_8$ and the rest are
+spread evenly over the other seven cells. Both are labelled as assumed
+wherever they are reported.
 
 \emph{Failure detection.} An escalating user has to notice that an answer
 is wrong. We evaluate two regimes. Under \emph{oracle detection} the user
@@ -159,17 +163,25 @@ always notices, and never discards a correct answer. This regime favours
 the manual policies, so it gives a lower bound on the tax, and it is the
 regime we quote in headline results. Under \emph{imperfect detection} the
 user accepts a wrong answer with probability $p_{\mathrm{acc}}$ and
-rejects a correct one with probability $p_{\mathrm{rej}}$. A prompt then
-may end unsolved, so costs are reported per \emph{solved} prompt,
+rejects a correct one with probability $p_{\mathrm{rej}}$. The answer from
+the last rung is kept whatever its quality, because the ladder has run out.
+A prompt may then end unsolved, so costs are also reported per
+\emph{solved} prompt,
 \begin{equation}
   \bar{\cost}_{\mathrm{solved}}(\pi) =
   \frac{\mathbb{E}_q\bigl[\mathrm{Cost}(\pi, q)\bigr]}
        {\Pr_q\bigl[\text{$q$ solved under $\pi$}\bigr]},
   \label{eq:persolved}
 \end{equation}
-and the two probabilities are swept rather than fixed
-\decision{whether $p_{\mathrm{acc}}$ and $p_{\mathrm{rej}}$ can be grounded
-in a citation or a small user study; placeholders 0.15 and 0.05}.
+We have no measurement of the two probabilities for users of LLM
+services, so they are treated as assumptions and swept:
+$p_{\mathrm{acc}} \in \{0, 0.05, 0.10, 0.15, 0.20, 0.30\}$ and
+$p_{\mathrm{rej}} \in \{0, 0.05, 0.10\}$. The point $p_{\mathrm{acc}} =
+0.15$, $p_{\mathrm{rej}} = 0.05$ is shown only as an illustration. Every
+outcome of a policy, including its tax and its probability of solving a
+prompt, is an expectation over the user's accept-or-reject decisions, so we
+compute it exactly from the labelled success vectors rather than by
+simulating users.
 
 \subsection{Routers as Per-Cell Success Predictors}
 \label{sec:routers}
@@ -210,10 +222,13 @@ kept as an ablation.
 \emph{What happens after a misroute.} A router that picks a failing cell
 does not end the interaction; the user still needs an answer. We charge a
 routed policy the same way as a manual one: the routed cell is the first
-attempt, and on failure the prompt is resubmitted to the largest thinking
-cell $c_8$ \decision{recovery rule after a failed routed attempt: direct to
-$c_8$, or continue up the P1 ladder}. The escalation tax of a router is then
-computed with \eqref{eq:tax} exactly as for $\pi$.
+attempt, and on failure the prompt is resubmitted once to the largest
+thinking cell $c_8$. As a sensitivity analysis, a failed routed attempt
+instead continues up the P1 ladder from the routed cell. The escalation tax
+of a router is then computed with \eqref{eq:tax} exactly as for $\pi$. For
+each cost unit, recovery rule and detection regime, $\tau$ is chosen on the
+validation split to minimise the net cost per solved prompt, router cost
+included, and the test split is evaluated once at that value.
 
 We compare three router families, chosen to span four orders of magnitude
 in their own cost.
@@ -255,8 +270,13 @@ For a router $r$ and a baseline policy $b$, the \emph{net saving} is
   \label{eq:netsaving}
 \end{equation}
 where $\cost_{\mathrm{route}}(r, q)$ is the router's own cost for $q$.
-For latency and energy this term is measured directly. For token cost it
-is non-zero only for R3, which consumes input and output tokens of its own.
+Latency is measured directly, one decision at a time, as a deployed router
+would make them. For token cost the term is non-zero only for R3, which
+consumes input and output tokens of its own. Energy is measured with NVML
+for routers that run on the GPU. NVML cannot see a CPU router, so its energy
+per decision is bounded above by its decision time multiplied by the upper
+end of the processor's configurable power range (54\,W), and that bound is
+what we charge.
 Ranking router families by gross saving and by $S_{\mathrm{net}}$ need not
 give the same order, and testing whether it does is one of the aims of the
 study.
@@ -267,14 +287,17 @@ study.
 The strongest published alternative to predicting in advance is to try the
 cheap configuration and check. We implement a cascade in the style of
 AutoMix~\cite{aggarwal2024automix}: generate on the cheapest cell, ask the
-same model to verify its answer with few-shot self-verification prompts,
-and escalate along the P1 ladder when verification fails. Verification
-calls are charged like any other generation. This baseline pays for failed
-attempts, as a user does, but decides with information from the answer
-itself. Beating it therefore requires that predicting before generation
-save more than the extra information from generating first is worth.
-\decision{decision rule for the cascade: verification threshold as in
-AutoMix, or its POMDP router}
+same model to verify its answer with a few-shot self-verification prompt,
+and escalate along the P1 ladder when verification fails. The verifier's
+confidence is the probability it assigns to the answer being correct, and a
+query escalates when that confidence falls below a threshold chosen on the
+validation split. AutoMix's POMDP meta-verifier is omitted. That
+simplification may weaken the cascade relative to the original method, and
+we keep it in view wherever the cascade is compared. Verification calls are
+charged like any other generation. This baseline pays for failed attempts,
+as a user does, but decides with information from the answer itself.
+Beating it therefore requires that predicting before generation save more
+than the extra information from generating first is worth.
 
 \subsection{Energy Measurement}
 \label{sec:energy}
@@ -289,16 +312,25 @@ power. Second, reported power refreshes only every 0.5\,s and is smoothed.
 A short no-think answer from the smallest model can finish inside a single
 refresh period, so its energy cannot be read from its own time window.
 
-Energy is therefore integrated over \emph{batches}. Each batch runs many
-prompts on one cell back to back; the batch window is extended by a 2\,s
-tail after the last generation to capture the decay of the smoothed reading.
-The integral is computed with the trapezoidal rule. We report two
-quantities: total energy, the raw integral, and dynamic energy, which
-subtracts an idle baseline measured for 60\,s before the batch. Dynamic
-energy is the figure we attribute to queries. Each query receives a share of
-its batch's dynamic energy in proportion to its share of the batch's
-generation wall time, and on a subsample we check that apportioning by token
-share gives the same result. Routers are measured the same way.
+Energy is therefore integrated over \emph{batch windows}. Prompts are taken
+in batches of 20, and each batch is run twice back to back on the loaded
+model, once per mode, so that every window holds a single cell. The mode
+that runs first alternates from one batch to the next. Each window is
+extended by a 6\,s tail after its last generation, because a pilot run
+showed that reported power takes about 5\,s to decay once generation stops;
+a shorter tail would charge one window's decay to the next. The integral is
+computed with the trapezoidal rule. Readings above 200\,W, which the GPU
+cannot draw under its 115\,W limit, are discarded as read errors; one such
+reading appeared in the pilot run. We report two quantities: board energy,
+the raw integral, and dynamic energy, which subtracts the idle power of the
+GPU with the model loaded. That baseline is the mean power over 60\,s after
+warm-up and 30\,s at the end of each model's session. Dynamic energy is the
+figure we attribute to queries. Each query receives a share of its window's
+dynamic energy in proportion to its share of the window's generation wall
+time, and we check that apportioning by token share gives the same result.
+A window is discarded and rerun, up to four times, if utilisation at the
+end of its tail shows another workload or if any of its generations had to
+reload the model. Routers that run on the GPU are measured the same way.
 
 Two derived measures connect energy to the escalation tax. \emph{Joules per
 solved query} divides the energy a policy spends, including failed attempts,
