@@ -1,0 +1,447 @@
+{
+  "gate": "gate2_mode_separation",
+  "analysed_at_utc": "2026-09-11T05:35:15.154361+00:00",
+  "thresholds": {
+    "auc_min": 0.9,
+    "auc_partial_min": 0.75,
+    "max_nothink_leak_rate": 0.05,
+    "max_marker_density_ratio": 0.5
+  },
+  "reasoning_markers": [
+    "wait",
+    "hmm",
+    "let me",
+    "let's",
+    "okay, so",
+    "alternatively",
+    "double-check",
+    "double check",
+    "on second thought",
+    "i think",
+    "first,",
+    "actually,"
+  ],
+  "decoding": {
+    "think": {
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0.0,
+      "num_predict": 4096
+    },
+    "no_think": {
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "min_p": 0.0,
+      "num_predict": 4096
+    }
+  },
+  "sizes": {
+    "0.6b": {
+      "tag": "qwen3:0.6b-q4_K_M",
+      "n_pairs": 60,
+      "tokens_median": {
+        "think": 1444.0,
+        "no_think": 194.5
+      },
+      "tokens_iqr": {
+        "think": [
+          729.75,
+          3654.75
+        ],
+        "no_think": [
+          19.25,
+          290.25
+        ]
+      },
+      "tokens_median_by_family": {
+        "code": {
+          "think": 2117.5,
+          "no_think": 200.0
+        },
+        "math": {
+          "think": 2469.0,
+          "no_think": 297.0
+        },
+        "mcq": {
+          "think": 679.5,
+          "no_think": 11.0
+        }
+      },
+      "auc_think_longer": 0.96375,
+      "paired_dominance": 1.0,
+      "wilcoxon_p": 1.629044415254058e-11,
+      "median_token_ratio": 13.94680473072433,
+      "median_token_ratio_ci95": [
+        9.421787709497206,
+        19.726027397260275
+      ],
+      "nothink_leak_rate": 0.0,
+      "nothink_nonempty_thinking_rate": 0.0,
+      "nothink_think_tag_rate": 0.0,
+      "marker_density_per_100_tokens": {
+        "think_trace": 1.6623636651035354,
+        "no_think_answer": 0.06631299734748011
+      },
+      "marker_density_ratio": 0.03989078848360777,
+      "cap_hit_rate": {
+        "think": 0.21666666666666667,
+        "no_think": 0.0
+      },
+      "throughput_tok_per_s": {
+        "think": 269.07947841031944,
+        "no_think": 311.9865255141039
+      },
+      "accuracy": {
+        "think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.55
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.3
+          }
+        },
+        "no_think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.4
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.25
+          }
+        }
+      },
+      "checks": {
+        "auc": true,
+        "leak_rate": true,
+        "marker_density_ratio": true
+      },
+      "status": "separated"
+    },
+    "1.7b": {
+      "tag": "qwen3:1.7b-q4_K_M",
+      "n_pairs": 60,
+      "tokens_median": {
+        "think": 2052.5,
+        "no_think": 184.0
+      },
+      "tokens_iqr": {
+        "think": [
+          904.5,
+          4096.0
+        ],
+        "no_think": [
+          97.5,
+          366.25
+        ]
+      },
+      "tokens_median_by_family": {
+        "code": {
+          "think": 2698.0,
+          "no_think": 183.0
+        },
+        "math": {
+          "think": 3031.0,
+          "no_think": 373.5
+        },
+        "mcq": {
+          "think": 949.0,
+          "no_think": 65.0
+        }
+      },
+      "auc_think_longer": 0.9538888888888889,
+      "paired_dominance": 1.0,
+      "wilcoxon_p": 1.6295557943119345e-11,
+      "median_token_ratio": 9.110638458063544,
+      "median_token_ratio_ci95": [
+        7.59741973712562,
+        11.890625
+      ],
+      "nothink_leak_rate": 0.0,
+      "nothink_nonempty_thinking_rate": 0.0,
+      "nothink_think_tag_rate": 0.0,
+      "marker_density_per_100_tokens": {
+        "think_trace": 1.4447812772391024,
+        "no_think_answer": 0.04869866349223527
+      },
+      "marker_density_ratio": 0.03370659923368867,
+      "cap_hit_rate": {
+        "think": 0.31666666666666665,
+        "no_think": 0.0
+      },
+      "throughput_tok_per_s": {
+        "think": 146.4353984160615,
+        "no_think": 162.28079664520024
+      },
+      "accuracy": {
+        "think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.55
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.6
+          }
+        },
+        "no_think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.6
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.8
+          }
+        }
+      },
+      "checks": {
+        "auc": true,
+        "leak_rate": true,
+        "marker_density_ratio": true
+      },
+      "status": "separated"
+    },
+    "4b": {
+      "tag": "qwen3:4b-q4_K_M",
+      "n_pairs": 60,
+      "tokens_median": {
+        "think": 1428.5,
+        "no_think": 149.0
+      },
+      "tokens_iqr": {
+        "think": [
+          650.0,
+          3718.0
+        ],
+        "no_think": [
+          97.0,
+          292.75
+        ]
+      },
+      "tokens_median_by_family": {
+        "code": {
+          "think": 2178.0,
+          "no_think": 118.0
+        },
+        "math": {
+          "think": 2215.5,
+          "no_think": 337.5
+        },
+        "mcq": {
+          "think": 650.0,
+          "no_think": 131.0
+        }
+      },
+      "auc_think_longer": 0.9276388888888889,
+      "paired_dominance": 0.9833333333333333,
+      "wilcoxon_p": 1.8964365613380834e-11,
+      "median_token_ratio": 7.008114704087858,
+      "median_token_ratio_ci95": [
+        5.340797244094488,
+        11.512362637362639
+      ],
+      "nothink_leak_rate": 0.0,
+      "nothink_nonempty_thinking_rate": 0.0,
+      "nothink_think_tag_rate": 0.0,
+      "marker_density_per_100_tokens": {
+        "think_trace": 1.5788094312851888,
+        "no_think_answer": 0.06688590379577504
+      },
+      "marker_density_ratio": 0.042364773398476795,
+      "cap_hit_rate": {
+        "think": 0.25,
+        "no_think": 0.0
+      },
+      "throughput_tok_per_s": {
+        "think": 71.64646118450474,
+        "no_think": 76.06789214702891
+      },
+      "accuracy": {
+        "think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.65
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.7
+          }
+        },
+        "no_think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.95
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.85
+          }
+        }
+      },
+      "checks": {
+        "auc": true,
+        "leak_rate": true,
+        "marker_density_ratio": true
+      },
+      "status": "separated"
+    },
+    "8b": {
+      "tag": "qwen3:8b-q4_K_M",
+      "n_pairs": 60,
+      "tokens_median": {
+        "think": 1814.0,
+        "no_think": 179.5
+      },
+      "tokens_iqr": {
+        "think": [
+          822.25,
+          3531.25
+        ],
+        "no_think": [
+          61.25,
+          242.75
+        ]
+      },
+      "tokens_median_by_family": {
+        "code": {
+          "think": 2636.5,
+          "no_think": 134.5
+        },
+        "math": {
+          "think": 1920.5,
+          "no_think": 272.0
+        },
+        "mcq": {
+          "think": 738.0,
+          "no_think": 60.5
+        }
+      },
+      "auc_think_longer": 0.9533333333333334,
+      "paired_dominance": 1.0,
+      "wilcoxon_p": 1.6295557943119345e-11,
+      "median_token_ratio": 9.650121065375302,
+      "median_token_ratio_ci95": [
+        7.703703703703703,
+        17.00497512437811
+      ],
+      "nothink_leak_rate": 0.0,
+      "nothink_nonempty_thinking_rate": 0.0,
+      "nothink_think_tag_rate": 0.0,
+      "marker_density_per_100_tokens": {
+        "think_trace": 1.609312439596852,
+        "no_think_answer": 0.0731981981981982
+      },
+      "marker_density_ratio": 0.04548414366108736,
+      "cap_hit_rate": {
+        "think": 0.21666666666666667,
+        "no_think": 0.0
+      },
+      "throughput_tok_per_s": {
+        "think": 43.86744582492448,
+        "no_think": 45.55112641441788
+      },
+      "accuracy": {
+        "think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.75
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.8
+          }
+        },
+        "no_think": {
+          "math": {
+            "n": 20,
+            "accuracy": 0.95
+          },
+          "mcq": {
+            "n": 20,
+            "accuracy": 0.95
+          }
+        }
+      },
+      "checks": {
+        "auc": true,
+        "leak_rate": true,
+        "marker_density_ratio": true
+      },
+      "status": "separated"
+    }
+  },
+  "passed": true,
+  "git_commit": "2ff49ee0d78c43525407318dd8b8b78bb3c30d00",
+  "models": [
+    {
+      "size": "0.6b",
+      "tag": "qwen3:0.6b-q4_K_M",
+      "digest": "7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435",
+      "size_bytes": 522653767,
+      "parameter_size": "751.63M",
+      "quantization": "Q4_K_M",
+      "family": "qwen3",
+      "context_length": 40960,
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "template_mentions_think": true
+    },
+    {
+      "size": "1.7b",
+      "tag": "qwen3:1.7b-q4_K_M",
+      "digest": "8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+      "size_bytes": 1359293444,
+      "parameter_size": "2.0B",
+      "quantization": "Q4_K_M",
+      "family": "qwen3",
+      "context_length": 40960,
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "template_mentions_think": true
+    },
+    {
+      "size": "4b",
+      "tag": "qwen3:4b-q4_K_M",
+      "digest": "2bfd38a7daaf4b1037efe517ccb73d1a3bbd4822cf89f1a82be1569050a114e0",
+      "size_bytes": 2620788260,
+      "parameter_size": "4.0B",
+      "quantization": "Q4_K_M",
+      "family": "qwen3",
+      "context_length": 40960,
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "template_mentions_think": true
+    },
+    {
+      "size": "8b",
+      "tag": "qwen3:8b-q4_K_M",
+      "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+      "size_bytes": 5225388164,
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M",
+      "family": "qwen3",
+      "context_length": 40960,
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "template_mentions_think": true
+    }
+  ],
+  "n_prompts": 60
+}
