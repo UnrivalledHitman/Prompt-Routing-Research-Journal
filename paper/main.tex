@@ -75,7 +75,7 @@ stickiness component. We then ask whether a small predictor, placed in
 front of an eight-cell pool of Qwen3 models (0.6B to 8B parameters, each
 with thinking on and off), can select that minimum sufficient configuration
 before any generation, and whether the saving survives once the router is
-charged for its own latency, memory and energy. Every prompt in a
+charged for its own tokens, latency and energy. Every prompt in a
 stratified corpus of mathematics, code, multiple-choice and open-ended
 tasks is run through all eight cells on a consumer laptop GPU with measured
 board power. We compare classical classifiers, fine-tuned encoders and a
