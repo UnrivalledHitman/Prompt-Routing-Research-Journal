@@ -27,6 +27,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from arbiter.energy.carbon import J_PER_KWH, carbon_g
 from arbiter.eval.cascade import Verification, cascade_outcome, cascade_sweep
 from arbiter.eval.labels import (
     CELL_NAMES,
@@ -360,6 +361,42 @@ def policy_table(
                         }
                     )
     return pd.DataFrame(rows)
+
+
+def carbon_table(
+    policies: pd.DataFrame,
+    intensities: Mapping[str, float],
+    unit: str = "energy_j",
+    per: float = 1000.0,
+) -> pd.DataFrame:
+    """Convert the energy rows of a policy table to carbon at each grid intensity.
+
+    One row per scope, detection model, policy and intensity. The conversion is a
+    multiplication, so a figure's interval bounds carry over to carbon unchanged and no
+    resampling is repeated here. ``per`` is the number of queries the carbon is reported
+    for; 1,000 follows the convention of Luccioni et al.
+    """
+    rows = policies[policies["unit"] == unit]
+    out = []
+    for name, intensity in intensities.items():
+        for _, row in rows.iterrows():
+            record = {
+                "scope": row["scope"],
+                "unit": unit,
+                "detection": row["detection"],
+                "policy": row["policy"],
+                "grid": name,
+                "intensity_g_per_kwh": float(intensity),
+                "kwh": row["mean_cost"] * per / J_PER_KWH,
+            }
+            for statistic in ("mean_cost", "tax", "escalation", "stickiness"):
+                target = "carbon" if statistic == "mean_cost" else f"carbon_{statistic}"
+                for suffix in ("", "_lo", "_hi"):
+                    value = row.get(f"{statistic}{suffix}")
+                    if value is not None:
+                        record[f"{target}{suffix}"] = carbon_g(value * per, intensity)
+            out.append(record)
+    return pd.DataFrame(out)
 
 
 def detection_sweep(

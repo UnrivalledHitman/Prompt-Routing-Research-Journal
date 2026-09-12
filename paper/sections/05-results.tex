@@ -10,7 +10,8 @@
 %       static policies, P1--P4, the cascade and the oracle.
 %    D. Net-of-router accounting (H3): gross vs net ordering of families.
 %    E. Energy of the reasoning-mode axis (H4): joules per solved query by
-%       size, mode and family; where thinking costs more than a size step.
+%       size, mode and family; where thinking costs more than a size step,
+%       and the same tax in carbon across a bracket of grid intensities.
 %    F. Asymmetric misallocation (H5): regret decomposition, over-routing
 %       cost vs under-routing failure rate.
 % =====================================================================
@@ -159,3 +160,23 @@ beside the solved column.}
 \tbd{Written when the hosted main stage finishes: the ladder and where
 high effort falls off it, the $c^*$ distribution against the local
 grid's, the policy taxes, and the reasoning-token cost of the mode axis.}
+
+\subsection{Carbon of the Escalation Tax}
+\label{sec:results-carbon}
+
+\begin{table}[!t]
+\caption{Carbon of the escalation tax under oracle detection, in grams of
+CO$_2$e per 1{,}000 queries. The kWh column is the policy's own energy for
+those queries; every carbon figure follows from it by multiplication. The
+four columns are grid carbon intensities in gCO$_2$e/kWh: 50 for a grid
+carried by nuclear or hydro, 250 for a large renewable share, 475 for the
+figure usually quoted as the global average, and 700 for a grid carried by
+coal. They are round values spanning the range grids occupy, not
+measurements of a named region.}
+\label{tab:carbon}
+\centering
+\generated{tables/carbon.tex}{\input{tables/carbon}}
+\end{table}
+
+\tbd{Written with the local energy results: the tax in carbon terms, and
+whether the bracket is wide enough to reorder the policies.}

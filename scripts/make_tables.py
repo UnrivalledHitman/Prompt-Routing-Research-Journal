@@ -210,6 +210,32 @@ def table_tax(frame: pd.DataFrame, unit: str) -> str | None:
     return tabular("@{}llrrrrrr@{}", header, body, breaks)
 
 
+def table_carbon(frame: pd.DataFrame) -> str | None:
+    """Carbon of the escalation tax per 1,000 queries, across the grid-intensity bracket.
+
+    Rows are policies under oracle detection; columns are grid intensities, headed by the
+    intensity itself and named in the caption. The conversion from energy is a
+    multiplication, so this table adds no statistics to the energy tax table.
+    """
+    rows = frame[(frame["scope"] == "all") & (frame["detection"] == "oracle")]
+    if rows.empty:
+        return None
+    grids = rows[["grid", "intensity_g_per_kwh"]].drop_duplicates()
+    grids = grids.sort_values("intensity_g_per_kwh")
+    body = []
+    for policy in POLICIES:
+        block = rows[rows["policy"] == policy].set_index("grid")
+        if block.empty:
+            continue
+        line = [POLICIES[policy], num(block["kwh"].iloc[0], 3)]
+        line += [num(block.loc[g, "carbon_tax"], 2) for g in grids["grid"]]
+        body.append(line)
+    if not body:
+        return None
+    header = ["Policy", "kWh"] + [f"{i:.0f}" for i in grids["intensity_g_per_kwh"]]
+    return tabular("@{}lr" + "r" * len(grids) + "@{}", header, body)
+
+
 def table_routers(
     tests: pd.DataFrame,
     baselines: pd.DataFrame,
@@ -438,7 +464,7 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     names = ("labels_cells", "tax_policies", "routers_test", "baselines_test", "comparisons",
              "frontier_area", "routers_overhead", "label_noise_cstar", "cap_sensitivity",
-             "energy_apportioning")  # fmt: skip
+             "energy_apportioning", "carbon")  # fmt: skip
     t = {name: read(args.analysis, name) for name in names}
     if t["labels_cells"] is not None:
         write(args.out, "cells", table_cells(t["labels_cells"]))
@@ -451,6 +477,8 @@ def main() -> None:
         ]
         if all(frame is not None for frame in router_inputs):
             write(args.out, f"routers_{unit}", table_routers(*router_inputs, unit))
+    if t["carbon"] is not None:
+        write(args.out, "carbon", table_carbon(t["carbon"]))
     if t["routers_overhead"] is not None:
         write(args.out, "overhead", table_overhead(t["routers_overhead"]))
     write(

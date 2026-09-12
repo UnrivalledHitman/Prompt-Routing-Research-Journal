@@ -248,9 +248,12 @@ each generation and integrates over the window by the trapezoidal rule to obtain
 Dynamic energy is the honest number for attributing cost to a query; total is reported alongside because
 data-centre accounting usually quotes it.
 
-**Carbon.** `gCO2e = (joules / 3.6e6) * grid_intensity`, with the grid intensity factor and its source
-stated explicitly, and results reported across a range of regional factors rather than one number. This
-follows the accounting style of `luccioni2024powerhungry` and `lacoste2019quantifying`.
+**Carbon.** `gCO2e = (joules / 3.6e6) * grid_intensity`, computed by `arbiter.energy.carbon`
+and reported by `analysis.carbon_table` across the intensities listed in `configs/analysis.yaml`
+(50, 250, 475 and 700 gCO2e/kWh) rather than at one value. Those are round values spanning the
+range grids occupy, labelled as assumed wherever they appear; the conversion is linear, so a
+reported figure rescales to any other intensity. This follows the accounting style of
+`luccioni2024powerhungry` and `lacoste2019quantifying`.
 
 **The router is measured with the identical harness.** Every router family's own joules, latency and peak
 VRAM are recorded the same way and subtracted from the saving. This is the thing GreenServ, EcoThink and

@@ -354,10 +354,12 @@ solved query} divides the energy a policy spends, including failed attempts,
 by the number of prompts it solves, so a cheap configuration that fails and
 triggers a retry is charged for the retry. \emph{Carbon} is reported as
 $\mathrm{gCO_2e} = (E / 3.6 \times 10^{6})\,I$ for a grid intensity $I$ in
-gCO$_2$e/kWh, over a range of regional intensities rather than a single
-value, following the accounting of Lacoste \emph{et
+gCO$_2$e/kWh, following the accounting of Lacoste \emph{et
 al.}~\cite{lacoste2019quantifying} and Luccioni \emph{et
-al.}~\cite{luccioni2024powerhungry}. NVML reports whole-board power, so any
+al.}~\cite{luccioni2024powerhungry}. The intensity belongs to the grid, not
+to the experiment, and grids differ by more than an order of magnitude, so
+carbon is reported across a bracket of intensities rather than at one value.
+The conversion is linear, so any figure rescales to another intensity. NVML reports whole-board power, so any
 other GPU workload contaminates the reading; measurement windows require an
 otherwise idle GPU, and utilisation is logged throughout to flag windows where
 it does not match the scheduled work.

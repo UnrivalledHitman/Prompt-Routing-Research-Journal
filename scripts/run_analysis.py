@@ -198,12 +198,10 @@ def label_analyses(
     write(out, "labels_cells", analysis.label_summary(table, units))
     write(out, "labels_cstar", analysis.cstar_distribution(table, units))
     started = time.time()
-    write(
-        out,
-        "tax_policies",
-        analysis.policy_table(table, units, detections, p4, n_boot, seed, level),
-    )
+    policies = analysis.policy_table(table, units, detections, p4, n_boot, seed, level)
+    write(out, "tax_policies", policies)
     LOGGER.info("policy table in %.0f s", time.time() - started)
+    write(out, "carbon", analysis.carbon_table(policies, cfg["carbon"]["intensities"]))
     sweeps = [
         analysis.detection_sweep(table, unit, grid["p_accept_wrong"], grid["p_reject_right"], p4)
         for unit in units
