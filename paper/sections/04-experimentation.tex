@@ -396,7 +396,12 @@ the local cap bounds, the trace included, and a truncated response is a
 failure exactly as a local cap hit is. Answers are graded by the same
 graders, and the pool summary, the $c^*$ distribution, the policy table and
 the mode comparison are computed by the same code as
-Section~\ref{sec:public-arm}.
+Section~\ref{sec:public-arm}. Because the two ladders differ by orders of
+magnitude in absolute price, the paired comparison is made by rank rather
+than by cell: which size step a prompt needs on its own ladder, and whether
+it needs the costly mode. It also counts what the hosted ladder rescues ---
+the prompts no local cell answers, and the hosted rung that answers them ---
+which is the one thing the local grid cannot report about itself.
 
 Three limits are worth stating plainly. First, the hosted models reject the
 temperature and nucleus parameters the local protocol sets per mode, so

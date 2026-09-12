@@ -672,6 +672,14 @@ cost is computed from the provider's own reported token counts, never from an es
   provider refuses a batch naming more than one model, so a stage runs as one batch per model, each
   carrying that model's two efforts -- grouped this way rather than one batch per cell so that a size is
   never half-run. The budget is checked once against the whole stage before any of its batches is sent.
+- **Pairing.** The hosted prompts come from the local main subset, so each prompt carries a `c*` from
+  both ladders. The two differ by orders of magnitude in absolute price, so they are compared by rank,
+  not by cell: which size step a prompt needs on its own ladder, and whether it needs the costly mode.
+  Both ladders are size-major and mode-minor, so one rank reading serves for `c1`..`c8` and `h1`..`h6`.
+  The pairing also counts what the hosted ladder rescues -- prompts no local cell answers, and the
+  hosted rung that does -- which is the one thing the local grid cannot report about itself. The local
+  per-prompt `c*` is read from the analysis' own `splits.csv`; a unit that table does not carry fails
+  loudly rather than joining to nothing and looking like agreement.
 - **Grading.** The local graders, unchanged: `arbiter.eval.grading.grade` reads the hosted record because
   the record carries `content` and `done_reason` under the local names. Analysis reuses
   `arbiter.eval.public` in full, so pool summary, `c*` distribution, policy table and mode comparison are
