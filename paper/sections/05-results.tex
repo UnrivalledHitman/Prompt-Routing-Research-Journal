@@ -26,7 +26,8 @@ inference and is final.}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figures/public_frontier}
+\generated{figures/public_frontier.pdf}
+{\includegraphics[width=\columnwidth]{figures/public_frontier}}
 \caption{The thirteen models of the public pool, the cost--accuracy
 frontier they define and where the escalation policies land on it. Cost is
 logarithmic, in US dollars per 1{,}000 queries. P3 sits on the top rung it
@@ -46,7 +47,7 @@ the four models on the cost--accuracy frontier, which are the rungs of the
 escalation ladder.}
 \label{tab:public-pool}
 \centering
-\input{tables/public_pool}
+\generated{tables/public_pool.tex}{\input{tables/public_pool}}
 \end{table*}
 
 \begin{table*}[!t]
@@ -58,7 +59,7 @@ that answers fewer queries can show a negative tax, underpaying by
 failing, so the tax is read beside the solved column.}
 \label{tab:public-tax}
 \centering
-\input{tables/public_tax}
+\generated{tables/public_tax.tex}{\input{tables/public_tax}}
 \end{table*}
 
 The local grid stops at 8B parameters. Section~\ref{sec:public-arm}
@@ -123,7 +124,8 @@ and P1 2.64 times, against 7.96 and 2.69.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figures/hosted_frontier}
+\generated{figures/hosted_frontier.pdf}
+{\includegraphics[width=\columnwidth]{figures/hosted_frontier}}
 \caption{The six hosted cells on the cost--accuracy plane, open for
 minimal reasoning effort and filled for high. Cost is logarithmic, in US
 dollars per 1{,}000 queries. The grey line is the frontier the escalation
@@ -140,7 +142,7 @@ as output. A cap hit is a truncated generation, counted as a failure
 exactly as a local cap hit is.}
 \label{tab:hosted-cells}
 \centering
-\input{tables/hosted_cells}
+\generated{tables/hosted_cells.tex}{\input{tables/hosted_cells}}
 \end{table*}
 
 \begin{table*}[!t]
@@ -151,7 +153,7 @@ show a negative tax by underpaying through failure, so the tax is read
 beside the solved column.}
 \label{tab:hosted-tax}
 \centering
-\input{tables/hosted_tax}
+\generated{tables/hosted_tax.tex}{\input{tables/hosted_tax}}
 \end{table*}
 
 \tbd{Written when the hosted main stage finishes: the ladder and where

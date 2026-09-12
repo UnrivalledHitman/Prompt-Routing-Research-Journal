@@ -20,6 +20,7 @@
 %  \tbd{...}          number or statement that depends on an unrun experiment
 %  \citeneeded{...}   claim that needs a source not yet verified into refs.bib
 %  \decision{...}     open decision from notes/experimental-protocol.md S12
+%  \generated{f}{c}   float c, or a TBD marker while f is still ungenerated
 % =====================================================================
 
 \documentclass[journal]{IEEEtran}
@@ -37,6 +38,10 @@
 \newcommand{\tbd}[1]{\textcolor{red}{[TBD: #1]}}
 \newcommand{\citeneeded}[1]{\textcolor{red}{[CITATION NEEDED: #1]}}
 \newcommand{\decision}[1]{\textcolor{orange}{[DECISION: #1]}}
+% \generated{file}{content}: typeset content once the analysis scripts have
+% written file, and a marker until they have, so the draft always compiles.
+\newcommand{\generated}[2]{\IfFileExists{#1}{#2}{\tbd{not yet generated:
+\url{#1}}}}
 
 % Notation used throughout
 \newcommand{\cells}{\mathcal{C}}
