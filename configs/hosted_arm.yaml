@@ -1,0 +1,84 @@
+# Hosted-frontier arm (experimental protocol section 14).
+#
+# The local grid stops at 8B. This arm repeats the same six-cell design on a hosted
+# ladder whose rungs span 25x in price, over prompts already labelled locally, so every
+# hosted cell is paired with a local c*. Cells are named h1..h6, size-major and
+# mode-minor, mirroring c1..c8: h1 = nano/minimal, h2 = nano/high, and so on.
+#
+# The reasoning-effort axis is NOT the same object as Qwen3's /think and /no_think. It is
+# a four-valued knob, and `minimal` still permits some reasoning tokens. The paper says so
+# rather than treating the two axes as interchangeable.
+#
+# Requests go through the Batch API: 50% of list price, a 24 h completion window. Caps
+# mirror the local protocol exactly -- 4,096 output tokens at high effort and 2,048 at
+# minimal -- and, as locally, a truncated generation is a failure, not a partial credit.
+
+seed: 20260912
+corpus: data/processed/corpus.jsonl
+raw_dir: results/raw/hosted
+out_dir: results/processed/hosted_arm
+endpoint: /v1/responses
+completion_window: 24h
+poll_s: 60
+
+# Prices in US dollars per million tokens, read from developers.openai.com/api/docs/pricing
+# on 2026-09-12. `batch_multiplier` is the Batch API discount the same page states.
+pricing:
+  fetched: 2026-09-12
+  source: https://developers.openai.com/api/docs/pricing
+  batch_multiplier: 0.5
+  models:
+    gpt-5-nano: {input: 0.05, cached_input: 0.005, output: 0.40}
+    gpt-5-mini: {input: 0.25, cached_input: 0.025, output: 2.00}
+    gpt-5: {input: 1.25, cached_input: 0.125, output: 10.00}
+    gpt-5.4: {input: 2.50, cached_input: 0.25, output: 15.00}
+
+# The ladder, cheapest first. `cap` is max_output_tokens, which on a reasoning model counts
+# the reasoning tokens too -- so it mirrors the local cap, which counts the think trace.
+cells:
+  - {cell: h1, model: gpt-5-nano, effort: minimal, cap: 2048}
+  - {cell: h2, model: gpt-5-nano, effort: high, cap: 4096}
+  - {cell: h3, model: gpt-5-mini, effort: minimal, cap: 2048}
+  - {cell: h4, model: gpt-5-mini, effort: high, cap: 4096}
+  - {cell: h5, model: gpt-5, effort: minimal, cap: 2048}
+  - {cell: h6, model: gpt-5, effort: high, cap: 4096}
+
+# Hard spend limit, authorised by the repository owner on 2026-09-12. The meter refuses to
+# submit a batch whose worst case -- every request emitting its full cap -- would carry the
+# cumulative total past `cap_usd`. Actual spend is recorded per batch in the ledger.
+budget:
+  cap_usd: 8.00
+  reserve_usd: 0.25    # never planned against; absorbs retries and rounding
+  ledger: results/processed/hosted_arm/ledger.jsonl
+
+stages:
+  # One prompt, one cell, to prove the endpoint accepts reasoning effort and returns the
+  # reasoning-token count. Costs a fraction of a cent.
+  smoke:
+    n_prompts: 1
+    cells: [h1]
+    select: pilot
+  # Measures what high effort actually spends, which is the one number the local run cannot
+  # supply. The main batch is sized from its result, not from an estimate.
+  pilot:
+    n_prompts: 40
+    select: main
+  # n_prompts is decided from the pilot's measured cost per prompt and written back here
+  # before the batch is submitted.
+  main:
+    n_prompts: null
+    select: main
+
+# Prompts are drawn stratified by family from those the local run has already labelled, so
+# the hosted and local c* are computed over the same queries.
+sampling:
+  families: [math, code, mcq]
+  exclude_stages: [smoke, pilot]   # a prompt is used by at most one stage
+
+success:
+  primary: 1.0
+
+bootstrap:
+  n_boot: 10000
+  level: 0.95
+  seed: 20260912

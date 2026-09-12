@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +50,7 @@ PUBLIC_POLICIES = {
     "random": "Random, then top",
     "oracle": "Oracle",
 }
+HOSTED_EFFORTS = {"minimal": "Minimal", "high": "High"}
 PER_THOUSAND = 1000.0  # published costs are dollars per query; the tables report per 1,000
 
 
@@ -344,7 +345,9 @@ def table_public_pool(pool: pd.DataFrame, cstar: pd.DataFrame) -> str | None:
     return tabular("@{}lrrrrc@{}", header, body, breaks=[len(body) - 1], colsep=4)
 
 
-def table_public_tax(frame: pd.DataFrame) -> str | None:
+def table_public_tax(
+    frame: pd.DataFrame, static: Callable[[str], str] | None = None
+) -> str | None:
     """Escalation tax on the public benchmark, in dollars per 1,000 queries."""
     rows = frame[(frame["scope"] == "all") & (frame["unit"] == "dollars")].set_index("policy")
     if rows.empty:
@@ -356,9 +359,9 @@ def table_public_tax(frame: pd.DataFrame) -> str | None:
         if policy not in rows.index:
             continue
         row = rows.loc[policy]
-        label = PUBLIC_POLICIES.get(
-            policy, rf"Always \texttt{{{str(policy).removeprefix('always-')}}}"
-        )
+        name = str(policy).removeprefix("always-")
+        fallback = static(name) if static else rf"Always \texttt{{{name}}}"
+        label = PUBLIC_POLICIES.get(policy, fallback)
         body.append(
             [
                 label,
@@ -374,6 +377,29 @@ def table_public_tax(frame: pd.DataFrame) -> str | None:
     return tabular("@{}lrrrrr@{}", header, body, breaks, colsep=4)
 
 
+def table_hosted_cells(cells: pd.DataFrame) -> str | None:
+    """Accuracy, output and reasoning tokens, cap-hit rate and price of every hosted cell."""
+    if cells.empty:
+        return None
+    body = [
+        [
+            f"$h_{row['cell'][1:]}$",
+            rf"\texttt{{{row['model']}}}",
+            HOSTED_EFFORTS.get(row["effort"], str(row["effort"])),
+            num(row["cap"], 0),
+            pct(row["accuracy"]),
+            num(row["mean_completion_tokens"], 0),
+            num(row["mean_reasoning_tokens"], 0),
+            pct(row["cap_hit_rate"]),
+            num(PER_THOUSAND * row["mean_cost_usd"], 2),
+        ]
+        for _, row in cells.iterrows()
+    ]
+    header = ["Cell", "Model", "Effort", "Cap", r"Acc.\ (\%)", "Out.\\ tok.", "Reas.\\ tok.",
+              r"Cap hit (\%)", r"Cost (\$/1{,}000)"]  # fmt: skip
+    return tabular("@{}lllrrrrrr@{}", header, body, colsep=3)
+
+
 def main() -> None:
     """Write every table for which the analysis wrote its inputs."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -382,6 +408,9 @@ def main() -> None:
     parser.add_argument("--units", nargs="+", default=["energy_j", "tokens"])
     parser.add_argument(
         "--public", type=Path, default=None, help="public-benchmark arm results directory"
+    )
+    parser.add_argument(
+        "--hosted", type=Path, default=None, help="hosted-frontier arm results directory"
     )
     args = parser.parse_args()
     logging.basicConfig(
@@ -416,6 +445,18 @@ def main() -> None:
             write(args.out, "public_pool", table_public_pool(p["pool"], p["cstar"]))
         if p["tax_policies"] is not None:
             write(args.out, "public_tax", table_public_tax(p["tax_policies"]))
+    if args.hosted is not None:
+        h = {n: read(args.hosted, n) for n in ("cells", "tax_policies")}
+        if h["cells"] is not None:
+            write(args.out, "hosted_cells", table_hosted_cells(h["cells"]))
+        if h["tax_policies"] is not None:
+            write(
+                args.out,
+                "hosted_tax",
+                table_public_tax(
+                    h["tax_policies"], lambda name: f"Always $h_{{{name[1:]}}}$"
+                ),
+            )
 
 
 if __name__ == "__main__":

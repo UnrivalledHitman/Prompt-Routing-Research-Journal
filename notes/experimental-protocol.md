@@ -390,6 +390,7 @@ model loads into four and avoids reload thrash on a memory-tight GPU.
 | 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Needs download approval |
 | 4 | Full router sweep, ablations, seeds | ~6-10 h | — |
 | 5 | Public-benchmark arm (no local inference) | 4 min (actual) | **Done 2026-09-12**, see §13.5 |
+| 6 | Hosted-frontier arm (no local inference, $8 cap) | minutes (batch) | **Started 2026-09-12**, see §14 |
 
 GPU use for the study was granted on 2026-09-11. The harness still waits for an otherwise idle GPU
 before loading a model and reruns any window touched by another workload, so the user's own GPU jobs are
@@ -633,3 +634,100 @@ subset chosen per dataset.
 - **Result.** P3 costs 7.96x the minimum sufficient cost and answers 58.8% of queries; P1 costs 2.69x and
   answers 76.2%; the oracle answers 82.0%. Per solved query, $102.08, $57.38 and $25.47 per 1,000. The
   tax survives the move to a frontier pool.
+
+## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
+
+The local grid stops at 8B and the public arm (§13.5) has no mode axis. This arm restores both at once: a
+hosted ladder whose rungs span 25x in price, crossed with a reasoning-effort axis, over prompts the local
+run has already labelled, so each hosted `c*` is paired with a local one. No GPU is used and nothing is
+downloaded.
+
+**Spend.** $8.00 authorised by the repository owner on 2026-09-12, with $0.25 of that held as reserve and
+never planned against. `arbiter.hosted.pricing.Meter` keeps a JSONL ledger (`results/processed/hosted_arm/
+ledger.jsonl`) and refuses to submit a batch whose **worst case** -- every request emitting its full output
+cap -- would carry the cumulative total past the cap. An in-flight batch is charged at its worst case until
+its actual cost is known, so the guard holds across invocations and cannot be defeated by a crash. Actual
+cost is computed from the provider's own reported token counts, never from an estimate.
+
+- **Pool.** Six cells, `h1`..`h6`, size-major and mode-minor as `c1`..`c8` are: `gpt-5-nano`, `gpt-5-mini`
+  and `gpt-5`, each at `minimal` and `high` reasoning effort. List prices per million tokens, read from
+  developers.openai.com/api/docs/pricing on 2026-09-12, are $0.05/$0.40, $0.25/$2.00 and $1.25/$10.00 for
+  input and output; the ladder therefore spans a factor of 25 in price against the local grid's much
+  narrower spread.
+- **Requests.** One user message carrying exactly the prompt text the local pool saw, no system message.
+  Caps mirror the local protocol: 4,096 output tokens at high effort and 2,048 at minimal. On a reasoning
+  model `max_output_tokens` counts reasoning tokens, so the cap bounds the same thing the local cap bounds,
+  the trace included. A truncated response is a failure, as a local cap hit is.
+- **Not a matched comparison of decoding.** The reasoning models reject the temperature, top-p, top-k and
+  min-p the local protocol sets per mode, so sampling is the provider's default. The arm claims a matched
+  *prompt* and a matched *cap*, not matched decoding.
+- **The effort axis is close to the mode axis, but is not the same object.** `/think` and `/no_think` are a
+  binary switch on one model's chat template; `reasoning_effort` is a four-valued knob the provider owns.
+  Measured on the pilot, the two ends behave alike: across all 120 `minimal` responses, every one of the
+  three models reported exactly zero reasoning tokens, so `minimal` is reasoning off in practice rather
+  than merely reasoning reduced. That is a stronger analogy than anticipated before the run, and it is
+  reported as a measurement, not assumed: the setting is the provider's and could change under the same
+  name. The paper states this rather than treating the two axes as interchangeable.
+- **Batching.** Requests go through the Batch API at 50% of list price, a 24 h completion window. The
+  provider refuses a batch naming more than one model, so a stage runs as one batch per model, each
+  carrying that model's two efforts -- grouped this way rather than one batch per cell so that a size is
+  never half-run. The budget is checked once against the whole stage before any of its batches is sent.
+- **Grading.** The local graders, unchanged: `arbiter.eval.grading.grade` reads the hosted record because
+  the record carries `content` and `done_reason` under the local names. Analysis reuses
+  `arbiter.eval.public` in full, so pool summary, `c*` distribution, policy table and mode comparison are
+  computed by exactly the code that produced them for the public arm.
+- **Losses against the local grid.** The provider returns the reasoning-token *count* but not the trace, so
+  the leak-rate and marker-density checks of §10 have no counterpart here. There is no energy: the arm
+  reports dollars and tokens only.
+
+| Stage | Prompts | Requests | Worst case | Actual |
+|-------|---------|----------|-----------|--------|
+| smoke | 1 | 1 | $0.0004 | $0.00002 |
+| pilot | 40 | 240 | $1.5334 | see §14.1 |
+| main | sized from the pilot | | | |
+
+The pilot exists to measure what `high` effort actually spends, which is the one quantity the local run
+cannot supply; the main batch is sized from its measured cost per prompt, not from a projection.
+
+### 14.1 Pilot result (run 2026-09-12)
+
+40 prompts x 6 cells = 240 responses, 0 errors, 5 cap hits (all at `h2`). Cost **$0.2639** against a
+worst case of $1.5334, that is 17.2% of the bound, so the guard is sound but loose -- which is what
+motivated the wave campaign in 14.2.
+
+| cell | model | effort | accuracy | output tok | reasoning tok | cap hits | $/1,000 prompts |
+|------|-------|--------|---------:|-----------:|--------------:|---------:|----------------:|
+| h1 | gpt-5-nano | minimal | 62.5% | 108 | 0 | 0.0% | 0.02 |
+| h2 | gpt-5-nano | high | 85.0% | 1,738 | 1,664 | 12.5% | 0.35 |
+| h3 | gpt-5-mini | minimal | 97.5% | 147 | 0 | 0.0% | 0.16 |
+| h4 | gpt-5-mini | high | 97.5% | 824 | 675 | 0.0% | 0.84 |
+| h5 | gpt-5 | minimal | 100.0% | 132 | 0 | 0.0% | 0.73 |
+| h6 | gpt-5 | high | 100.0% | 887 | 760 | 0.0% | 4.50 |
+
+Three findings, all provisional on 40 prompts:
+
+1. **`minimal` emits zero reasoning tokens** on all three models, over 120 responses. See the corrected
+   caveat in 14.
+2. **The cost-accuracy ladder is `h1 -> h3 -> h5`: every rung is a minimal-effort cell.** High effort is
+   off the frontier at all three sizes. `h3` beats `h2` on both cost and accuracy; `h6` costs 6.2x `h5`
+   for no accuracy gain. 92.5% of prompts are cheapest-solved at a minimal cell, against 88.3% no-think
+   on the local grid -- the local headline replicates on hosted frontier models.
+3. **Relative tax: P1 0.34x, P3 10.60x, P4-uniform 17.41x, random 17.81x.** Same ordering as the local
+   grid, wider spread, as expected from a ladder spanning 25x in price rather than ~13x in parameters.
+
+Weakness: `gpt-5` answers 100% of these 40 prompts, so the top of the ladder is untested and no prompt
+is unservable. The main run exists to find the prompts that need the upper rungs.
+
+### 14.2 Wave campaign (main stage, run 2026-09-12)
+
+The guard approves only the worst case, but measured generations came in at 17% of it, so a single
+worst-case-sized batch would have bought 195 prompts and left most of the budget unusable. The main
+stage therefore runs as a sequence of waves: each wave is sized to the worst case the *remaining*
+budget allows, submitted under the same check, and then settled at its measured cost, which frees the
+difference for the next wave. The guard is never loosened -- at every instant, committed spend is the
+worst case of everything unsettled -- and the arm reaches roughly 852 of the 858 available prompts for
+an expected ~$5.6 rather than 195 for $1.3.
+
+Waves share one records file and one ledger, and each wave's prompts are withheld from later waves by
+prompt id, so the campaign is resumable: an interrupted run resumes from what its own input files show
+was already paid for.

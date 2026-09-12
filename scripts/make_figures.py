@@ -445,6 +445,61 @@ def fig_public(pool: pd.DataFrame, taxes: pd.DataFrame, out: Path) -> None:
     save(fig, out, "public_frontier")
 
 
+HOSTED_SHORT = {"gpt-5-nano": "nano", "gpt-5-mini": "mini", "gpt-5": "gpt-5"}
+HOSTED_EFFORT = {"minimal": ("o", "none"), "high": ("^", "C0")}
+
+
+def fig_hosted(cells: pd.DataFrame, pool: pd.DataFrame, taxes: pd.DataFrame, out: Path) -> None:
+    """Accuracy against dollars on the hosted ladder, with the reasoning-effort axis marked.
+
+    One point per hosted cell, filled for high reasoning effort and open for minimal, so the
+    mode axis reads as a horizontal displacement at fixed model size. The grey line is the
+    cost-ordered frontier the escalation policies climb.
+    """
+    spec = cells.rename(columns={"model": "family", "cell": "model"})
+    rows = pool[pool["scope"] == "all"].merge(
+        spec[["model", "family", "effort"]], on="model", how="left"
+    )
+    policies = taxes[(taxes["scope"] == "all") & (taxes["unit"] == "dollars")].set_index("policy")
+    if not usable(rows, "hosted cells") or not usable(policies, "hosted policies"):
+        return
+    rows = rows.sort_values("mean_dollars")
+    cost = PER_THOUSAND * rows["mean_dollars"].to_numpy()
+    accuracy = 100.0 * rows["accuracy"].to_numpy()
+    ladder = rows["on_ladder"].to_numpy(dtype=bool)
+    fig, ax = plt.subplots(figsize=(COLUMN_IN, 2.3))
+    ax.plot(cost[ladder], accuracy[ladder], color="0.6", linewidth=0.9, zorder=1,
+            label="Escalation ladder")  # fmt: skip
+    for effort, (marker, fill) in HOSTED_EFFORT.items():
+        mask = (rows["effort"] == effort).to_numpy()
+        if not mask.any():
+            continue
+        ax.scatter(cost[mask], accuracy[mask], marker=marker, s=26, zorder=5,
+                   facecolors=fill, edgecolors="C0", linewidths=0.9,
+                   label=f"{effort.capitalize()} effort")  # fmt: skip
+    edge = cost.min() * (cost.max() / cost.min()) ** 0.55
+    for family, x, y in zip(rows["family"], cost, accuracy, strict=True):
+        left = x > edge  # a label out here would run off the axis
+        ax.annotate(HOSTED_SHORT.get(family, str(family)), (x, y),
+                    textcoords="offset points", xytext=(-4 if left else 4, -7),
+                    ha="right" if left else "left", va="top", fontsize=5.5,
+                    color="C0")  # fmt: skip
+    for policy, marker, color in (("P1", "s", "C1"), ("P3", "v", "C3"), ("oracle", "*", "C2")):
+        if policy not in policies.index:
+            continue
+        row = policies.loc[policy]
+        ax.scatter(PER_THOUSAND * row["mean_cost"], 100.0 * row["solved_rate"], marker=marker,
+                   s=50 if marker == "*" else 26, color=color, zorder=3,
+                   label="Oracle" if policy == "oracle" else policy)  # fmt: skip
+    ax.set_xscale("log")
+    ax.set_xlim(cost.min() / 1.9, cost.max() * 1.9)  # room for the end labels
+    ax.set_xlabel("Cost (US\\$ per 1000 queries)")
+    ax.set_ylabel("Queries answered (\\%)")
+    ax.legend(frameon=False, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 1.0),
+              handletextpad=0.3, columnspacing=0.8)  # fmt: skip
+    save(fig, out, "hosted_frontier")
+
+
 def main() -> None:
     """Draw every figure for which the analysis wrote its input."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -453,6 +508,9 @@ def main() -> None:
     parser.add_argument("--units", nargs="+", default=["energy_j", "tokens"])
     parser.add_argument(
         "--public", type=Path, default=None, help="public-benchmark arm results directory"
+    )
+    parser.add_argument(
+        "--hosted", type=Path, default=None, help="hosted-frontier arm results directory"
     )
     args = parser.parse_args()
     logging.basicConfig(
@@ -488,6 +546,10 @@ def main() -> None:
         pool, taxes = read(args.public, "pool"), read(args.public, "tax_policies")
         if pool is not None and taxes is not None:
             fig_public(pool, taxes, args.out)
+    if args.hosted is not None:
+        h = {n: read(args.hosted, n) for n in ("cells", "pool", "tax_policies")}
+        if all(frame is not None for frame in h.values()):
+            fig_hosted(h["cells"], h["pool"], h["tax_policies"], args.out)
 
 
 if __name__ == "__main__":
