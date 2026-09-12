@@ -689,6 +689,12 @@ cost is computed from the provider's own reported token counts, never from an es
   hosted rung that does -- which is the one thing the local grid cannot report about itself. The local
   per-prompt `c*` is read from the analysis' own `splits.csv`; a unit that table does not carry fails
   loudly rather than joining to nothing and looking like agreement.
+- **Policies.** `P1`, `P3`, `P4` and `random` are the public arm's, built from the pool's own cost
+  frontier, and on this pool that frontier holds only the minimal-effort rungs. `P2` cannot be
+  discovered that way and is named instead: start at the cheapest model in the cheap mode, then take
+  the costly mode at each size in turn. The rungs are derived from the pool's shape rather than
+  hard-coded, and the derivation reproduces the local grid's `P2` exactly when given eight cells, so
+  the two arms report the same policy rather than two policies with one name.
 - **Grading.** The local graders, unchanged: `arbiter.eval.grading.grade` reads the hosted record because
   the record carries `content` and `done_reason` under the local names. Analysis reuses
   `arbiter.eval.public` in full, so pool summary, `c*` distribution, policy table and mode comparison are

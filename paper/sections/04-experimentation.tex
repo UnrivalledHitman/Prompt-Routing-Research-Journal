@@ -408,6 +408,12 @@ than by cell: which size step a prompt needs on its own ladder, and whether
 it needs the costly mode. It also counts what the hosted ladder rescues ---
 the prompts no local cell answers, and the hosted rung that answers them ---
 which is the one thing the local grid cannot report about itself.
+The escalation policies are those of Section~\ref{sec:public-arm}, built
+from the pool's own cost frontier, with one addition: that frontier contains
+no high-effort cell, so $P_2$ --- start cheap, then take the costly mode at
+each size in turn --- is named rather than discovered. Its rungs follow from
+the pool's shape, and the same rule applied to eight cells reproduces the
+local grid's $P_2$, so the arms report one policy under one name.
 
 Three limits are worth stating plainly. First, the hosted models reject the
 temperature and nucleus parameters the local protocol sets per mode, so
