@@ -443,6 +443,17 @@ digests. Raw generations are stored with their token counts, timings, seeds
 and energy. The processed tables that every result is computed from contain
 prompt identifiers but no prompt text, and the corpus can be rebuilt from
 the public source datasets with the recorded seed and fingerprints.
+
+The hosted arm adds a spend ledger. Every batch is recorded with its
+identifier, the worst case it was approved against and the cost finally
+settled from the provider's own token counts, so each dollar figure in this
+paper can be audited line by line rather than taken on trust. The prices
+themselves are recorded with the date they were read. The hosted models are
+not reproducible artefacts in the way a pinned local checkpoint is: a
+provider may change what a model, or an effort setting, does under an
+unchanged name. That is a limitation of any hosted measurement, and it is
+the reason the local grid rather than this arm carries the paper's primary
+claims.
 \decision{code and data availability statement and release timing, given
 the pending patent filing; a conservative draft is ``available from the
 corresponding author on reasonable request''}
