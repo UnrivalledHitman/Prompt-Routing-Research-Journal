@@ -1,0 +1,13 @@
+# Stages the progress board dates once the labelling grid stops. Hours are estimates, scaled
+# from the pilot's measured throughput to each stage's request count, and they are kept here
+# rather than in code so that a revised estimate is a data change. The grid's own remaining
+# time is never taken from this file: it is measured from the run's records.
+queue:
+  - {name: "grade + attribute energy, rerun analysis", hours: 0.5, detail: "CPU; also writes carbon.csv"}
+  - {name: "train the three neural routers", hours: 1.0, detail: "GPU, minutes each plus the tau sweep"}
+  - {name: "cap reruns at 8,192 tokens", hours: 4.6, detail: "GPU; the capped thinking responses again"}
+  - {name: "label-noise stage, three seeds", hours: 4.6, detail: "GPU; feeds the noise ceiling"}
+  - {name: "rebuild the corpus with the open family", hours: 0.2, detail: "CPU; Dolly enabled once labelling stops"}
+  - {name: "open-family generation over the grid", hours: 12.3, detail: "GPU; 300 prompts x 8 cells"}
+  - {name: "judge the open family + validation", hours: 4.5, detail: "GPU; llama3.1:8b is already local"}
+  - {name: "probes: verify, route_zero, route_few", hours: 8.0, detail: "GPU; 6-10 h depending on cap hits"}
