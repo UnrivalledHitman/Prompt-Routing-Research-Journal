@@ -168,6 +168,7 @@ def policy_outcomes(
     ladder: Sequence[int],
     models: Sequence[str],
     detection: Detection = ORACLE,
+    extra: Mapping[str, Sequence[int]] | None = None,
 ) -> dict[str, Outcome]:
     """Evaluate the escalation policies, the static ones and the oracle.
 
@@ -175,6 +176,11 @@ def policy_outcomes(
     uniformly over the pool and then climbs, and ``random`` picks a model uniformly and
     recovers at the top rung. A static ``always-<model>`` policy is reported for each rung
     of the ladder; :func:`pool_summary` covers the models off it.
+
+    ``extra`` names further ladders to climb, for a pool whose models have a structure the
+    cost frontier does not see. A pool of sizes crossed with a cheap and a costly mode has
+    a mode-first ladder that the frontier will not contain whenever the costly mode is not
+    worth its price on average, which is exactly the comparison such a pool exists to make.
     """
     k, top = success.shape[1], ladder[-1]
     weights = np.full(k, 1.0 / k)
@@ -188,6 +194,8 @@ def policy_outcomes(
         "P4-uniform": mixture(climbs, weights),
         "random": mixture(retries, weights),
     }
+    for name, rungs in (extra or {}).items():
+        outcomes[name] = ladder_outcome(success, cost, rungs, detection)
     if detection == ORACLE:
         outcomes |= {f"always-{models[i]}": static_policy(success, cost, i) for i in ladder}
         outcomes["oracle"] = oracle_outcome(success, cost, top)
@@ -201,8 +209,12 @@ def tax_table(
     n_boot: int = 10000,
     seed: int = 0,
     level: float = 0.95,
+    extra: Mapping[str, Sequence[int]] | None = None,
 ) -> pd.DataFrame:
-    """Tabulate tax, escalation, stickiness and cost per solved query for every policy."""
+    """Tabulate tax, escalation, stickiness and cost per solved query for every policy.
+
+    ``extra`` passes further named ladders through to :func:`policy_outcomes`.
+    """
     detections = detections or {"oracle": ORACLE}
     rows = []
     for scope, sub in scopes(table):
@@ -212,7 +224,7 @@ def tax_table(
             cost = sub.costs[unit]
             best = cstar_cost(sub.success, cost)
             for label, detection in detections.items():
-                outcomes = policy_outcomes(sub.success, cost, ladder, sub.models, detection)
+                outcomes = policy_outcomes(sub.success, cost, ladder, sub.models, detection, extra)
                 for policy, outcome in outcomes.items():
                     rows.append(
                         {

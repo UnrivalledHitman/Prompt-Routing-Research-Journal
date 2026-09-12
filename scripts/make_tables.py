@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +49,13 @@ PUBLIC_POLICIES = {
     "P4-uniform": "P4, uniform start",
     "random": "Random, then top",
     "oracle": "Oracle",
+}
+# The hosted pool has a mode axis the public one lacks, so it also reports the
+# costly-mode-first policy. Its P1 stays the frontier climb the public arm reports.
+HOSTED_POLICIES = {
+    "P1": PUBLIC_POLICIES["P1"],
+    "P2": "P2, costly mode first",
+    **{name: label for name, label in PUBLIC_POLICIES.items() if name != "P1"},
 }
 HOSTED_EFFORTS = {"minimal": "Minimal", "high": "High"}
 PER_THOUSAND = 1000.0  # published costs are dollars per query; the tables report per 1,000
@@ -345,12 +352,20 @@ def table_public_pool(pool: pd.DataFrame, cstar: pd.DataFrame) -> str | None:
     return tabular("@{}lrrrrc@{}", header, body, breaks=[len(body) - 1], colsep=4)
 
 
-def table_public_tax(frame: pd.DataFrame, static: Callable[[str], str] | None = None) -> str | None:
-    """Escalation tax on the public benchmark, in dollars per 1,000 queries."""
+def table_public_tax(
+    frame: pd.DataFrame,
+    static: Callable[[str], str] | None = None,
+    labels: Mapping[str, str] | None = None,
+) -> str | None:
+    """Escalation tax on a priced pool, in dollars per 1,000 queries.
+
+    ``labels`` names and orders the policies; it defaults to the public arm's set.
+    """
+    labels = labels or PUBLIC_POLICIES
     rows = frame[(frame["scope"] == "all") & (frame["unit"] == "dollars")].set_index("policy")
     if rows.empty:
         return None
-    names = [p for p in PUBLIC_POLICIES if p != "oracle" and p in rows.index]
+    names = [p for p in labels if p != "oracle" and p in rows.index]
     statics = [p for p in rows.index if str(p).startswith("always-")]
     body, breaks = [], [len(names), len(names) + len(statics)]
     for policy in [*names, *statics, "oracle"]:
@@ -359,7 +374,7 @@ def table_public_tax(frame: pd.DataFrame, static: Callable[[str], str] | None = 
         row = rows.loc[policy]
         name = str(policy).removeprefix("always-")
         fallback = static(name) if static else rf"Always \texttt{{{name}}}"
-        label = PUBLIC_POLICIES.get(policy, fallback)
+        label = labels.get(policy, fallback)
         body.append(
             [
                 label,
@@ -457,7 +472,11 @@ def main() -> None:
             write(
                 args.out,
                 "hosted_tax",
-                table_public_tax(h["tax_policies"], lambda name: f"Always $h_{{{name[1:]}}}$"),
+                table_public_tax(
+                    h["tax_policies"],
+                    lambda name: f"Always $h_{{{name[1:]}}}$",
+                    HOSTED_POLICIES,
+                ),
             )
 
 

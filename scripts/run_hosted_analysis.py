@@ -129,6 +129,19 @@ def write(out: Path, name: str, frame: pd.DataFrame) -> None:
     LOGGER.info("wrote %s.csv (%d rows)", name, len(frame))
 
 
+def mode_first_ladder(cells: int, per_size: int = MODES_PER_SIZE) -> tuple[int, ...]:
+    """Return the rungs of the costly-mode-first policy, the local grid's ``P2``.
+
+    Start at the cheapest model in the cheap mode, then take the costly mode at each size
+    in turn. On the local grid of four sizes this is ``c1, c2, c4, c6, c8``; on the hosted
+    ladder of three it is ``h1, h2, h4, h6``. The cost frontier will not contain this
+    ladder whenever the costly mode is not worth its price on average, which is why it has
+    to be named rather than discovered.
+    """
+    sizes = cells // per_size
+    return (0, *(per_size * size + per_size - 1 for size in range(sizes)))
+
+
 def cell_rank(name: str, per_size: int = MODES_PER_SIZE) -> tuple[int, int]:
     """Return ``(size rank, mode rank)`` for a size-major, mode-minor cell name.
 
@@ -267,7 +280,8 @@ def main() -> None:
     ladder = summary[(summary["scope"] == "all") & summary["on_ladder"]]["model"].tolist()
     LOGGER.info("ladder: %s", " -> ".join(ladder))
     write(out, "cstar", public.cstar_distribution(table, units))
-    taxes = public.tax_table(table, units, **kwargs)
+    extra = {"P2": mode_first_ladder(len(table.models))}
+    taxes = public.tax_table(table, units, extra=extra, **kwargs)
     write(out, "tax_policies", taxes)
 
     # The mode axis, one pair per size: high effort against minimal on the same model.
@@ -306,7 +320,7 @@ def main() -> None:
         "relative_tax": {
             policy: round(float(headline.loc[policy, "relative_tax"]), 4)
             for policy in headline.index
-            if policy in {"P1", "P3", "P4-uniform", "random", "oracle"}
+            if policy in {"P1", "P2", "P3", "P4-uniform", "random", "oracle"}
         },
         "pairing": paired,
     }

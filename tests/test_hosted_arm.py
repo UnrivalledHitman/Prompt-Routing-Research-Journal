@@ -12,6 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 from arbiter.data.corpus import PromptItem
@@ -690,3 +691,32 @@ def test_cell_report_reports_no_finished_accuracy_when_nothing_finished() -> Non
     report = cell_report(frame, CFG).set_index("cell")
     assert report.loc["h1", "finished"] == 0
     assert pd.isna(report.loc["h1", "accuracy_finished"])
+
+
+def test_mode_first_ladder_matches_the_local_grid_definition() -> None:
+    """The hosted P2 has to be the same policy as the local P2, not a lookalike."""
+    from run_hosted_analysis import mode_first_ladder
+
+    from arbiter.eval.policies import P2 as LOCAL_P2
+
+    # Four sizes with a cheap and a costly mode is the local grid: c1, c2, c4, c6, c8.
+    assert mode_first_ladder(8) == LOCAL_P2
+    # Three sizes is the hosted ladder: h1, h2, h4, h6.
+    assert mode_first_ladder(6) == (0, 1, 3, 5)
+
+
+def test_extra_ladder_is_evaluated_and_leaves_the_others_alone() -> None:
+    """A named ladder adds a policy; the frontier policies must not shift under it."""
+    from arbiter.eval import public as pub
+
+    # Two cells: the cheap one answers the first prompt, the dear one answers both.
+    success = np.array([[True, True], [False, True]])
+    cost = np.array([[1.0, 10.0], [1.0, 10.0]])
+    plain = pub.policy_outcomes(success, cost, (0, 1), ["h1", "h2"])
+    withp2 = pub.policy_outcomes(success, cost, (0, 1), ["h1", "h2"], extra={"P2": (1,)})
+    assert "P2" not in plain
+    assert set(withp2) == set(plain) | {"P2"}
+    for name, outcome in plain.items():
+        assert outcome.cost.tolist() == withp2[name].cost.tolist(), name
+    # P2 here is "go straight to the dear cell", which is what always-h2 costs.
+    assert withp2["P2"].cost.tolist() == plain["always-h2"].cost.tolist()
