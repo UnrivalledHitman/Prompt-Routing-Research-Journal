@@ -390,7 +390,7 @@ model loads into four and avoids reload thrash on a memory-tight GPU.
 | 3 | Main labelling, 900 further gradable prompts | ~28 h | After the pilot is clean |
 | 3a | Noise subset, 75 prompts x 2 extra samples | ~4.7 h | — |
 | 3b | Cap sensitivity, think cap 8192 on cap-hit prompts | ~5 h | — |
-| 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Needs download approval |
+| 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Judge confirmed 2026-09-13 |
 | 4 | Full router sweep, ablations, seeds | ~6-10 h | — |
 | 5 | Public-benchmark arm (no local inference) | 4 min (actual) | **Done 2026-09-12**, see §13.5 |
 | 6 | Hosted-frontier arm (no local inference, $8 cap) | minutes (batch) | **Started 2026-09-12**, see §14 |
@@ -534,7 +534,9 @@ silicon and will not be claimed to.
 ## 12. Open decisions
 
 1. **Open-ended dataset** — source, licence, redistributability. Blocks §4.
-2. **Judge model identity** — pending VRAM headroom measurement. Blocks §5.4.
+2. **Judge model identity** — resolved 2026-09-13: `llama3.1:8b-instruct-q4_K_M`, confirmed by Indrajeet
+   (§5.4, §13.2). The validation reference is `gpt-5-mini` under a $0.36 ceiling he authorised, separate
+   from and not fungible with the $8.00 of the hosted arm (§14).
 3. **`p_accept` / `p_retry`** — cite, measure, or sweep and label as assumed. Blocks the headline tax number.
 4. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship
    and ORCID. Needed for the LaTeX template, not for any experiment.
@@ -569,13 +571,13 @@ failure. Because the think cap could make larger models look worse than they are
 reruns prompts that hit the cap with an 8,192-token cap, and the paper reports how many oracle labels
 change.
 
-### 13.2 Open-ended family and judge (pending downloads)
+### 13.2 Open-ended family and judge
 
-Proposed source: `databricks/databricks-dolly-15k` (CC BY-SA 3.0, 12.5 MB), stratified by category,
-human-written responses as references. Proposed judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GB,
-out-of-family). The judge runs after labelling, never loaded alongside a routed model. Neither is
-downloaded until Indrajeet approves it. Until then the corpus has 1,200 gradable prompts, and every result
-states that the open-ended family is not yet included.
+Source: `databricks/databricks-dolly-15k` (CC BY-SA 3.0, 12.5 MB), stratified by category, human-written
+responses as references. Judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GiB, which `ollama list` shows as 4.9 GB; out-of-family), confirmed
+by Indrajeet 2026-09-13 and already present in Ollama. The judge runs after labelling, never loaded
+alongside a routed model. Until the family's labels and the judge validation exist, the corpus has 1,200
+gradable prompts and every result states that the open-ended family is not yet included.
 
 ### 13.3 Energy windows, from the smoke stage
 
