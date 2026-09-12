@@ -92,12 +92,22 @@ def graded_frame(
 
 
 def cell_report(frame: pd.DataFrame, cfg: dict[str, Any]) -> pd.DataFrame:
-    """Summarise each cell: accuracy, tokens, reasoning tokens, cap-hit rate and cost."""
+    """Summarise each cell: accuracy, tokens, reasoning tokens, cap-hit rate and cost.
+
+    ``accuracy`` is the headline: a generation cut off at the cap is graded wrong, the same
+    rule the local grid uses, because an answer the user never receives is no answer.
+    ``accuracy_finished`` is that same accuracy over only the generations that stopped on
+    their own. The two separate an effort setting that does not help from one whose
+    reasoning does not fit in the cap, which look identical in the headline number.
+    """
     spec = {row["cell"]: row for row in cfg["cells"]}
     grouped = frame.groupby("model", sort=False)
+    finished = frame[~frame["capped"].astype(bool)].groupby("model", sort=False)
     out = pd.DataFrame(
         {
             "accuracy": grouped["score"].mean(),
+            "accuracy_finished": finished["score"].mean(),
+            "finished": finished["score"].size(),
             "mean_prompt_tokens": grouped["prompt_tokens"].mean(),
             "mean_completion_tokens": grouped["completion_tokens"].mean(),
             "mean_reasoning_tokens": grouped["reasoning_tokens"].mean(),
@@ -105,6 +115,7 @@ def cell_report(frame: pd.DataFrame, cfg: dict[str, Any]) -> pd.DataFrame:
             "mean_cost_usd": grouped["cost"].mean(),
         }
     ).reset_index(names="cell")
+    out["finished"] = out["finished"].fillna(0).astype(int)
     out["model"] = out["cell"].map(lambda c: spec[c]["model"])
     out["effort"] = out["cell"].map(lambda c: spec[c]["effort"])
     out["cap"] = out["cell"].map(lambda c: spec[c]["cap"])

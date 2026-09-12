@@ -655,3 +655,38 @@ def test_pairing_summary_is_valid_json_when_a_share_is_undefined() -> None:
     assert summary["local_cheap_mode_share"] is None
     assert summary["size_rank_spearman"] is None
     assert json.loads(json.dumps(summary))["hosted_cheap_mode_share"] is None
+
+
+def test_cell_report_separates_a_weak_cell_from_a_truncated_one() -> None:
+    """A cell that runs out of cap and one that answers wrongly look alike in the headline."""
+    items = {"a-1": _item("a-1"), "a-2": _item("a-2")}
+    records = [
+        # h1 answers both, one of them wrong: a genuinely weaker cell.
+        _record("h1", "a-1", r"\boxed{4}"),
+        _record("h1", "a-2", r"\boxed{5}"),
+        # h2 answers one correctly and is cut off on the other: right when it finishes.
+        _record("h2", "a-1", r"\boxed{4}"),
+        _record("h2", "a-2", r"\boxed{4}", done_reason="length"),
+    ]
+    frame, _ = graded_frame(records, items, CFG)
+    report = cell_report(frame, CFG).set_index("cell")
+    assert report.loc["h1", "accuracy"] == pytest.approx(0.5)
+    assert report.loc["h2", "accuracy"] == pytest.approx(0.5)
+    # The headline hides the difference; the finished-answer accuracy shows it.
+    assert report.loc["h1", "accuracy_finished"] == pytest.approx(0.5)
+    assert report.loc["h2", "accuracy_finished"] == pytest.approx(1.0)
+    assert report.loc["h1", "finished"] == 2
+    assert report.loc["h2", "finished"] == 1
+
+
+def test_cell_report_reports_no_finished_accuracy_when_nothing_finished() -> None:
+    """Every generation cut off leaves the finished accuracy undefined, not zero."""
+    items = {"a-1": _item("a-1")}
+    records = [
+        _record("h1", "a-1", r"\boxed{4}", done_reason="length"),
+        _record("h2", "a-1", r"\boxed{4}"),
+    ]
+    frame, _ = graded_frame(records, items, CFG)
+    report = cell_report(frame, CFG).set_index("cell")
+    assert report.loc["h1", "finished"] == 0
+    assert pd.isna(report.loc["h1", "accuracy_finished"])

@@ -376,7 +376,11 @@ def table_public_tax(frame: pd.DataFrame, static: Callable[[str], str] | None = 
 
 
 def table_hosted_cells(cells: pd.DataFrame) -> str | None:
-    """Accuracy, output and reasoning tokens, cap-hit rate and price of every hosted cell."""
+    """Accuracy, output and reasoning tokens, cap-hit rate and price of every hosted cell.
+
+    Two accuracies: the headline one, in which a generation cut off at the cap is wrong, and
+    the same figure over the generations that finished on their own.
+    """
     if cells.empty:
         return None
     body = [
@@ -386,6 +390,7 @@ def table_hosted_cells(cells: pd.DataFrame) -> str | None:
             HOSTED_EFFORTS.get(row["effort"], str(row["effort"])),
             num(row["cap"], 0),
             pct(row["accuracy"]),
+            pct(row["accuracy_finished"]),
             num(row["mean_completion_tokens"], 0),
             num(row["mean_reasoning_tokens"], 0),
             pct(row["cap_hit_rate"]),
@@ -393,9 +398,10 @@ def table_hosted_cells(cells: pd.DataFrame) -> str | None:
         ]
         for _, row in cells.iterrows()
     ]
-    header = ["Cell", "Model", "Effort", "Cap", r"Acc.\ (\%)", "Out.\\ tok.", "Reas.\\ tok.",
-              r"Cap hit (\%)", r"Cost (\$/1{,}000)"]  # fmt: skip
-    return tabular("@{}lllrrrrrr@{}", header, body, colsep=3)
+    header = ["Cell", "Model", "Effort", "Cap", r"Acc.\ (\%)", r"Acc.\ fin.\ (\%)",
+              "Out.\\ tok.", "Reas.\\ tok.", r"Cap hit (\%)",
+              r"Cost (\$/1{,}000)"]  # fmt: skip
+    return tabular("@{}lllrrrrrrr@{}", header, body, colsep=3)
 
 
 def main() -> None:
