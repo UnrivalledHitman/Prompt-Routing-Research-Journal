@@ -200,8 +200,12 @@ prompts share one matrix of resampled prompt indices, so every comparison is
 paired by prompt and its interval is taken over the resampled differences.
 Two-sided $p$-values are obtained by inverting the percentile interval, as
 twice the smaller share of resampled differences on either side of zero,
-with a floor of $10^{-4}$. The Holm--Bonferroni procedure~\cite{holm1979simple} corrects the $p$-values within each group of
-comparisons that share a cost unit, recovery rule and detection regime. For
+with a floor of $10^{-4}$, one over the number of resamples. The
+Holm--Bonferroni procedure~\cite{holm1979simple} corrects the $p$-values
+within each family of comparisons that asks one question at a fixed cost
+unit, recovery rule and detection regime: routers against the manual
+policies, the oracle against the same, per-cell routers against direct
+ones, and one-shot routers against the cascade. For
 routers, $\tau$ is fixed on the validation split before the test split is
 resampled, so the intervals do not include the uncertainty of that choice.
 Each trainable router is trained with three seeds; intervals are reported
