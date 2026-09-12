@@ -1,0 +1,26 @@
+{
+  "generated_utc": "2026-09-12T10:06:26+00:00",
+  "stage": "main",
+  "prompts": 825,
+  "prompts_seen": 827,
+  "prompts_dropped": 2,
+  "responses": 4960,
+  "cap_hits": 243,
+  "errors": 0,
+  "ladder": [
+    "h1",
+    "h3",
+    "h5",
+    "h4"
+  ],
+  "n_boot": 10000,
+  "relative_tax": {
+    "P1": 0.2205,
+    "P3": 4.3532,
+    "P4-uniform": 6.9253,
+    "random": 7.2433,
+    "P2": 1.409,
+    "oracle": 0.0
+  },
+  "pairing": null
+}

@@ -693,8 +693,9 @@ cost is computed from the provider's own reported token counts, never from an es
   per-prompt `c*` is read from the analysis' own `splits.csv`; a unit that table does not carry fails
   loudly rather than joining to nothing and looking like agreement.
 - **Policies.** `P1`, `P3`, `P4` and `random` are the public arm's, built from the pool's own cost
-  frontier, and on this pool that frontier holds only the minimal-effort rungs. `P2` cannot be
-  discovered that way and is named instead: start at the cheapest model in the cheap mode, then take
+  frontier. On the 40-prompt pilot that frontier held only minimal-effort rungs; on the main stage it
+  admits one high-effort rung, `h4` (see §14.2). `P2` is not discoverable from the frontier either way
+  and is named instead: start at the cheapest model in the cheap mode, then take
   the costly mode at each size in turn. The rungs are derived from the pool's shape rather than
   hard-coded, and the derivation reproduces the local grid's `P2` exactly when given eight cells, so
   the two arms report the same policy rather than two policies with one name.
@@ -709,8 +710,9 @@ cost is computed from the provider's own reported token counts, never from an es
 | Stage | Prompts | Requests | Worst case | Actual |
 |-------|---------|----------|-----------|--------|
 | smoke | 1 | 1 | $0.0004 | $0.00002 |
-| pilot | 40 | 240 | $1.5334 | see §14.1 |
-| main | sized from the pilot | | | |
+| pilot | 40 | 240 | $1.5334 | $0.2639 |
+| main | 827 in 10 waves | 4,962 | $31.6978 | $6.8066 |
+| **total** | **868** | **5,203** | | **$7.0706** of $8.00 |
 
 The pilot exists to measure what `high` effort actually spends, which is the one quantity the local run
 cannot supply; the main batch is sized from its measured cost per prompt, not from a projection.
@@ -751,9 +753,54 @@ worst-case-sized batch would have bought 195 prompts and left most of the budget
 stage therefore runs as a sequence of waves: each wave is sized to the worst case the *remaining*
 budget allows, submitted under the same check, and then settled at its measured cost, which frees the
 difference for the next wave. The guard is never loosened -- at every instant, committed spend is the
-worst case of everything unsettled -- and the arm reaches roughly 852 of the 858 available prompts for
-an expected ~$5.6 rather than 195 for $1.3.
+worst case of everything unsettled.
 
 Waves share one records file and one ledger, and each wave's prompts are withheld from later waves by
 prompt id, so the campaign is resumable: an interrupted run resumes from what its own input files show
-was already paid for.
+was already paid for. The campaign stops when the budget left would fund a wave below a floor of 20
+prompts, so that a final wave is never too small to be worth a batch round trip.
+
+**Outcome.** Ten waves, 827 of the 860 eligible prompts, $6.8066 spent against a worst case of
+$31.6978 -- 21.5% of the bound, close to the pilot's 17.2%. Wave sizes fall geometrically as the
+remaining budget shrinks: 195, 153, 121, 94, 73, 58, 47, 36, 27, 23. Wave 11 drew 21 prompts, of which
+the budget allowed 17, below the floor, and the campaign stopped with $0.9294 unspent. The 33 prompts
+never submitted are the price of the guard, and the paper says so rather than implying full coverage.
+
+4,960 responses were returned of 4,962 requested. The two missing are content-filter refusals, one at
+`h3` (`math500-204`) and one at `h5` (`mbpp-66`); both prompts are dropped whole, because a refusal is
+not a wrong answer, leaving **825 prompts** in the analysis. 243 responses hit their cap. No request
+errored.
+
+Results, over 825 prompts (`results/processed/hosted_arm/main/`):
+
+| cell | model | effort | accuracy | acc. finished | output tok | reasoning tok | cap hits | $/1,000 |
+|------|-------|--------|---------:|--------------:|-----------:|--------------:|---------:|--------:|
+| h1 | gpt-5-nano | minimal | 74.2% | 74.5% | 142 | 0 | 0.5% | 0.03 |
+| h2 | gpt-5-nano | high | 77.8% | 96.0% | 1,908 | 1,845 | 18.9% | 0.38 |
+| h3 | gpt-5-mini | minimal | 89.5% | 89.6% | 168 | 0 | 0.1% | 0.18 |
+| h4 | gpt-5-mini | high | 92.8% | 96.5% | 1,010 | 886 | 3.8% | 1.02 |
+| h5 | gpt-5 | minimal | 91.8% | 91.9% | 146 | 0 | 0.1% | 0.79 |
+| h6 | gpt-5 | high | 91.9% | 97.3% | 1,140 | 1,042 | 5.6% | 5.77 |
+
+1. **The ladder is `h1 -> h3 -> h5 -> h4`.** High effort earns a rung at the `mini` size on 825 prompts,
+   which it did not on the pilot's 40 -- the pilot was too easy to separate `h3` from `h4`. `h2` and
+   `h6` stay off the frontier. `h6` costs 5.6x `h4` and answers 0.9 points *fewer* (91.9% vs 92.8%):
+   **the costliest cell in the pool is not the most accurate.**
+2. **Relative tax: P1 0.22x, P2 1.41x, P3 4.35x, P4-uniform 6.93x, random 7.24x.** Same ordering as the
+   pilot and the local grid, much narrower spread, because the pilot's 40 easy prompts made the oracle
+   unrealistically cheap. Per solved query: oracle $0.25/1,000, P1 $0.35, P3 $1.10.
+3. **The pilot's weakness is resolved.** 2.5% of prompts are unservable by all six cells, and the upper
+   rungs are the cheapest sufficient choice for a measurable share, so the top of the ladder is tested.
+   `c*` in dollars: h1 74.2%, h3 16.0%, h2 3.4%, h5 2.2%, h4 1.3%, h6 0.4%.
+4. **Effort is priced as a multiple, and what it buys shrinks with model strength.** High costs 11.8x,
+   5.45x and 7.26x minimal at nano, mini and gpt-5, while the share of prompts minimal fails and high
+   answers is 15.2%, 6.2% and 4.1%. At `gpt-5` the headline accuracy moves 91.8% -> 91.9% and *falls*
+   on mcq, 94.9% -> 93.4%.
+5. **The cap binds hardest where reasoning is dearest, exactly as §14 anticipated.** `h2` hits its cap
+   on 18.9% of prompts and answers 96.0% of the generations that finish against a 77.8% headline. On
+   code, where its reasoning runs longest (3,075 output tokens), high effort is worse than minimal
+   outright, 65.3% vs 82.5%.
+
+The local pairing is not yet computed: it needs the local main analysis, which needs the labelling grid
+to finish. `run_hosted_analysis.py --stage main --local <dir>` fills it in; `summary.json` currently
+carries `"pairing": null`.
