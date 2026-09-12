@@ -436,6 +436,13 @@ the leak and marker checks of Section~\ref{sec:gate-mode} have no counterpart,
 and no energy is measurable for a hosted model: this arm reports dollars and
 tokens only.
 
+A prompt enters the analysis only when all six cells answered it, so that the
+pool stays fixed across cells as it does across datasets in
+Section~\ref{sec:public-arm}. A few prompts lose a cell to the provider's
+content filter, which refuses the request outright; the whole prompt is then
+dropped rather than scored as a failure, because a refusal is not a wrong
+answer, and Section~\ref{sec:results-hosted} reports how many.
+
 Requests run through the provider's batch interface at half list price. A
 budget meter prices every batch at its worst case, every request emitting
 its full cap, and refuses to submit one that would carry cumulative spend

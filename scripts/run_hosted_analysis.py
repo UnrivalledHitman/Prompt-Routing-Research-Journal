@@ -312,6 +312,8 @@ def main() -> None:
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "stage": args.stage,
         "prompts": notes["prompts_kept"],
+        "prompts_seen": notes["prompts_seen"],
+        "prompts_dropped": notes["prompts_seen"] - notes["prompts_kept"],
         "responses": notes["graded"],
         "cap_hits": notes["capped"],
         "errors": notes["errors"],
