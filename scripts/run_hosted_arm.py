@@ -326,9 +326,24 @@ def cmd_submit(cfg: dict[str, Any], args: argparse.Namespace) -> None:
 
 
 def cmd_collect(cfg: dict[str, Any], args: argparse.Namespace) -> None:
-    """Wait for every batch of a stage, price them from reported usage and settle the ledger."""
+    """Wait for every batch of a stage, price them from reported usage and settle the ledger.
+
+    The records file is rewritten only for a stage nothing has been collected for yet. Once a
+    stage has a settled batch its records were paid for, and truncating the file to re-collect
+    the remainder would throw them away for good: the provider keeps an output file, but the
+    ledger will not spend again to rebuild what is already on disk.
+    """
     meter = meter_of(cfg)
-    grand = collect_stage(cfg, args.stage, meter=meter, client=client_of(cfg), reset=True)
+    settled = any(
+        entry["stage"] == args.stage and entry.get("actual_usd") is not None
+        for entry in meter.entries
+    )
+    if settled:
+        LOGGER.info("stage %s already has settled batches; appending rather than rewriting",
+                    args.stage)  # fmt: skip
+    grand = collect_stage(
+        cfg, args.stage, meter=meter, client=client_of(cfg), reset=not settled
+    )
     report_stage(args.stage, grand, len(stage_cells(cfg, args.stage)), meter)
 
 

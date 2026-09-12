@@ -439,6 +439,8 @@ def test_cell_report_keeps_ladder_order_and_reports_the_cap_rate() -> None:
 # The wave campaign
 # ---------------------------------------------------------------------------
 
+import argparse  # noqa: E402
+
 from run_hosted_arm import fit_to_budget, select, used_prompt_ids  # noqa: E402
 
 
@@ -607,3 +609,38 @@ def test_pairing_rejects_a_unit_the_local_table_does_not_carry() -> None:
     """A silent empty join would look like agreement; a missing unit has to fail loudly."""
     with pytest.raises(ValueError, match="cstar_joules"):
         pairing(pd.Series({"q1": "h1"}), _splits([("q1", "math", "c1")]), "joules")
+
+
+def test_collect_keeps_records_a_settled_batch_already_paid_for(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Re-collecting a partly settled stage must append: the money for those records is spent."""
+    import run_hosted_arm as runner
+
+    ledger = tmp_path / "ledger.jsonl"
+    cfg = {
+        "cells": list(CELLS),
+        "raw_dir": str(tmp_path),
+        "budget": {"cap_usd": 8.0, "reserve_usd": 0.0, "ledger": str(ledger)},
+        "stages": {"main": {}},
+    }
+    meter = Meter.load(cap_usd=8.0, reserve_usd=0.0, path=ledger)
+    meter.record({"batch_id": "b1", "stage": "main", "requests": 1, "worst_case_usd": 0.01})
+    meter.settle("b1", 0.005, {"responses": 1})
+    meter.record({"batch_id": "b2", "stage": "main", "requests": 1, "worst_case_usd": 0.01})
+
+    seen: dict[str, bool] = {}
+
+    def fake_collect(_cfg: object, stage: str, **kwargs: object) -> dict[str, float]:
+        seen["reset"] = bool(kwargs["reset"])
+        return {"responses": 1.0, "actual_usd": 0.005}
+
+    monkeypatch.setattr(runner, "collect_stage", fake_collect)
+    monkeypatch.setattr(runner, "client_of", lambda _cfg: None)
+    runner.cmd_collect(cfg, argparse.Namespace(stage="main"))
+    assert seen["reset"] is False
+
+    # A stage with nothing settled may still start from a clean records file.
+    cfg["budget"]["ledger"] = str(tmp_path / "other.jsonl")
+    runner.cmd_collect(cfg, argparse.Namespace(stage="main"))
+    assert seen["reset"] is True
