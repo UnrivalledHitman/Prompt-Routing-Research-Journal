@@ -215,7 +215,7 @@ sweep the quality threshold at test time.
 ### 5.4 Judging open-ended outputs, and validating the judge
 
 A judge drawn from the routed pool would be circular, so the primary judge is **out-of-family and outside
-the pool**: `llama3.1:8b-instruct-q4_K_M` (Llama 3.1 8B Instruct, 4.58 GB), fixed on 2026-09-12 when
+the pool**: `llama3.1:8b-instruct-q4_K_M` (Llama 3.1 8B Instruct, 4.58 GiB), fixed on 2026-09-12 when
 Indrajeet approved the download. It is loaded only after labelling, never alongside a routed model, and it
 will not judge while a routed model is loaded. Settings are in `configs/judge.yaml`; the code is
 `src/arbiter/eval/judge.py` and `scripts/run_judge.py`.
@@ -233,10 +233,19 @@ the counts of unreadable replies and shortened references (`judge_runs.jsonl`).
 
 **Judge validation.** Cheap judges are the standard attack surface for this kind of paper, so the judge is
 itself evaluated (`scripts/sample_judge_validation.py`, `scripts/judge_agreement.py`):
-1. ~200 judged items, stratified by Dolly category and judge verdict, are re-scored by a frontier OpenAI
-   model with the same rubric and schema (`scripts/judge_openai.py`). This is what the ~INR 1000 credit is
-   for; it is enough for this and not for bulk grading. **[DECISION]** The model and the spend need
-   Indrajeet's yes; `--estimate` prints the cost bound in rupees before anything is sent.
+1. ~200 judged items, stratified by Dolly category and judge verdict, are re-scored by a hosted reference
+   model with the same rubric and schema (`scripts/judge_openai.py`). **Resolved 2026-09-13:** the model
+   is `gpt-5-mini` and Indrajeet authorised **$0.36** for it. That authorisation is separate from the
+   $8.00 of the hosted arm (§14), and the two are not fungible -- the hosted arm closed at $7.07 and its
+   $0.93 of headroom is not spent here.
+
+   `--estimate` prints an **upper bound**, not the expected spend: it prices every request at the full
+   prompt budget (~9,000 tokens, §5.4 `num_ctx`) and the full reply budget, which bounds 200 items at
+   about $1.25 on `gpt-5-mini` against a realistic ~$0.30, since an open-ended request is 83 tokens at
+   the median and a judged answer a few hundred. The ceiling is therefore enforced by `--max-inr`, which
+   refuses the next item once the running spend could pass it, rather than by the estimate; the USD/INR
+   rate used is recorded with the run. If the guard stops the run short of 200 items, the sample is
+   reported at the size reached and any increase goes back to Indrajeet before a further request is sent.
 2. Indrajeet scores ~100 of those items blind, from a sheet that shows the request, reference and answer
    but not the model, mode or judge score, giving a human anchor.
 
@@ -550,13 +559,17 @@ silicon and will not be claimed to.
 ## 12. Open decisions
 
 1. **Open-ended dataset** — resolved 2026-09-12: Dolly-15k (§13.2).
-2. **Judge model identity** — resolved 2026-09-12: `llama3.1:8b-instruct-q4_K_M` (§5.4, §13.2).
-3. **`p_accept` / `p_retry`** — cite, measure, or sweep and label as assumed. Blocks the headline tax number.
-4. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship
+2. **Judge model identity** — resolved 2026-09-12, confirmed by Indrajeet 2026-09-13:
+   `llama3.1:8b-instruct-q4_K_M` (§5.4, §13.2).
+3. **Validation reference model and its spend** — resolved 2026-09-13: `gpt-5-mini` under a $0.36 ceiling
+   authorised by Indrajeet, enforced by `--max-inr` (§5.4).
+4. **`p_accept` / `p_retry`** — resolved 2026-09-11: swept over a grid and labelled as assumed, with the
+   headline tax under oracle detection (§13).
+5. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship
    and ORCID. Needed for the LaTeX template, not for any experiment.
 
-Items 1-3 are resolved provisionally in §13. Item 4 and a code/data availability statement remain with
-Indrajeet and the mentor.
+Items 1-4 are resolved; 1, 2 and 4 are recorded in §13. Item 5 and a code/data availability statement
+remain with Indrajeet and the mentor.
 
 ---
 
@@ -588,7 +601,7 @@ change.
 ### 13.2 Open-ended family and judge (downloads approved 2026-09-12)
 
 Source: `databricks/databricks-dolly-15k` (CC BY-SA 3.0, 12.5 MB), stratified by category, with the
-human-written responses as references. Judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GB, out-of-family), run
+human-written responses as references. Judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GiB, which `ollama list` shows as 4.9 GB; out-of-family), run
 after labelling and never loaded alongside a routed model (§5.4). Indrajeet approved both downloads on
 2026-09-12. The family is added by enabling `dolly` in `configs/corpus.yaml`. Each source draws from its
 own seeded stream, so the 1,200 gradable prompts should not change; the rebuilt manifest is checked against

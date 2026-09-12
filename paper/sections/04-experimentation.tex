@@ -157,9 +157,11 @@ fails without being judged.
 
 The judge is validated from two sides before its labels are used. About 200
 judged answers, stratified by Dolly category and verdict, are re-scored with
-the same rubric by a frontier model accessed through the OpenAI API
-\decision{OpenAI model, pending approval of the API spend}, and the first
-author scores about 100 of them blind to model, mode and judge score.
+the same rubric by \texttt{gpt-5-mini} through the OpenAI API, a hosted
+reference well above the local judge in capability and outside its family,
+under a spend ceiling of \$0.36 that stops the run rather than passing it;
+and the first author scores about 100 of them blind to model, mode and judge
+score.
 Agreement is reported as Cohen's $\kappa$~\cite{cohen1960kappa} on the
 success decision and as quadratic-weighted $\kappa$~\cite{cohen1968weighted}
 on the scores. The rule for using the labels was fixed before any judge
