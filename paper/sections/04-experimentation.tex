@@ -375,8 +375,9 @@ counterpart of H4. Because the frontier is a subset of the pool, a policy
 climbing it can fail on a query that some off-ladder model answers; the tax
 is therefore read alongside the success rate, and cost per solved query is
 the statistic comparable across policies. Intervals use 2{,}000 bootstrap
-resamples rather than the 10{,}000 used locally, the prompt set being forty
-times larger.
+resamples rather than the 10{,}000 used locally: the resampling matrix grows
+with the number of queries as well as the number of resamples, and this
+prompt set is ten times the size of the local corpus.
 
 \subsection{Hosted-Frontier Arm}
 \label{sec:hosted-arm}
