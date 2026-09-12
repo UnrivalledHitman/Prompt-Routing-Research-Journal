@@ -658,6 +658,15 @@ cost is computed from the provider's own reported token counts, never from an es
   Caps mirror the local protocol: 4,096 output tokens at high effort and 2,048 at minimal. On a reasoning
   model `max_output_tokens` counts reasoning tokens, so the cap bounds the same thing the local cap bounds,
   the trace included. A truncated response is a failure, as a local cap hit is.
+- **Two accuracies, because the cap binds hardest where reasoning is dearest.** A high-effort
+  generation spends most of its output budget on reasoning tokens, so the 4,096 cap is a real
+  constraint there and none at all at minimal effort, where the trace is empty. Each cell is
+  therefore reported twice: the headline accuracy, in which a truncated generation is wrong, and
+  the accuracy over the generations that stopped on their own. The first is what a user of that
+  cell would actually get; the second says whether the cell answered badly or merely ran out of
+  room. Without the pair they are indistinguishable, and the local grid's cap-sensitivity stage
+  (§13.1) has no hosted counterpart the budget can afford -- re-running a cell at a larger cap
+  costs money, whereas conditioning on the generations that finished costs nothing.
 - **Not a matched comparison of decoding.** The reasoning models reject the temperature, top-p, top-k and
   min-p the local protocol sets per mode, so sampling is the provider's default. The arm claims a matched
   *prompt* and a matched *cap*, not matched decoding.

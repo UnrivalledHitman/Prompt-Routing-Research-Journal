@@ -393,7 +393,13 @@ user message with no system message. The output caps mirror the local
 protocol, 4{,}096 tokens at high effort and 2{,}048 at minimal; on a
 reasoning model the cap counts reasoning tokens, so it bounds the same thing
 the local cap bounds, the trace included, and a truncated response is a
-failure exactly as a local cap hit is. Answers are graded by the same
+failure exactly as a local cap hit is. That rule falls hardest on the
+high-effort cells, which spend most of their budget on reasoning tokens
+where the cheap mode emits none, so each cell is reported twice: the
+headline accuracy, in which a truncated generation is wrong, and the
+accuracy over the generations that stopped on their own. The first is what
+a user of that cell receives; the second separates a cell that reasons
+badly from one whose reasoning does not fit. Answers are graded by the same
 graders, and the pool summary, the $c^*$ distribution, the policy table and
 the mode comparison are computed by the same code as
 Section~\ref{sec:public-arm}. Because the two ladders differ by orders of
