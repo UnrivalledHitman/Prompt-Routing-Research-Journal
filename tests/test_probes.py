@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import math
+import sys
+from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -199,3 +202,32 @@ def test_generate_one_sends_request_and_records_logprobs(tmp_path: Path) -> None
         else:
             assert "logprobs" not in client.kwargs
             assert "logprobs" not in record
+
+
+def test_build_probes_refuses_to_write_an_empty_corpus(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A missing or unhelpful generations file must stop the run, not label nothing."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import build_probes
+
+    corpus = tmp_path / "corpus.jsonl"
+    corpus.write_text(json.dumps(asdict(_item("q1"))), encoding="utf-8")
+    argv = ["build_probes.py", "verify", "--corpus", str(corpus), "--out-dir", str(tmp_path)]
+
+    monkeypatch.setattr(sys, "argv", [*argv, "--generations", str(tmp_path / "missing.jsonl")])
+    with pytest.raises(SystemExit, match="does not exist"):
+        build_probes.main()
+
+    empty = tmp_path / "generations.jsonl"
+    empty.write_text("", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", [*argv, "--generations", str(empty)])
+    with pytest.raises(SystemExit, match="no verification probes"):
+        build_probes.main()
+
+    monkeypatch.setattr(
+        sys, "argv", [*argv, "--subsets", "nosuchsubset", "--generations", str(empty)]
+    )
+    with pytest.raises(SystemExit, match="no prompts in subsets"):
+        build_probes.main()
+    assert not list(tmp_path.glob("verify_*"))
