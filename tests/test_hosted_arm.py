@@ -335,6 +335,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from run_hosted_analysis import cell_report, graded_frame  # noqa: E402
 
+from arbiter.eval import public  # noqa: E402
+
 CFG = {
     "pricing": PRICING,
     "cells": [
@@ -514,3 +516,94 @@ def test_used_prompt_ids_reads_every_wave_of_a_stage(tmp_path: Path) -> None:
             json.dumps(line) + "\n", encoding="utf-8"
         )
     assert used_prompt_ids(cfg, ["main"]) == {"math-0", "code-1"}
+
+
+# ---------------------------------------------------------------------------
+# Pairing the two ladders
+# ---------------------------------------------------------------------------
+
+import pandas as pd  # noqa: E402
+from run_hosted_analysis import cell_rank, cstar_per_prompt, pairing  # noqa: E402
+
+
+def test_cell_rank_reads_either_ladder() -> None:
+    """Both ladders are size-major and mode-minor, so one reading serves for both."""
+    assert [cell_rank(f"c{i}") for i in (1, 2, 7, 8)] == [(0, 0), (0, 1), (3, 0), (3, 1)]
+    assert [cell_rank(f"h{i}") for i in (1, 2, 5, 6)] == [(0, 0), (0, 1), (2, 0), (2, 1)]
+
+
+def test_cstar_per_prompt_names_the_cheapest_cell_that_answers() -> None:
+    """c* is the cheapest successful cell, and a prompt no cell answers is unservable."""
+    frame = pd.DataFrame(
+        [
+            # cheap cell wrong, dear cell right -> c* is the dear one
+            {"dataset": "math", "index": "q1", "model": "h1", "score": 0.0, "cost": 1e-5,
+             "prompt_tokens": 10, "completion_tokens": 10},
+            {"dataset": "math", "index": "q1", "model": "h2", "score": 1.0, "cost": 9e-5,
+             "prompt_tokens": 10, "completion_tokens": 90},
+            # both right -> c* is the cheaper
+            {"dataset": "math", "index": "q2", "model": "h1", "score": 1.0, "cost": 1e-5,
+             "prompt_tokens": 10, "completion_tokens": 10},
+            {"dataset": "math", "index": "q2", "model": "h2", "score": 1.0, "cost": 9e-5,
+             "prompt_tokens": 10, "completion_tokens": 90},
+            # neither right -> unservable
+            {"dataset": "math", "index": "q3", "model": "h1", "score": 0.0, "cost": 1e-5,
+             "prompt_tokens": 10, "completion_tokens": 10},
+            {"dataset": "math", "index": "q3", "model": "h2", "score": 0.0, "cost": 9e-5,
+             "prompt_tokens": 10, "completion_tokens": 90},
+        ]
+    )  # fmt: skip
+    table = public.build_table(frame, ["h1", "h2"], 1.0)
+    got = cstar_per_prompt(table)
+    assert dict(got) == {"q1": "h2", "q2": "h1", "q3": "unservable"}
+
+
+def _splits(rows: list[tuple[str, str, str]]) -> pd.DataFrame:
+    """Build the columns of the local analysis' splits table that pairing reads."""
+    return pd.DataFrame(
+        [{"prompt_id": p, "family": f, "cstar_energy_j": c} for p, f, c in rows]
+    )
+
+
+def test_pairing_compares_ranks_and_reports_what_the_hosted_ladder_rescues() -> None:
+    """Two ladders of different scale compare by rank, and only on prompts both arms saw."""
+    hosted = pd.Series(
+        {"q1": "h1", "q2": "h4", "q3": "h3", "q4": "unservable", "q9": "h1"},
+        name="hosted_cstar",
+    )
+    splits = _splits(
+        [
+            ("q1", "math", "c1"),  # cheap mode both sides
+            ("q2", "code", "c6"),  # costly mode both sides
+            ("q3", "mcq", "c5"),  # cheap mode both sides
+            ("q4", "math", "c7"),
+            ("q8", "math", "c1"),  # local only: dropped
+        ]
+    )
+    rows, counts, summary = pairing(hosted, splits, "energy_j")
+    assert summary["paired"] == 4  # q9 has no local label, q8 no hosted one
+    assert summary["servable_both"] == 3  # q4 is unservable on the hosted ladder
+    assert summary["hosted_unservable"] == 1
+    assert summary["local_unservable"] == 0
+    assert summary["local_cheap_mode_share"] == pytest.approx(2 / 3, abs=5e-5)
+    assert summary["hosted_cheap_mode_share"] == pytest.approx(2 / 3, abs=5e-5)
+    assert summary["both_cheap_mode_share"] == pytest.approx(2 / 3, abs=5e-5)
+    assert set(rows["prompt_id"]) == {"q1", "q2", "q3", "q4"}
+    assert int(counts.loc[counts["local_cstar"] == "c1", "count"].iloc[0]) == 1
+
+
+def test_pairing_counts_the_prompts_the_local_grid_cannot_answer() -> None:
+    """What a frontier ladder rescues is the comparison the hosted arm exists to make."""
+    hosted = pd.Series({"q1": "h5", "q2": "h6", "q3": "unservable"}, name="hosted_cstar")
+    splits = _splits([("q1", "math", "unservable"), ("q2", "math", "unservable"),
+                      ("q3", "math", "unservable")])  # fmt: skip
+    _, _, summary = pairing(hosted, splits, "energy_j")
+    assert summary["local_unservable"] == 3
+    assert summary["servable_both"] == 0
+    assert summary["rescued_by_hosted"] == {"h5": 1, "h6": 1, "unservable": 1}
+
+
+def test_pairing_rejects_a_unit_the_local_table_does_not_carry() -> None:
+    """A silent empty join would look like agreement; a missing unit has to fail loudly."""
+    with pytest.raises(ValueError, match="cstar_joules"):
+        pairing(pd.Series({"q1": "h1"}), _splits([("q1", "math", "c1")]), "joules")

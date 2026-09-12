@@ -25,14 +25,17 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import pandas as pd  # noqa: E402
 import yaml  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 from arbiter.data.corpus import PromptItem, read_corpus  # noqa: E402
 from arbiter.eval import public  # noqa: E402
 from arbiter.eval.grading import grade  # noqa: E402
+from arbiter.eval.labels import minimum_sufficient  # noqa: E402
 from arbiter.hosted.pricing import cost_of, price_table  # noqa: E402
 from arbiter.utils.jsonl import read_jsonl  # noqa: E402
 
 LOGGER = logging.getLogger("arbiter.hosted_analysis")
+MODES_PER_SIZE = 2  # both ladders pair every model size with a cheap and a costly mode
 
 
 def graded_frame(
@@ -114,6 +117,85 @@ def write(out: Path, name: str, frame: pd.DataFrame) -> None:
     LOGGER.info("wrote %s.csv (%d rows)", name, len(frame))
 
 
+def cell_rank(name: str, per_size: int = MODES_PER_SIZE) -> tuple[int, int]:
+    """Return ``(size rank, mode rank)`` for a size-major, mode-minor cell name.
+
+    Both ladders are indexed the same way -- ``c1``..``c8`` over four sizes and ``h1``..``h6``
+    over three -- so one function reads either, and the ranks are what compare across ladders
+    whose absolute costs differ by orders of magnitude.
+    """
+    index = int(name[1:]) - 1
+    return index // per_size, index % per_size
+
+
+def cstar_per_prompt(table: public.PublicTable) -> pd.Series:
+    """Return each prompt's minimum sufficient cell, ``unservable`` where none succeeds."""
+    choice = minimum_sufficient(table.success, table.costs["dollars"])
+    names = [table.models[c] if c >= 0 else "unservable" for c in choice]
+    return pd.Series(names, index=table.queries["index"].to_numpy(), name="hosted_cstar")
+
+
+def pairing(
+    hosted: pd.Series, splits: pd.DataFrame, unit: str
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    """Pair hosted and local ``c*`` on the prompts both arms labelled.
+
+    The hosted prompts are drawn from the local main subset precisely so this comparison
+    exists. What carries across two ladders of such different scale is not the cell but its
+    rank: how far up its own ladder a prompt must be sent, and whether it needs the expensive
+    mode. Prompts missing from either arm are dropped, and the unservable ones are reported
+    rather than ranked, since they have no rung.
+    """
+    column = f"cstar_{unit}"
+    if column not in splits.columns:
+        raise ValueError(f"{column} is not in the local splits table")
+    local = splits.set_index("prompt_id")
+    shared = local.index.intersection(hosted.index)
+    frame = pd.DataFrame(
+        {
+            "family": local.loc[shared, "family"],
+            "local_cstar": local.loc[shared, column],
+            "hosted_cstar": hosted.loc[shared],
+        }
+    ).reset_index(names="prompt_id")
+    for side in ("local", "hosted"):
+        served = frame[f"{side}_cstar"] != "unservable"
+        ranks = [cell_rank(cell) for cell in frame.loc[served, f"{side}_cstar"]]
+        frame.loc[served, f"{side}_size"] = [rank[0] for rank in ranks]
+        frame.loc[served, f"{side}_mode"] = [rank[1] for rank in ranks]
+
+    counts = (
+        frame.groupby(["local_cstar", "hosted_cstar"], sort=True)
+        .size()
+        .reset_index(name="count")
+    )
+    both = frame.dropna(subset=["local_size", "hosted_size"])
+    rho, pvalue = (
+        spearmanr(both["local_size"], both["hosted_size"])
+        if len(both) > 2
+        else (float("nan"), float("nan"))
+    )
+    rescued = frame[frame["local_cstar"] == "unservable"]["hosted_cstar"]
+    summary = {
+        "unit": unit,
+        "paired": int(len(frame)),
+        "servable_both": int(len(both)),
+        "local_unservable": int((frame["local_cstar"] == "unservable").sum()),
+        "hosted_unservable": int((frame["hosted_cstar"] == "unservable").sum()),
+        "local_cheap_mode_share": round(float((both["local_mode"] == 0).mean()), 4),
+        "hosted_cheap_mode_share": round(float((both["hosted_mode"] == 0).mean()), 4),
+        "both_cheap_mode_share": round(
+            float(((both["local_mode"] == 0) & (both["hosted_mode"] == 0)).mean()), 4
+        ),
+        "size_rank_spearman": round(float(rho), 4),
+        "size_rank_p": float(pvalue),
+        "rescued_by_hosted": {
+            str(cell): int(count) for cell, count in rescued.value_counts().items()
+        },
+    }
+    return frame, counts, summary
+
+
 def main() -> None:
     """Grade a stage's responses and write the arm's tables."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -121,6 +203,11 @@ def main() -> None:
     parser.add_argument("--stage", default="pilot")
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--n-boot", type=int, default=None, help="override the config")
+    parser.add_argument(
+        "--local", type=Path, default=None,
+        help="local analysis directory holding splits.csv, to pair c* prompt by prompt",
+    )  # fmt: skip
+    parser.add_argument("--local-unit", default="energy_j", help="local c* unit to pair")
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s | %(message)s"
@@ -175,6 +262,14 @@ def main() -> None:
     headline = taxes[
         (taxes["scope"] == "all") & (taxes["unit"] == "dollars") & (taxes["detection"] == "oracle")
     ].set_index("policy")
+    paired: dict[str, Any] | None = None
+    if args.local is not None:
+        splits = pd.read_csv(args.local / "splits.csv")
+        rows, counts, paired = pairing(cstar_per_prompt(table), splits, args.local_unit)
+        write(out, "pairing", rows)
+        write(out, "pairing_contingency", counts)
+        LOGGER.info("pairing: %s", json.dumps(paired))
+
     payload = {
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "stage": args.stage,
@@ -189,6 +284,7 @@ def main() -> None:
             for policy in headline.index
             if policy in {"P1", "P3", "P4-uniform", "random", "oracle"}
         },
+        "pairing": paired,
     }
     (out / "summary.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     LOGGER.info("summary: %s", json.dumps(payload["relative_tax"]))
