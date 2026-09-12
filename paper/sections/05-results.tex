@@ -17,5 +17,90 @@
 \section{Results}
 \label{sec:results}
 
-\tbd{Section to be written after the pilot and full labelling runs and the
-router evaluation.}
+\tbd{Subsections A--F to be written after the full labelling run and the
+router evaluation. The public-benchmark arm below needs no local
+inference and is final.}
+
+\subsection{The Escalation Tax on a Public Benchmark}
+\label{sec:results-public}
+
+\begin{table*}[!t]
+\caption{The public pool in cost order, over the 12{,}168 queries of nine
+datasets that all thirteen models answered. Cost is the provider's own
+charge, in US dollars per 1{,}000 queries. The $c^*$ share is the fraction
+of queries for which that model is the cheapest one that answers
+correctly, and the last row the queries no model answers. A bullet marks
+the four models on the cost--accuracy frontier, which are the rungs of the
+escalation ladder.}
+\label{tab:public-pool}
+\centering
+\input{tables/public_pool}
+\end{table*}
+
+\begin{table*}[!t]
+\caption{Escalation policies on the public pool under oracle detection, in
+US dollars per 1{,}000 queries. P1 climbs the cost--accuracy frontier, P3
+uses its top rung once, P4 starts uniformly over the pool and then climbs,
+and Random picks a model uniformly and recovers at the top rung. A policy
+that answers fewer queries can show a negative tax, underpaying by
+failing, so the tax is read beside the solved column.}
+\label{tab:public-tax}
+\centering
+\input{tables/public_tax}
+\end{table*}
+
+The local grid stops at 8B parameters. Section~\ref{sec:public-arm}
+recomputes the same quantities on the published outcomes of
+LLMRouterBench: thirteen flagship models, nine datasets and 12{,}168
+queries every model answered, priced by the providers themselves.
+
+Table~\ref{tab:public-pool} gives the pool in cost order. Its members span
+a factor of 79 in price, from \$0.76 to \$60.02 per thousand queries, and
+a factor of 1.6 in accuracy, from 36.9\% to 58.8\%. Price and accuracy are
+only loosely related: four models cost more than
+\texttt{qwen3-235b-a22b-2507} and answer fewer queries than it does. Only
+four of the thirteen lie on the cost--accuracy frontier, and those four
+are the ladder a rational escalator would climb. Between them the thirteen
+answer 82.0\% of the queries; the remaining 18.0\% are beyond the pool.
+The distribution of the minimum sufficient model repeats what the local
+grid shows: the two cheapest models are the cheapest sufficient choice for
+46.5\% of all queries, and the costliest model is that choice for 2.4\%.
+Another 29.8\% are answered most cheaply by a model off the frontier,
+which matters for what follows.
+
+Table~\ref{tab:public-tax} gives the policies. Sticky use of the top of
+the ladder (P3) costs 7.96 times the minimum sufficient cost, close to the
+local grid's figure, and answers 58.8\% of queries. Climbing the frontier
+(P1) costs 2.69 times, answers 76.2\% and takes 2.27 attempts per query.
+The oracle answers 82.0\% at \$20.88 per thousand queries. Per solved
+query the ordering is the same and the comparison is fair across policies
+of unequal success: \$25.47 for the oracle, \$57.38 for P1 and \$102.08
+for P3, so a user who always reaches for the strongest model pays four
+times what a perfect one-shot router would pay for the same answers.
+
+Two features of the pool are worth separating from the local grid. First,
+the frontier is a subset: a policy climbing it fails on queries only an
+off-frontier model answers, and then pays four cheap attempts instead of
+one expensive sufficient model. This is why the two cheapest static
+policies show a negative tax, and why on SimpleQA even P1 does; they
+underpay by failing, answering 41.3\% and 53.3\% of queries. Tax is
+meaningful only beside the success rate, which is why cost per solved
+query carries the comparison. Second, the dollar tax is larger than the
+token tax --- 7.96 against 2.04 for P3 --- because the price per token
+spans two orders of magnitude across providers while the answers
+themselves do not differ in length nearly as much. Escalation on a mixed
+pool is expensive in a way that token counts hide.
+
+The thinking and non-thinking releases of Qwen3-235B-A22B give the public
+counterpart of the mode axis. Thinking costs 9.11 times more per solved
+query [8.78, 9.47] and, over all nine datasets, answers slightly fewer
+queries (52.1\% against 53.3\%). The plain release already answers 53.3\%
+of queries on its own and only 9.3\% need thinking, so the mode is worth
+paying for on a small minority of queries and is picked per query or not
+at all. Where reasoning is the point the picture reverses --- on GPQA
+thinking answers 80.3\% against 58.6\% --- which is the same
+family-dependence the local grid shows.
+
+Scoring a judged Arena-Hard tie as half credit rather than requiring a
+full score moves nothing: P3 pays 8.14 times the minimum sufficient cost
+and P1 2.64 times, against 7.96 and 2.69.

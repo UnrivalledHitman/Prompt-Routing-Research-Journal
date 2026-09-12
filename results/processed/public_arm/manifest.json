@@ -1,0 +1,75 @@
+{
+  "built_utc": "2026-09-12T00:14:31+00:00",
+  "source": {
+    "repo_id": "NPULH/LLMRouterBench",
+    "repo_type": "dataset",
+    "filename": "bench-release.tar.gz",
+    "revision": "0e5af1b84bf73437a01a1849c0f1d2468baa93fc",
+    "sha256": "b79f8cde1a6f029c2efa663a3a3b6f7748defb22341fe59f328cebef6648c8f1",
+    "file": "bench-release.tar.gz"
+  },
+  "pool": [
+    "claude-sonnet-4",
+    "deepseek-r1-0528",
+    "deepseek-v3-0324",
+    "deepseek-v3.1-terminus",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "glm-4.6",
+    "gpt-5",
+    "gpt-5-chat",
+    "intern-s1",
+    "kimi-k2-0905",
+    "qwen3-235b-a22b-2507",
+    "qwen3-235b-a22b-thinking-2507"
+  ],
+  "subsets": {
+    "aime": {
+      "split": "hybrid",
+      "fingerprint": "fdd43055e4a110990681acac6e814bde1ae9bc89eba943ea1fa020214fa95b80",
+      "queries": 60
+    },
+    "arenahard": {
+      "split": "test",
+      "fingerprint": "5917b4de49b2567d625dbc5ae94cf375753b36f7713cadffc3e92b5204b81b92",
+      "queries": 750
+    },
+    "gpqa": {
+      "split": "test",
+      "fingerprint": "c8ae21899fff07b3219cd6fe529af112c5b2758dd3805a776747fca2635f29d3",
+      "queries": 198
+    },
+    "hle": {
+      "split": "test",
+      "fingerprint": "ef4c81f6b98c214597cf452bce4f626889829e634176a2f16d72596dbf637b94",
+      "queries": 2158
+    },
+    "livecodebench": {
+      "split": "test",
+      "fingerprint": "5b6020ea195c260d426803fb6db244b44c74fcc25c4892c5e74cb1400707915a",
+      "queries": 1055
+    },
+    "livemathbench": {
+      "split": "test",
+      "fingerprint": "66ca37cc2e1ddbbe29ca49e6fbd77cbf0cebdd3b632ef2d5ffa9e988cf4345da",
+      "queries": 121
+    },
+    "mmlupro": {
+      "split": "test_3000",
+      "fingerprint": "048b39e0ed481da8d6d04e4e009b815783f336802393fc7f1f5f9b2e1571e825",
+      "queries": 3000
+    },
+    "simpleqa": {
+      "split": "test",
+      "fingerprint": "a4073cf4befb2d617498fdde3c12d3606765961f5e4d51604633a27046331bb8",
+      "queries": 4326
+    },
+    "swe-bench": {
+      "split": "verified",
+      "fingerprint": "b133eff5fe0f85a53235964061506d42e0470dbe678ac5c78af178b0ead5207f",
+      "queries": 500
+    }
+  },
+  "rows": 158184,
+  "records": "data/processed/public_arm_records.csv.gz"
+}

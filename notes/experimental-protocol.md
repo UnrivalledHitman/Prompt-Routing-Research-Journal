@@ -389,7 +389,7 @@ model loads into four and avoids reload thrash on a memory-tight GPU.
 | 3b | Cap sensitivity, think cap 8192 on cap-hit prompts | ~5 h | — |
 | 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Needs download approval |
 | 4 | Full router sweep, ablations, seeds | ~6-10 h | — |
-| 5 | Public-benchmark arm (no local inference) | CPU only | Needs a non-pickle source |
+| 5 | Public-benchmark arm (no local inference) | 4 min (actual) | **Done 2026-09-12**, see §13.5 |
 
 GPU use for the study was granted on 2026-09-11. The harness still waits for an otherwise idle GPU
 before loading a model and reruns any window touched by another workload, so the user's own GPU jobs are
@@ -601,3 +601,35 @@ meta-verifier of `aggarwal2024automix` is omitted, which favours no method, and 
 
 **Starting distribution of the sticky-mixed policy (P4).** Uniform over cells as the primary; a skewed
 distribution with 50% of queries starting at c8 as a sensitivity. Both are labelled as assumptions.
+
+### 13.5 Public-benchmark arm, stage 5 (run 2026-09-12)
+
+The source is LLMRouterBench (`NPULH/LLMRouterBench`, MIT licence), read from the local Hugging Face
+cache at revision `0e5af1b8`; `bench-release.tar.gz` has SHA-256 `b79f8cde...f648c8f1`. Nothing is
+downloaded and nothing is generated: `scripts/build_public_arm.py` streams the archive, keeps the outcome
+fields of the pool and writes `data/processed/public_arm_records.csv.gz` plus a manifest naming the
+subset chosen per dataset.
+
+- **Pool and queries.** The thirteen models of the performance-cost setting, over the nine datasets all of
+  them were run on. `tau2` is the tenth and is dropped: `gpt-5-chat` was never run on it, and the pool has
+  to stay fixed across datasets. Where a dataset ships several evaluated subsets, the largest one every
+  pool model shares is taken, identified by the release's own `data_fingerprint`. That gives 12,168
+  queries and 158,184 records.
+- **Success.** A full score. Scores are binary except on ArenaHard, where a judged tie against the baseline
+  scores 0.5; a tie is not a correct answer. The 0.5 threshold is run as a sensitivity and moves nothing.
+- **Cost.** Dollars, as metered by the providers, and prompt plus completion tokens. No per-query latency
+  and no energy is published for these pools, so those units are not reported here.
+- **Ladder.** The grid's size-and-mode order has no counterpart in a pool of thirteen models, so the ladder
+  is the cost-accuracy frontier of the pool in cost order: `deepseek-v3-0324`, `qwen3-235b-a22b-2507`,
+  `gpt-5`, `gemini-2.5-pro`. Its top rung takes the role of c8. P1, P3 and P4 carry over; P2 does not,
+  the pool having no mode axis, and the two Qwen3-235B-A22B releases are compared instead.
+- **Caveat.** The frontier is a subset of the pool, so a climbing policy can fail where an off-frontier
+  model would have answered (29.8% of queries are answered most cheaply off the frontier). Such a policy
+  can show a negative tax by underpaying and failing, so the tax is reported beside the success rate and
+  cost per solved query carries the comparison.
+- **Bootstrap.** 2,000 resamples rather than 10,000: the prompt set is forty times the local one, and the
+  resample matrix is what bounds memory. `analysis._mean` and `analysis._ratio` now consume that matrix in
+  blocks, which changes no statistic.
+- **Result.** P3 costs 7.96x the minimum sufficient cost and answers 58.8% of queries; P1 costs 2.69x and
+  answers 76.2%; the oracle answers 82.0%. Per solved query, $102.08, $57.38 and $25.47 per 1,000. The
+  tax survives the move to a frontier pool.

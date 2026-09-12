@@ -1,0 +1,72 @@
+# Public-benchmark arm (experimental protocol, section 9, stage 5; paper section IV-J).
+#
+# The escalation tax is recomputed, without local inference, on the published per-query
+# outcomes of LLMRouterBench. The release is read from the local Hugging Face cache at a
+# pinned revision and never downloaded here. Its records carry a score, prompt and
+# completion token counts and a dollar cost per model and query, which is what the
+# resubmission term needs; no per-query latency is published, so this arm reports tokens
+# and dollars only.
+
+source:
+  repo_id: NPULH/LLMRouterBench
+  repo_type: dataset
+  filename: bench-release.tar.gz
+  revision: 0e5af1b84bf73437a01a1849c0f1d2468baa93fc
+
+paths:
+  records: data/processed/public_arm_records.csv.gz   # one row per model and query
+  manifest: results/processed/public_arm/manifest.json
+  out_dir: results/processed/public_arm
+
+# The performance-cost setting of the benchmark: 13 flagship models whose dollar costs are
+# metered by their providers. tau2 is the tenth dataset of that setting but was not run with
+# gpt-5-chat, so it is left out and the pool stays fixed across datasets.
+pool:
+  - claude-sonnet-4
+  - deepseek-r1-0528
+  - deepseek-v3-0324
+  - deepseek-v3.1-terminus
+  - gemini-2.5-flash
+  - gemini-2.5-pro
+  - glm-4.6
+  - gpt-5
+  - gpt-5-chat
+  - intern-s1
+  - kimi-k2-0905
+  - qwen3-235b-a22b-2507
+  - qwen3-235b-a22b-thinking-2507
+
+datasets: [aime, arenahard, gpqa, hle, livecodebench, livemathbench, mmlupro, simpleqa, swe-bench]
+
+# Several datasets ship more than one evaluated subset. The canonical one is the subset every
+# pool model was run on; where more than one qualifies, the largest.
+selection: shared_largest
+
+# Scores are 0 or 1 everywhere except ArenaHard, where a judged tie against the baseline
+# scores 0.5. A tie is not a correct answer, so the primary threshold is a full score.
+success:
+  primary: 1.0
+  sensitivity: 0.5
+
+units: [dollars, tokens]
+
+# A user escalating through a pool of 13 models would not step onto a model that costs more
+# than one already tried and answers no better. The ladder is therefore the cost-accuracy
+# frontier in cost order, computed on the pool itself; "top" recovers at the most accurate
+# model, "climb" continues up the frontier.
+policies:
+  recovery: [top, climb]
+  start_weights: uniform
+
+# The pool has no mode axis, so P2 has no analogue. It does contain one thinking and
+# non-thinking release of the same model, which is the closest public counterpart to H4.
+mode_pair:
+  thinking: qwen3-235b-a22b-thinking-2507
+  plain: qwen3-235b-a22b-2507
+
+# 2,000 resamples rather than the 10,000 used locally: this arm has 12,168 queries instead
+# of 300, so the intervals are already narrow and the resample matrix is 40 times larger.
+bootstrap:
+  n_boot: 2000
+  level: 0.95
+  seed: 20260911

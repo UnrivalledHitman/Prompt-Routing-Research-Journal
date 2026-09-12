@@ -43,6 +43,14 @@ ROUTERS = {
 }
 PER_CHECK = {"cascade-automix"}  # overhead is reported per verification call
 DIGITS = {"energy_j": 1, "board_j": 1, "tokens": 0, "tokens_output_heavy": 0, "latency_s": 2}
+PUBLIC_POLICIES = {
+    "P1": "P1, climb the frontier",
+    "P3": "P3, sticky top",
+    "P4-uniform": "P4, uniform start",
+    "random": "Random, then top",
+    "oracle": "Oracle",
+}
+PER_THOUSAND = 1000.0  # published costs are dollars per query; the tables report per 1,000
 
 
 def finite(value: Any) -> bool:  # noqa: ANN401
@@ -312,12 +320,69 @@ def table_robustness(
     return tabular("@{}lr@{}", ["Check", "Value"], body)
 
 
+def table_public_pool(pool: pd.DataFrame, cstar: pd.DataFrame) -> str | None:
+    """Accuracy, cost, $c^*$ share and ladder membership of every model in the public pool."""
+    rows = pool[pool["scope"] == "all"].sort_values("rung")
+    shares = cstar[(cstar["scope"] == "all") & (cstar["unit"] == "dollars")]
+    if rows.empty or shares.empty:
+        return None
+    share = dict(zip(shares["cstar"], shares["share"], strict=True))
+    body = [
+        [
+            rf"\texttt{{{row['model']}}}",
+            pct(row["accuracy"]),
+            num(PER_THOUSAND * row["mean_dollars"], 2),
+            num(PER_THOUSAND * row["dollars_per_solved"], 2),
+            pct(share.get(row["model"], float("nan"))),
+            r"$\bullet$" if row["on_ladder"] else "",
+        ]
+        for _, row in rows.iterrows()
+    ]
+    body.append(["No model answers", "--", "--", "--", pct(share.get("unservable")), ""])
+    header = ["Model", r"Acc.\ (\%)", r"Cost (\$/1{,}000)", r"\$ per solved (/1{,}000)",
+              r"$c^*$ share (\%)", "Ladder"]  # fmt: skip
+    return tabular("@{}lrrrrc@{}", header, body, breaks=[len(body) - 1], colsep=4)
+
+
+def table_public_tax(frame: pd.DataFrame) -> str | None:
+    """Escalation tax on the public benchmark, in dollars per 1,000 queries."""
+    rows = frame[(frame["scope"] == "all") & (frame["unit"] == "dollars")].set_index("policy")
+    if rows.empty:
+        return None
+    names = [p for p in PUBLIC_POLICIES if p != "oracle" and p in rows.index]
+    statics = [p for p in rows.index if str(p).startswith("always-")]
+    body, breaks = [], [len(names), len(names) + len(statics)]
+    for policy in [*names, *statics, "oracle"]:
+        if policy not in rows.index:
+            continue
+        row = rows.loc[policy]
+        label = PUBLIC_POLICIES.get(
+            policy, rf"Always \texttt{{{str(policy).removeprefix('always-')}}}"
+        )
+        body.append(
+            [
+                label,
+                pct(row["solved_rate"]),
+                num(row["attempts"], 2),
+                with_ci(row, "mean_cost", 2, PER_THOUSAND),
+                with_ci(row, "tax", 2, PER_THOUSAND),
+                num(row["relative_tax"], 2),
+            ]
+        )
+    header = ["Policy", r"Solved (\%)", "Attempts", r"Cost (\$/1{,}000) [95\% CI]",
+              r"Tax [95\% CI]", r"Tax / $c^*$ cost"]  # fmt: skip
+    return tabular("@{}lrrrrr@{}", header, body, breaks, colsep=4)
+
+
 def main() -> None:
     """Write every table for which the analysis wrote its inputs."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("analysis", type=Path)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "paper" / "tables")
     parser.add_argument("--units", nargs="+", default=["energy_j", "tokens"])
+    parser.add_argument(
+        "--public", type=Path, default=None, help="public-benchmark arm results directory"
+    )
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s | %(message)s"
@@ -345,6 +410,12 @@ def main() -> None:
         "robustness",
         table_robustness(t["label_noise_cstar"], t["cap_sensitivity"], t["energy_apportioning"]),
     )
+    if args.public is not None:
+        p = {name: read(args.public, name) for name in ("pool", "cstar", "tax_policies")}
+        if p["pool"] is not None and p["cstar"] is not None:
+            write(args.out, "public_pool", table_public_pool(p["pool"], p["cstar"]))
+        if p["tax_policies"] is not None:
+            write(args.out, "public_tax", table_public_tax(p["tax_policies"]))
 
 
 if __name__ == "__main__":

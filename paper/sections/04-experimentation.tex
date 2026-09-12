@@ -336,14 +336,43 @@ differently. To test whether the escalation-tax analysis carries over, the
 same policy and tax computations are applied, without local inference, to
 the per-model outcomes and costs published with
 LLMRouterBench~\cite{li2026llmrouterbench}. Each of its records stores a
-score, prompt and completion token counts, a dollar cost and a latency for
-one model on one query, which is what the resubmission term needs: a
-re-asked query pays its prompt tokens again at the stronger model's price.
+score and prompt and completion token counts for one model on one query,
+and, in its performance--cost setting, the provider's dollar charge, which
+is what the resubmission term needs: a re-asked query pays its prompt
+tokens again at the stronger model's price.
 RouterBench~\cite{hu2024routerbench} carries similar fields, but it is
 distributed as serialised Python objects, which execute code when loaded,
-so we do not use it. Energy is not available for these pools, so this arm
-reports tokens, dollars and latency only. \tbd{public-benchmark arm: run
-once the data download is approved}
+so we do not use it. Neither energy nor per-query latency is published for
+these pools, so this arm reports dollars and tokens only.
+
+We take the thirteen models of the performance--cost setting and the nine
+datasets every one of them was run on: AIME, Arena-Hard, GPQA, HLE,
+LiveCodeBench, LiveMathBench, MMLU-Pro, SimpleQA and SWE-bench Verified.
+The tenth dataset of that setting, $\tau^2$-bench, was not run with one
+pool model and is dropped, so that the pool stays fixed across datasets.
+Several datasets ship more than one evaluated subset; we keep, per dataset,
+the largest subset every pool model shares, identified by the release's own
+data fingerprint. That leaves 12{,}168 queries answered by all thirteen
+models. Scores are binary except on Arena-Hard, where a judged tie against
+the baseline scores one half; a tie is not a correct answer, so a query
+counts as answered at a full score, and the half-credit threshold is
+reported as a sensitivity check.
+
+Two things differ from the local grid. First, the ladder. The grid has a
+natural size-and-mode order, but a pool of thirteen models does not: a user
+escalating through it would not step onto a model that costs more than one
+already tried and answers no better. The ladder is therefore the
+cost--accuracy frontier of the pool in cost order, computed on the same
+queries, and its top rung plays the part $c_8$ plays locally. Second, the
+policies: P1, P3 and P4 carry over, but P2 turns thinking on before moving
+up a size and has no analogue in a pool with no mode axis. The two releases
+of Qwen3-235B-A22B, thinking and not, are compared separately as the public
+counterpart of H4. Because the frontier is a subset of the pool, a policy
+climbing it can fail on a query that some off-ladder model answers; the tax
+is therefore read alongside the success rate, and cost per solved query is
+the statistic comparable across policies. Intervals use 2{,}000 bootstrap
+resamples rather than the 10{,}000 used locally, the prompt set being forty
+times larger.
 
 \subsection{Reproducibility}
 \label{sec:repro}
