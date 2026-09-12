@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -135,6 +136,17 @@ def cstar_per_prompt(table: public.PublicTable) -> pd.Series:
     return pd.Series(names, index=table.queries["index"].to_numpy(), name="hosted_cstar")
 
 
+def share(values: pd.Series) -> float | None:
+    """Return a rounded share, or None when there is nothing to take a share of.
+
+    ``json.dumps`` writes a float NaN as bare ``NaN``, which no strict JSON reader
+    accepts, so an undefined statistic has to leave the payload as null.
+    """
+    if values.empty:
+        return None
+    return round(float(values.mean()), 4)
+
+
 def pairing(
     hosted: pd.Series, splits: pd.DataFrame, unit: str
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
@@ -151,6 +163,11 @@ def pairing(
         raise ValueError(f"{column} is not in the local splits table")
     local = splits.set_index("prompt_id")
     shared = local.index.intersection(hosted.index)
+    if shared.empty:
+        raise ValueError(
+            "no prompt is in both arms: the local analysis covers a different subset "
+            "from the hosted stage"
+        )
     frame = pd.DataFrame(
         {
             "family": local.loc[shared, "family"],
@@ -165,9 +182,7 @@ def pairing(
         frame.loc[served, f"{side}_mode"] = [rank[1] for rank in ranks]
 
     counts = (
-        frame.groupby(["local_cstar", "hosted_cstar"], sort=True)
-        .size()
-        .reset_index(name="count")
+        frame.groupby(["local_cstar", "hosted_cstar"], sort=True).size().reset_index(name="count")
     )
     both = frame.dropna(subset=["local_size", "hosted_size"])
     rho, pvalue = (
@@ -182,13 +197,11 @@ def pairing(
         "servable_both": int(len(both)),
         "local_unservable": int((frame["local_cstar"] == "unservable").sum()),
         "hosted_unservable": int((frame["hosted_cstar"] == "unservable").sum()),
-        "local_cheap_mode_share": round(float((both["local_mode"] == 0).mean()), 4),
-        "hosted_cheap_mode_share": round(float((both["hosted_mode"] == 0).mean()), 4),
-        "both_cheap_mode_share": round(
-            float(((both["local_mode"] == 0) & (both["hosted_mode"] == 0)).mean()), 4
-        ),
-        "size_rank_spearman": round(float(rho), 4),
-        "size_rank_p": float(pvalue),
+        "local_cheap_mode_share": share(both["local_mode"] == 0),
+        "hosted_cheap_mode_share": share(both["hosted_mode"] == 0),
+        "both_cheap_mode_share": share((both["local_mode"] == 0) & (both["hosted_mode"] == 0)),
+        "size_rank_spearman": None if math.isnan(rho) else round(float(rho), 4),
+        "size_rank_p": None if math.isnan(pvalue) else float(pvalue),
         "rescued_by_hosted": {
             str(cell): int(count) for cell, count in rescued.value_counts().items()
         },

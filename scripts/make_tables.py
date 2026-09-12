@@ -345,9 +345,7 @@ def table_public_pool(pool: pd.DataFrame, cstar: pd.DataFrame) -> str | None:
     return tabular("@{}lrrrrc@{}", header, body, breaks=[len(body) - 1], colsep=4)
 
 
-def table_public_tax(
-    frame: pd.DataFrame, static: Callable[[str], str] | None = None
-) -> str | None:
+def table_public_tax(frame: pd.DataFrame, static: Callable[[str], str] | None = None) -> str | None:
     """Escalation tax on the public benchmark, in dollars per 1,000 queries."""
     rows = frame[(frame["scope"] == "all") & (frame["unit"] == "dollars")].set_index("policy")
     if rows.empty:
@@ -453,9 +451,7 @@ def main() -> None:
             write(
                 args.out,
                 "hosted_tax",
-                table_public_tax(
-                    h["tax_policies"], lambda name: f"Always $h_{{{name[1:]}}}$"
-                ),
+                table_public_tax(h["tax_policies"], lambda name: f"Always $h_{{{name[1:]}}}$"),
             )
 
 

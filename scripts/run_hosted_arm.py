@@ -341,9 +341,7 @@ def cmd_collect(cfg: dict[str, Any], args: argparse.Namespace) -> None:
     if settled:
         LOGGER.info("stage %s already has settled batches; appending rather than rewriting",
                     args.stage)  # fmt: skip
-    grand = collect_stage(
-        cfg, args.stage, meter=meter, client=client_of(cfg), reset=not settled
-    )
+    grand = collect_stage(cfg, args.stage, meter=meter, client=client_of(cfg), reset=not settled)
     report_stage(args.stage, grand, len(stage_cells(cfg, args.stage)), meter)
 
 

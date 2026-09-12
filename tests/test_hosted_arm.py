@@ -460,9 +460,7 @@ def _corpus(path: Path, per_family: int) -> list[PromptItem]:
         for index in range(per_family)
         for family in ("math", "code", "mcq")
     ]
-    path.write_text(
-        "".join(json.dumps(asdict(item)) + "\n" for item in items), encoding="utf-8"
-    )
+    path.write_text("".join(json.dumps(asdict(item)) + "\n" for item in items), encoding="utf-8")
     return items
 
 
@@ -514,9 +512,7 @@ def test_used_prompt_ids_reads_every_wave_of_a_stage(tmp_path: Path) -> None:
     cfg = _campaign_cfg(tmp_path)
     for name, prompt_id in (("main_w1_cheap", "math-0"), ("main_w2_dear", "code-1")):
         line = {"custom_id": hb.custom_id("h1", prompt_id), "method": "POST"}
-        (tmp_path / f"{name}_input.jsonl").write_text(
-            json.dumps(line) + "\n", encoding="utf-8"
-        )
+        (tmp_path / f"{name}_input.jsonl").write_text(json.dumps(line) + "\n", encoding="utf-8")
     assert used_prompt_ids(cfg, ["main"]) == {"math-0", "code-1"}
 
 
@@ -562,9 +558,7 @@ def test_cstar_per_prompt_names_the_cheapest_cell_that_answers() -> None:
 
 def _splits(rows: list[tuple[str, str, str]]) -> pd.DataFrame:
     """Build the columns of the local analysis' splits table that pairing reads."""
-    return pd.DataFrame(
-        [{"prompt_id": p, "family": f, "cstar_energy_j": c} for p, f, c in rows]
-    )
+    return pd.DataFrame([{"prompt_id": p, "family": f, "cstar_energy_j": c} for p, f, c in rows])
 
 
 def test_pairing_compares_ranks_and_reports_what_the_hosted_ladder_rescues() -> None:
@@ -644,3 +638,20 @@ def test_collect_keeps_records_a_settled_batch_already_paid_for(
     cfg["budget"]["ledger"] = str(tmp_path / "other.jsonl")
     runner.cmd_collect(cfg, argparse.Namespace(stage="main"))
     assert seen["reset"] is True
+
+
+def test_pairing_refuses_a_local_analysis_of_a_different_subset() -> None:
+    """An empty join reads like perfect disagreement; the wrong directory has to say so."""
+    hosted = pd.Series({"q1": "h1", "q2": "h3"}, name="hosted_cstar")
+    with pytest.raises(ValueError, match="no prompt is in both arms"):
+        pairing(hosted, _splits([("z9", "math", "c1")]), "energy_j")
+
+
+def test_pairing_summary_is_valid_json_when_a_share_is_undefined() -> None:
+    """Both arms unservable leaves the shares undefined, and NaN is not JSON."""
+    hosted = pd.Series({"q1": "unservable"}, name="hosted_cstar")
+    _, _, summary = pairing(hosted, _splits([("q1", "math", "unservable")]), "energy_j")
+    assert summary["servable_both"] == 0
+    assert summary["local_cheap_mode_share"] is None
+    assert summary["size_rank_spearman"] is None
+    assert json.loads(json.dumps(summary))["hosted_cheap_mode_share"] is None
