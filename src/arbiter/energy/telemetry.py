@@ -31,7 +31,7 @@ import pynvml
 
 LOGGER = logging.getLogger("arbiter.telemetry")
 CSV_COLUMNS = ("perf_s", "epoch_s", "power_mw", "util_pct", "temp_c", "mem_used_mb")
-MAX_VALID_W = 200.0  # RTX 4060 Laptop maximum graphics power is 140 W with Dynamic Boost
+MAX_VALID_W = 200.0  # gate 1 measured a 115 W enforced limit; above this is a read error
 T = TypeVar("T")
 
 
