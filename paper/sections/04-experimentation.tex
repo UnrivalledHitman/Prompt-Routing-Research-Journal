@@ -138,9 +138,10 @@ not a reason to resample. Open-ended answers are judged as described next.
 \label{sec:judge}
 
 A judge drawn from the routed pool would grade its own family, so the
-primary judge comes from a different model family and runs locally
-\decision{judge model, pending approval to download: Llama~3.1 8B Instruct
-or Gemma~3 4B at Q4\_K\_M}. The open-ended family is labelled after the
+primary judge comes from a different model family and runs locally:
+Llama~3.1 8B Instruct at Q4\_K\_M, the same quantisation as the routed
+pool, so the judge costs no more to run than the models it grades. The
+open-ended family is labelled after the
 three gradable families, and results in Section~\ref{sec:results} cover the
 gradable families unless stated otherwise. The judge scores
 each answer on a 1--5 rubric, against a reference answer where one exists,
