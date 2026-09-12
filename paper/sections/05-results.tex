@@ -24,6 +24,18 @@ inference and is final.}
 \subsection{The Escalation Tax on a Public Benchmark}
 \label{sec:results-public}
 
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/public_frontier}
+\caption{The thirteen models of the public pool, the cost--accuracy
+frontier they define and where the escalation policies land on it. Cost is
+logarithmic, in US dollars per 1{,}000 queries. P3 sits on the top rung it
+always uses. P1 climbs the frontier and answers more queries than any
+single model in the pool, at a price between the two costliest rungs. The
+oracle answers still more for a third of what P3 costs.}
+\label{fig:public-frontier}
+\end{figure}
+
 \begin{table*}[!t]
 \caption{The public pool in cost order, over the 12{,}168 queries of nine
 datasets that all thirteen models answered. Cost is the provider's own
@@ -54,7 +66,8 @@ recomputes the same quantities on the published outcomes of
 LLMRouterBench: thirteen flagship models, nine datasets and 12{,}168
 queries every model answered, priced by the providers themselves.
 
-Table~\ref{tab:public-pool} gives the pool in cost order. Its members span
+Table~\ref{tab:public-pool} and Fig.~\ref{fig:public-frontier} give the
+pool in cost order. Its members span
 a factor of 79 in price, from \$0.76 to \$60.02 per thousand queries, and
 a factor of 1.6 in accuracy, from 36.9\% to 58.8\%. Price and accuracy are
 only loosely related: four models cost more than

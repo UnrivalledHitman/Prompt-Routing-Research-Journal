@@ -51,6 +51,7 @@ ROUTERS = {
     "cascade-automix": ("AutoMix-style cascade", "C6"),
 }
 ERROR_KW = {"elinewidth": 0.6, "capsize": 1.5}
+PER_THOUSAND = 1000.0  # the public arm prices a query in dollars; the figure uses 1,000 queries
 
 
 def style() -> None:
@@ -390,12 +391,69 @@ def fig_asymmetry(frame: pd.DataFrame, unit: str, out: Path) -> None:
     save(fig, out, f"asymmetry_{unit}")
 
 
+def fig_public(pool: pd.DataFrame, taxes: pd.DataFrame, out: Path) -> None:
+    """Accuracy against cost for the public pool, with its frontier and the policies."""
+    models = pool[pool["scope"] == "all"]
+    policies = taxes[(taxes["scope"] == "all") & (taxes["unit"] == "dollars")].set_index("policy")
+    if not usable(models, "public pool") or not usable(policies, "public policies"):
+        return
+    cost = PER_THOUSAND * models["mean_dollars"].to_numpy()
+    accuracy = 100.0 * models["accuracy"].to_numpy()
+    ladder = models["on_ladder"].to_numpy(dtype=bool)
+    fig, ax = plt.subplots(figsize=(COLUMN_IN, 2.3))
+    ax.scatter(cost[~ladder], accuracy[~ladder], s=12, color="0.65", label="Pool member")
+    ax.plot(
+        cost[ladder],
+        accuracy[ladder],
+        marker="o",
+        markersize=4,
+        color="C0",
+        linewidth=0.9,
+        label="Escalation ladder",
+    )
+    rungs = list(zip(models["model"][ladder], cost[ladder], accuracy[ladder], strict=True))
+    for index, (name, x, y) in enumerate(rungs):
+        last = index == len(rungs) - 1  # the top rung would otherwise run off the axis
+        ax.annotate(
+            name.replace("-235b-a22b", ""),
+            (x, y),
+            textcoords="offset points",
+            xytext=(-5, 5) if last else (3, -8),
+            ha="right" if last else "left",
+            va="bottom" if last else "top",
+            fontsize=5.5,
+            color="C0",
+        )
+    for policy, marker, color in (("P1", "s", "C1"), ("P3", "v", "C3"), ("oracle", "*", "C2")):
+        if policy not in policies.index:
+            continue
+        row = policies.loc[policy]
+        ax.scatter(
+            PER_THOUSAND * row["mean_cost"],
+            100.0 * row["solved_rate"],
+            marker=marker,
+            s=26 if marker != "*" else 50,
+            color=color,
+            zorder=3,
+            label="Oracle" if policy == "oracle" else policy,
+        )
+    ax.set_xscale("log")
+    ax.set_xlabel("Cost (US\\$ per 1000 queries)")
+    ax.set_ylabel("Queries answered (\\%)")
+    ax.legend(frameon=False, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 1.0),
+              handletextpad=0.3, columnspacing=0.8)  # fmt: skip
+    save(fig, out, "public_frontier")
+
+
 def main() -> None:
     """Draw every figure for which the analysis wrote its input."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("analysis", type=Path)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "paper" / "figures")
     parser.add_argument("--units", nargs="+", default=["energy_j", "tokens"])
+    parser.add_argument(
+        "--public", type=Path, default=None, help="public-benchmark arm results directory"
+    )
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s | %(message)s"
@@ -426,6 +484,10 @@ def main() -> None:
             fig_asymmetry(tables["asymmetry"], unit, args.out)
         if tables["routers_sweeps"] is not None and tables["baselines_test"] is not None:
             fig_frontier(tables["routers_sweeps"], tables["baselines_test"], unit, args.out)
+    if args.public is not None:
+        pool, taxes = read(args.public, "pool"), read(args.public, "tax_policies")
+        if pool is not None and taxes is not None:
+            fig_public(pool, taxes, args.out)
 
 
 if __name__ == "__main__":
