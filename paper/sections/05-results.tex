@@ -157,9 +157,64 @@ beside the solved column.}
 \generated{tables/hosted_tax.tex}{\input{tables/hosted_tax}}
 \end{table*}
 
-\tbd{Written when the hosted main stage finishes: the ladder and where
-high effort falls off it, the $c^*$ distribution against the local
-grid's, the policy taxes, and the reasoning-token cost of the mode axis.}
+Six hosted cells cross three model sizes with two reasoning-effort
+settings, priced by the provider rather than metered on our hardware.
+Table~\ref{tab:hosted-cells} and Fig.~\ref{fig:hosted-frontier} give them
+over the 825 prompts of the main subset that every cell answered. They
+span a factor of 185 in price, from \$0.03 to \$5.77 per thousand queries,
+and 74.2\% to 92.8\% in accuracy. Four of the six lie on the
+cost--accuracy frontier and form the ladder $h_1 \rightarrow h_3
+\rightarrow h_5 \rightarrow h_4$: \texttt{gpt-5-nano} then
+\texttt{gpt-5-mini} at minimal effort, then \texttt{gpt-5} at minimal
+effort, then \texttt{gpt-5-mini} at high effort. Both cells left off the
+ladder are high-effort ones. \texttt{gpt-5-nano} at high effort costs
+twice \texttt{gpt-5-mini} at minimal and answers twelve points fewer.
+\texttt{gpt-5} at high effort is the costliest cell in the pool at \$5.77
+per thousand, 5.6 times the price of \texttt{gpt-5-mini} at high effort,
+and answers slightly fewer queries than it, 91.9\% against 92.8\%. The
+most expensive thing a user can buy here is not the most accurate one.
+
+The cheapest cell is the minimum sufficient choice for 74.2\% of queries
+and the second rung for another 16.0\%; 2.5\% are answered by no cell.
+Paid reasoning effort is the cheapest sufficient choice for 5.1\% of
+queries across its three cells. The split by family repeats the local
+grid's: on math the cheapest cell suffices for 58.6\% and the second rung
+takes another 27.3\%, while on code the cheapest cell suffices for
+82.5\%.
+
+Table~\ref{tab:hosted-tax} gives the policies. Sticky use of the ladder's
+top rung (P3) costs 5.35 times the minimum sufficient cost and answers
+92.8\% of queries. Climbing the frontier (P1) costs 1.22 times, answers
+97.1\% and takes 1.38 attempts. The oracle answers 97.5\% at \$0.25 per
+thousand queries. Per solved query P3 pays \$1.10 against the oracle's
+\$0.25, so escalation on this ladder is a factor of 4.4 on the price of an
+answer. Starting uniformly over the six cells and then climbing (P4) costs
+7.93 times, worse than either, because two of its six starting points are
+cells the frontier excludes. One static policy is worth naming:
+\texttt{gpt-5-mini} at minimal effort used alone costs within noise of the
+minimum sufficient cost --- a tax of $-0.04$ with a 95\% interval of
+$[-0.32, 0.41]$ --- while answering 89.5\% of queries. Most of what the
+ladder buys above that rung is bought at a steep multiple.
+
+The reasoning-effort axis is priced here rather than metered, and the
+price is a multiple rather than a margin: high effort costs 11.8, 5.45 and
+7.26 times minimal effort at \texttt{gpt-5-nano}, \texttt{gpt-5-mini} and
+\texttt{gpt-5}. What it buys shrinks as the model gets stronger. The share
+of queries minimal effort fails and high effort answers is 15.2\% at
+\texttt{gpt-5-nano}, 6.2\% at \texttt{gpt-5-mini} and 4.1\% at
+\texttt{gpt-5}, where overall accuracy moves by a tenth of a point, from
+91.8\% to 91.9\%, and falls on multiple choice from 94.9\% to 93.4\%.
+
+The cap does to the hosted cells what it does to the local grid.
+\texttt{gpt-5-nano} at high effort spends 1{,}845 reasoning tokens on the
+average prompt and hits its 4{,}096-token cap on 18.9\% of them. Counting
+a truncated generation as a failure, as the local grid does, leaves it at
+77.8\%; on the responses that finish it answers 96.0\%, against 74.5\% for
+the same model at minimal effort. On code, where its reasoning runs
+longest at 3{,}075 output tokens per prompt, high effort is worse than
+minimal outright, 65.3\% against 82.5\%. Reasoning that does not fit the
+budget is paid for and discarded, which is the same failure the local 0.6B
+and 1.7B thinking cells show.
 
 \subsection{Carbon of the Escalation Tax}
 \label{sec:results-carbon}

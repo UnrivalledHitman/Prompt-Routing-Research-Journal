@@ -442,7 +442,9 @@ pool stays fixed across cells as it does across datasets in
 Section~\ref{sec:public-arm}. A few prompts lose a cell to the provider's
 content filter, which refuses the request outright; the whole prompt is then
 dropped rather than scored as a failure, because a refusal is not a wrong
-answer, and Section~\ref{sec:results-hosted} reports how many.
+answer. Two of the 827 prompts collected were lost this way, one to a
+\texttt{gpt-5-mini} refusal and one to a \texttt{gpt-5} refusal, leaving
+825 for the analysis.
 
 Requests run through the provider's batch interface at half list price. A
 budget meter prices every batch at its worst case, every request emitting
@@ -453,9 +455,13 @@ effort actually spends. Because real generations fall well short of their
 caps, the main stage then runs in waves: each wave is sized to the worst
 case the remaining budget allows, and settling it at its measured cost frees
 the difference for the next. The guard is never loosened --- committed spend
-is at every moment the worst case of everything unsettled --- yet the arm
-still covers the whole labelled pool rather than the fraction a single
-worst-case-sized batch could afford.
+is at every moment the worst case of everything unsettled --- yet the waves
+reach far more of the pool than one batch could. Ten waves collected 827 of
+the 860 eligible prompts for \$6.81, bringing the arm's total to \$7.07
+against a \$8.00 limit, where the first wave alone, priced at its worst
+case, took almost the whole limit for 195 prompts. The campaign stops once the budget left would fund a wave of fewer
+than twenty prompts, which is why 33 prompts of the pool go unpriced; the
+analysis is over the 827 collected rather than the whole labelled set.
 
 \subsection{Reproducibility}
 \label{sec:repro}
