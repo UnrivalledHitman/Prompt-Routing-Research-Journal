@@ -15,6 +15,11 @@
 All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
 16\,GB of system memory and an NVIDIA GeForce RTX~4060 Laptop GPU with
 8\,GB of memory, driver 616.56 and an enforced board power limit of 115\,W.
+The driver was updated to 616.92 between the main labelling run and the
+later cap, noise and open-ended stages. The noise stage resamples prompts
+and cells the main run measured, so it doubles as a check on the energy
+comparison across that change. \tbd{result of the energy-per-token
+comparison on the noise subset}
 Models are served by Ollama 0.34.0~\cite{ollama} from GGUF weights
 quantised to Q4\_K\_M~\cite{gerganov2023llamacpp}.
 Every model is addressed by an explicit quantisation tag, and the weight
