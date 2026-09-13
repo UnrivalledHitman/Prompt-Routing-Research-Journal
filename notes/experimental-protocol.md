@@ -708,6 +708,11 @@ the machine. What changed across that restart, and what did not:
 - **Cap reruns.** 219 capped generations, up to 40 per cell and all of them where a cell had fewer
   (`scripts/select_cap_reruns.py --per-cell 40` on the full 9,600-generation grades), bounded at 5.7 GPU
   hours. Thinking hit the 4,096-token cap on 16-20% of prompts at every size and non-thinking on about 1%.
+- **8B cap context.** The 0.6B, 1.7B and 4B reruns ran at a 10,240-token context. At that context Ollama
+  placed only 92% of qwen3:8b in VRAM (6,044 of 6,566 MB), five load attempts in a row on 2026-09-14, and
+  the harness stopped rather than measure a partly offloaded model. A placement test on an idle GPU loaded
+  it fully at 9,216 and 8,704 tokens. The 8B reruns therefore run as their own stage, `cap_8b`, at 9,216
+  tokens: the longest 8B prompt in the sample is 371 tokens, so each keeps its full 8,192-token budget.
 
 ## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
 
