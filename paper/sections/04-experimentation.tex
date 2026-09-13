@@ -73,7 +73,10 @@ depends on the caps, and we measure by how much. A sample of capped
 generations, up to 40 per size and mode and spread evenly over families, is
 rerun with an 8{,}192-token cap and a 10{,}240-token context, and we report
 how often the longer cap turns a failure into a success and how often that
-success would move $\cstar(q)$ to a cheaper cell. Before measurement, each
+success would move $\cstar(q)$ to a cheaper cell. At that context the 8B
+model no longer fits entirely in GPU memory, so its reruns use a
+9{,}216-token context, which still holds the longest 8B prompt in the
+sample, 371 tokens, together with the full cap. Before measurement, each
 Ollama server session
 runs one thinking and one non-thinking warm-up generation, which are
 discarded; the gate showed a one-off prefill stall of about 6\,s at the
