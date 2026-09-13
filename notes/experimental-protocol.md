@@ -242,10 +242,13 @@ itself evaluated (`scripts/sample_judge_validation.py`, `scripts/judge_agreement
    `--estimate` prints an **upper bound**, not the expected spend: it prices every request at the full
    prompt budget (~9,000 tokens, §5.4 `num_ctx`) and the full reply budget, which bounds 200 items at
    about $1.25 on `gpt-5-mini` against a realistic ~$0.30, since an open-ended request is 83 tokens at
-   the median and a judged answer a few hundred. The ceiling is therefore enforced by `--max-inr`, which
-   refuses the next item once the running spend could pass it, rather than by the estimate; the USD/INR
-   rate used is recorded with the run. If the guard stops the run short of 200 items, the sample is
-   reported at the size reached and any increase goes back to Indrajeet before a further request is sent.
+   the median and a judged answer a few hundred. The ceiling is therefore enforced by `--max-usd`, which
+   charges the next item its full prompt and reply budget and refuses it if that could carry the running
+   spend past the ceiling, rather than by the estimate. The guard counts in dollars, the unit the
+   authorisation is given in, so no exchange rate stands between the two; `--inr-per-usd` only adds a
+   rupee figure to the log for a credit priced that way. If the guard stops the run short of 200 items,
+   the sample is reported at the size reached and any increase goes back to Indrajeet before a further
+   request is sent.
 2. Indrajeet scores ~100 of those items blind, from a sheet that shows the request, reference and answer
    but not the model, mode or judge score, giving a human anchor.
 
@@ -562,7 +565,7 @@ silicon and will not be claimed to.
 2. **Judge model identity** — resolved 2026-09-12, confirmed by Indrajeet 2026-09-13:
    `llama3.1:8b-instruct-q4_K_M` (§5.4, §13.2).
 3. **Validation reference model and its spend** — resolved 2026-09-13: `gpt-5-mini` under a $0.36 ceiling
-   authorised by Indrajeet, enforced by `--max-inr` (§5.4).
+   authorised by Indrajeet, enforced by `--max-usd` (§5.4).
 4. **`p_accept` / `p_retry`** — resolved 2026-09-11: swept over a grid and labelled as assumed, with the
    headline tax under oracle detection (§13).
 5. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship

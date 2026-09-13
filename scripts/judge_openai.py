@@ -1,19 +1,28 @@
 """Re-score the frontier validation sample with an OpenAI model. Costs money.
 
 The model sees the local judge's rubric, messages and reply schema (experimental
-protocol, section 5.4). Nothing is sent without ``--confirm-spend``. ``--estimate``
-sends nothing and prints an upper bound on the cost in rupees, from the prompt lengths,
-the output budget and the prices given on the command line. The API key is read from
-``OPENAI_API_KEY``, loading ``.env`` if present, and is never printed or logged. Scores
-are appended to ``frontier_judgements.jsonl`` after every answer, so a stopped run
-resumes.
+protocol, section 5.4). Nothing is sent without ``--confirm-spend``.
+
+``--estimate`` sends nothing and prints an upper bound on the cost from the prompt
+lengths, the output budget and the prices given on the command line. That bound is
+deliberately pessimistic: it charges every request the full prompt budget and the full
+reply budget, which is several times a realistic prompt. So the bound is not the figure
+to authorise against. ``--max-usd`` is the guard that holds the ceiling: it refuses the
+next answer once the running spend could pass it, so the run stops short of the sample
+rather than past the money. Spend is counted in dollars because that is the unit an
+authorisation is given in; pass ``--inr-per-usd`` to have rupees reported alongside,
+for a credit priced in them.
+
+The API key is read from ``OPENAI_API_KEY``, loading ``.env`` if present, and is never
+printed or logged. Scores are appended to ``frontier_judgements.jsonl`` after every
+answer, so a stopped run resumes.
 
 Usage::
 
     python scripts/judge_openai.py results/raw/labelling --model MODEL --estimate \
-        --usd-in PRICE --usd-out PRICE --inr-per-usd RATE
+        --usd-in PRICE --usd-out PRICE
     python scripts/judge_openai.py results/raw/labelling --model MODEL --confirm-spend \
-        --usd-in PRICE --usd-out PRICE --inr-per-usd RATE --max-inr 500
+        --usd-in PRICE --usd-out PRICE --max-usd CEILING
 """
 
 from __future__ import annotations
@@ -71,9 +80,16 @@ def prompt_tokens_bound(body: dict[str, Any]) -> float:
     return sum(len(message["content"]) for message in body["messages"]) / CHARS_PER_TOKEN
 
 
-def cost_inr(tokens_in: float, tokens_out: float, args: argparse.Namespace) -> float:
-    """Convert token counts to rupees at the prices given on the command line."""
-    return (tokens_in * args.usd_in + tokens_out * args.usd_out) / 1e6 * args.inr_per_usd
+def cost_usd(tokens_in: float, tokens_out: float, args: argparse.Namespace) -> float:
+    """Convert token counts to dollars at the prices given on the command line."""
+    return (tokens_in * args.usd_in + tokens_out * args.usd_out) / 1e6
+
+
+def money(usd: float, args: argparse.Namespace) -> str:
+    """Render an amount in dollars, adding rupees when a conversion rate was given."""
+    if args.inr_per_usd:
+        return f"${usd:.4f} (INR {usd * args.inr_per_usd:.0f})"
+    return f"${usd:.4f}"
 
 
 def post(http: httpx.Client, body: dict[str, Any]) -> dict[str, Any]:
@@ -111,15 +127,17 @@ def main() -> None:
     )
     parser.add_argument("--usd-in", type=float, help="input price, USD per million tokens")
     parser.add_argument("--usd-out", type=float, help="output price, USD per million tokens")
-    parser.add_argument("--inr-per-usd", type=float)
-    parser.add_argument("--max-inr", type=float, help="stop before the spend could pass this")
+    parser.add_argument("--inr-per-usd", type=float, help="also report rupees, for an INR credit")
+    parser.add_argument(
+        "--max-usd", type=float, help="stop before the spend could pass this ceiling"
+    )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--estimate", action="store_true", help="print the cost bound only")
     mode.add_argument("--confirm-spend", action="store_true", help="send the requests")
     args = parser.parse_args()
-    priced = None not in (args.usd_in, args.usd_out, args.inr_per_usd)
-    if (args.estimate or args.max_inr is not None) and not priced:
-        parser.error("--estimate and --max-inr need --usd-in, --usd-out and --inr-per-usd")
+    priced = None not in (args.usd_in, args.usd_out)
+    if (args.estimate or args.max_usd is not None) and not priced:
+        parser.error("--estimate and --max-usd need --usd-in and --usd-out")
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s | %(message)s"
     )
@@ -150,7 +168,10 @@ def main() -> None:
         tokens_out,
     )
     if args.estimate:
-        LOGGER.info("upper bound on cost: INR %.0f", cost_inr(tokens_in, tokens_out, args))
+        LOGGER.info(
+            "upper bound on cost: %s; a realistic prompt is a fraction of the budget priced here",
+            money(cost_usd(tokens_in, tokens_out, args), args),
+        )
         return
 
     load_dotenv(REPO_ROOT / ".env")
@@ -161,10 +182,15 @@ def main() -> None:
     headers = {"Authorization": f"Bearer {api_key}"}
     with httpx.Client(base_url=API_BASE, headers=headers, timeout=180.0) as http:
         for n, (item, body) in enumerate(requests, start=1):
-            if args.max_inr is not None:
-                bound = cost_inr(prompt_tokens_bound(body), args.max_output_tokens, args)
-                if spent + bound > args.max_inr:
-                    LOGGER.warning("stopping: the next answer could pass INR %.0f", args.max_inr)
+            if args.max_usd is not None:
+                bound = cost_usd(prompt_tokens_bound(body), args.max_output_tokens, args)
+                if spent + bound > args.max_usd:
+                    LOGGER.warning(
+                        "stopping after %d of %d: the next answer could pass $%.4f",
+                        n - 1,
+                        len(requests),
+                        args.max_usd,
+                    )
                     break
             data = post(http, body)
             choice = data["choices"][0]
@@ -173,7 +199,7 @@ def main() -> None:
             used_in = usage.get("prompt_tokens", 0)
             used_out = usage.get("completion_tokens", 0)
             if priced:
-                spent += cost_inr(used_in, used_out, args)
+                spent += cost_usd(used_in, used_out, args)
             row = {key: item[key] for key in KEY_FIELDS} | {
                 "category": item["category"],
                 "judge_model": data.get("model", args.model),
@@ -187,7 +213,7 @@ def main() -> None:
             }
             append_jsonl(out_path, [row])
             if n % 25 == 0 or n == len(requests):
-                LOGGER.info("%d/%d scored; about INR %.0f spent", n, len(requests), spent)
+                LOGGER.info("%d/%d scored; about %s spent", n, len(requests), money(spent, args))
 
 
 if __name__ == "__main__":
