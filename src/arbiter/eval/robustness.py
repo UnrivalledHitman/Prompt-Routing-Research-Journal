@@ -5,7 +5,10 @@
 * :func:`cap_sensitivity`: how often a capped failure succeeds under a longer cap, and
   whether that success would move ``c*(q)`` to a cheaper cell;
 * :func:`apportioning_check`: whether energy labels depend on splitting window energy
-  by wall time or by generated tokens.
+  by wall time or by generated tokens;
+* :func:`energy_drift`: whether energy per generated token moved between the first
+  sample and later samples of the same prompts and cells, which were measured on
+  either side of a driver update.
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ import pandas as pd
 from arbiter.eval.labels import (
     CELL_NAMES,
     CELLS,
+    KEY,
     LabelTable,
     build_label_table,
     cell_index,
@@ -255,3 +259,79 @@ def apportioning_check(
             )
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def energy_drift(
+    grades: pd.DataFrame,
+    energy: pd.DataFrame,
+    before: Sequence[int] = (0,),
+    after: Sequence[int] = (1, 2),
+    n_boot: int = 2000,
+    seed: int = 0,
+    level: float = 0.95,
+) -> pd.DataFrame:
+    """Compare energy per generated token between two groups of samples.
+
+    Only base-variant, uncontaminated generations of (prompt, cell) pairs measured in
+    both groups are used, so the two sides cover the same prompts. Per cell, the ratio
+    is joules per output token after over joules per output token before, each a
+    ratio of sums, with a percentile interval from resampling prompts. Board baseline
+    power and output tokens per second are reported beside it, since a driver change
+    could move either without moving the other.
+
+    Raises
+    ------
+    ValueError
+        If no (prompt, cell) pair has generations in both groups.
+    """
+    frame = grades[(grades["variant"] == "base") & ~grades["contaminated"].astype(bool)]
+    frame = frame.merge(
+        energy[[*KEY, "energy_dyn_j", "baseline_w"]], on=KEY, how="inner", validate="one_to_one"
+    )
+    frame = frame[frame["eval_count"] > 0].copy()
+    frame["group"] = np.where(
+        frame["sample"].isin(before), "before", np.where(frame["sample"].isin(after), "after", "")
+    )
+    frame = frame[frame["group"] != ""]
+    sides = frame.groupby(["prompt_id", "size", "mode"])["group"].nunique()
+    paired = sides[sides == 2].index
+    if paired.empty:
+        raise ValueError("no (prompt, cell) pair has generations before and after")
+    frame = frame.set_index(["prompt_id", "size", "mode"]).loc[paired].reset_index()
+
+    rng = np.random.default_rng(seed)
+    tail = (1.0 - level) / 2.0 * 100.0
+    rows = []
+    for (size, mode), cell in frame.groupby(["size", "mode"], sort=False):
+        sums = (
+            cell.groupby(["prompt_id", "group"])[["energy_dyn_j", "eval_count", "wall_s"]]
+            .sum()
+            .unstack("group")
+        )
+        joules_b, joules_a = sums[("energy_dyn_j", "before")], sums[("energy_dyn_j", "after")]
+        tokens_b, tokens_a = sums[("eval_count", "before")], sums[("eval_count", "after")]
+        wall_b, wall_a = sums[("wall_s", "before")], sums[("wall_s", "after")]
+        jb, ja = joules_b.to_numpy(), joules_a.to_numpy()
+        tb, ta = tokens_b.to_numpy(), tokens_a.to_numpy()
+        index = rng.integers(0, len(jb), size=(n_boot, len(jb)))
+        dist = (ja[index].sum(1) / ta[index].sum(1)) / (jb[index].sum(1) / tb[index].sum(1))
+        lo, hi = np.percentile(dist, [tail, 100.0 - tail])
+        by_group = cell.groupby("group")
+        rows.append(
+            {
+                "cell": CELL_NAMES[cell_index(size, mode)],
+                "size": size,
+                "mode": mode,
+                "n_prompts": len(jb),
+                "j_per_token_before": float(jb.sum() / tb.sum()),
+                "j_per_token_after": float(ja.sum() / ta.sum()),
+                "ratio": float((ja.sum() / ta.sum()) / (jb.sum() / tb.sum())),
+                "ratio_lo": float(lo),
+                "ratio_hi": float(hi),
+                "tokens_per_s_before": float(tb.sum() / wall_b.sum()),
+                "tokens_per_s_after": float(ta.sum() / wall_a.sum()),
+                "baseline_w_before": float(by_group["baseline_w"].mean()["before"]),
+                "baseline_w_after": float(by_group["baseline_w"].mean()["after"]),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("cell").reset_index(drop=True)

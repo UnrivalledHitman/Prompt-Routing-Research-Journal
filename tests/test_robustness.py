@@ -147,3 +147,30 @@ def test_label_table_adds_token_share_energy_only_when_present() -> None:
     assert "energy_token_j" not in build_label_table(grades, energy).costs
     table = build_label_table(grades, energy.assign(energy_dyn_token_j=3.0))
     assert np.all(table.costs["energy_token_j"] == 3.0)
+
+
+def test_energy_drift_pairs_samples_and_ignores_unpaired_prompts() -> None:
+    """Energy per token after over before, on prompts and cells present in both groups."""
+    before = pd.DataFrame(_rows("p0", "math", _hits(0)) + _rows("p1", "code", _hits(1)))
+    after = pd.DataFrame(_rows("p0", "math", _hits(0), sample=1))
+    grades = pd.concat([before, after], ignore_index=True)
+    # Sample 1 spends 1.5 times the joules of sample 0 on the same tokens; baseline rises.
+    energy = grades[KEY].assign(
+        energy_dyn_j=np.where(grades["sample"] == 1, 1.5, 1.0) * grades["eval_count"] * 0.2,
+        baseline_w=np.where(grades["sample"] == 1, 4.0, 3.0),
+    )
+    result = robustness.energy_drift(grades, energy, n_boot=50).set_index("cell")
+    assert len(result) == len(CELLS)
+    assert (result["n_prompts"] == 1).all()
+    assert result.loc["c1", "j_per_token_before"] == pytest.approx(0.2)
+    assert result.loc["c8", "ratio"] == pytest.approx(1.5)
+    assert result.loc["c8", "ratio_lo"] == pytest.approx(1.5)
+    assert result.loc["c3", "baseline_w_after"] == pytest.approx(4.0)
+
+
+def test_energy_drift_needs_pairs() -> None:
+    """With no prompt measured in both groups there is nothing to compare."""
+    grades = pd.DataFrame(_rows("p0", "math", _hits(0)))
+    energy = grades[KEY].assign(energy_dyn_j=1.0, baseline_w=3.0)
+    with pytest.raises(ValueError, match="before and after"):
+        robustness.energy_drift(grades, energy)
