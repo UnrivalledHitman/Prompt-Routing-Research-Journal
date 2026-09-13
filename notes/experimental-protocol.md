@@ -716,6 +716,11 @@ cost is computed from the provider's own reported token counts, never from an es
 | main | 827 in 10 waves | 4,962 | $31.6978 | $6.8066 |
 | **total** | **868** | **5,203** | | **$7.0706** of $8.00 |
 
+The actual column is the sum of the per-batch costs the ledger records from each batch's own returned
+usage, over 35 settled batches with none outstanding. Indrajeet reconciled it against the provider's own
+usage figure for the key on 2026-09-13, which read $7.07: the two agree to the cent, so the cost this
+paper reports is not a self-accounted number alone.
+
 The pilot exists to measure what `high` effort actually spends, which is the one quantity the local run
 cannot supply; the main batch is sized from its measured cost per prompt, not from a projection.
 
