@@ -1,0 +1,14 @@
+router,params,val_objective,chosen
+R1a-tfidf-lr,{'c': 0.1},1205.91,True
+R1a-tfidf-lr,{'c': 1.0},1409.46,False
+R1a-tfidf-lr,{'c': 10.0},1609.43,False
+R1b-features-lightgbm,{},,True
+R1b-features-xgboost,{},,True
+R1a-tfidf-lr-cs,{'c': 0.1},1203.54,True
+R1a-tfidf-lr-cs,{'c': 1.0},1276.8,False
+R1a-tfidf-lr-cs,{'c': 10.0},1411.21,False
+R1b-features-lightgbm-cs,{},,True
+R1b-features-xgboost-cs,{},,True
+R1-direct-tfidf-lr,{'c': 0.1},2180.24,False
+R1-direct-tfidf-lr,{'c': 1.0},1960.7,True
+R1-direct-tfidf-lr,{'c': 10.0},2110.09,False
