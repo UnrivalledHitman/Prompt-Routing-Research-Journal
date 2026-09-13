@@ -1,0 +1,11 @@
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Router & Device & p50 (ms) & p95 (ms) & J/decision \\
+\midrule
+Direct: TF-IDF + LR & CPU & 1.38 & 2.21 & 0.080 \\
+TF-IDF + LR & CPU & 2.59 & 3.89 & 0.148 \\
+Features + LightGBM & CPU & 3.96 & 5.06 & 0.211 \\
+Features + XGBoost & CPU & 2.56 & 3.53 & 0.143 \\
+\bottomrule
+\end{tabular}
