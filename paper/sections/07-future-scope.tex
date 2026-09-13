@@ -1,15 +1,14 @@
 % =====================================================================
 %  VII. FUTURE SCOPE
 %  The directions below follow from the design and its limitations
-%  (Section VI-B). Directions that depend on the results are added, and
-%  any of these that the results undercut are dropped, once Section V
-%  exists.
+%  (Section VI-B) and from the local, public and hosted results. Directions
+%  that depend on the routing results are added once Section V-C exists.
 % =====================================================================
 \section{Future Scope}
 \label{sec:future}
 
 Several directions follow from the limitations in
-Section~\ref{sec:limitations}.
+Section~\ref{sec:limitations} and from the results.
 
 \emph{Observing escalation.} The constructed policies and the swept
 detection probabilities are the least grounded part of the comparator. A
@@ -23,8 +22,29 @@ starting distribution.
 the amount of reasoning be set as a token budget or an effort level rather
 than switched on or off. Treating the budget as a continuous axis would turn
 the eight-cell grid into a surface, and the router's decision into a choice
-of size and budget. The dependence of our labels on the thinking cap points
-the same way, since the cap is a budget fixed once for every prompt.
+of size and budget. The results make this the most pressing direction. The
+cap is a budget fixed once for every prompt, and it cuts off between 16\%
+and 20\% of local thinking generations. On code, \texttt{gpt-5-nano}
+answers fewer prompts at high effort than at minimal effort; its output
+there averages 3{,}075 tokens against a cap of 4{,}096. A budget chosen per prompt could keep the answers
+reasoning buys without paying for reasoning that is thrown away.
+
+\emph{Energy from token logs.} Within a size, energy per output token
+barely changes with the reasoning mode, while between 0.6B and 8B it
+changes by a factor of 6.6. If that pattern holds on other hardware, a
+table of joules per output token for each model, measured once, would turn
+the token logs that services already keep into energy estimates. Token-priced
+routing studies could then report energy without metering. What such a
+table needs first is evidence of how stable the per-token figure is across
+prompt lengths, batch sizes and machines.
+
+\emph{Choosing the first cell and the recovery together.} The penalty for
+routing too low depends on where a failure is recovered
+(Section~\ref{sec:why}). Recovering at the costliest cell makes a low guess
+expensive, and a cheaper recovery path changes the threshold a router
+should use. A router that chooses its first cell and its recovery path
+jointly extends the one-shot setting without giving up its main property:
+it still decides before generating.
 
 \emph{Conversations and switching costs.} A cost model in which a retry
 carries the conversation so far, and in which moving to another size pays
@@ -54,5 +74,5 @@ router current without relabelling every prompt in every cell. That is a
 partial-feedback problem, because only the routed cell's outcome is ever
 observed.
 
-\tbd{Add directions motivated by the results, and drop any of the above
-that the results undercut, once Section~\ref{sec:results} exists.}
+\tbd{Directions motivated by the routing results, and any of the above they
+undercut, once Section~\ref{sec:results-routing} is written.}
