@@ -692,6 +692,23 @@ subset chosen per dataset.
   answers 76.2%; the oracle answers 82.0%. Per solved query, $102.08, $57.38 and $25.47 per 1,000. The
   tax survives the move to a frontier pool.
 
+### 13.6 Cap, noise and open-ended stages (run from 2026-09-13)
+
+The local grid's main stage finished on 2026-09-13. The remaining GPU stages run back to back, in the
+order cap, noise, the open-ended family (pilot, then main), the judge, and the probes, after a restart of
+the machine. What changed across that restart, and what did not:
+
+- **Driver.** 616.56 for gate 1, the pilot and the main stage; 616.92 from the cap stage on. The update
+  arrived with the restart and was not chosen. Every run record carries its driver version, and the noise
+  stage re-samples prompts and cells the main stage measured, so it doubles as a check that energy per
+  token did not move with the driver.
+- **Unchanged.** Ollama 0.34.0, started from the same Startup shortcut with no `OLLAMA_*` variables set;
+  the four Qwen3 digests, compared with those recorded at the main stage; and the 1,200 gradable prompts,
+  which the corpus rebuild that adds Dolly reproduces record for record.
+- **Cap reruns.** 219 capped generations, up to 40 per cell and all of them where a cell had fewer
+  (`scripts/select_cap_reruns.py --per-cell 40` on the full 9,600-generation grades), bounded at 5.7 GPU
+  hours. Thinking hit the 4,096-token cap on 16-20% of prompts at every size and non-thinking on about 1%.
+
 ## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
 
 The local grid stops at 8B and the public arm (§13.5) has no mode axis. This arm restores both at once: a
