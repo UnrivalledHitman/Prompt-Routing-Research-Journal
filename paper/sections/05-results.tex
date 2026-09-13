@@ -1,26 +1,294 @@
 % =====================================================================
-%  V. RESULTS  --  STUB
-%  Nothing here may be written until the labelling and routing runs exist.
-%  Planned order, following the hypotheses in notes/experimental-protocol.md:
-%    A. Corpus and oracle labels: distribution of c*(q) by family,
-%       unservable fraction, per-cell success and cost.
-%    B. The escalation tax (H1): Tax, Esc and Stk for P1--P4 under oracle
-%       and imperfect detection, in tokens, seconds and joules, with CIs.
-%    C. Routing (H2): cost--quality frontiers over tau for R1--R3 against
-%       static policies, P1--P4, the cascade and the oracle.
-%    D. Net-of-router accounting (H3): gross vs net ordering of families.
-%    E. Energy of the reasoning-mode axis (H4): joules per solved query by
-%       size, mode and family; where thinking costs more than a size step,
-%       and the same tax in carbon across a bracket of grid intensities.
-%    F. Asymmetric misallocation (H5): regret decomposition, over-routing
-%       cost vs under-routing failure rate.
+%  V. RESULTS
+%  Order follows the hypotheses in notes/experimental-protocol.md S1:
+%    A. Oracle labels on the local grid (per-cell success and cost, c*)
+%    B. The escalation tax (H1)
+%    C. Routing, gross and net of router cost (H2, H3)  -- waits for the
+%       fine-tuned encoders, the language-model routers and the cascade
+%    D. Energy of the reasoning-mode axis (H4)
+%    E. Asymmetry of misallocation (H5)
+%    F-H. Public pool, hosted ladder, carbon
+%  Local numbers come from results/processed/analysis/main (gradable
+%  families, 1,200 prompts); router numbers are on its test split only.
 % =====================================================================
 \section{Results}
 \label{sec:results}
 
-\tbd{Subsections A--F to be written after the full labelling run and the
-router evaluation. The public-benchmark arm below needs no local
-inference and is final.}
+Unless stated otherwise, local results cover the 1{,}200 prompts of the
+three gradable families, costs are dynamic GPU energy in joules, and
+intervals are 95\% bootstrap intervals over prompts
+(Section~\ref{sec:stats}). Router results are on the test split alone.
+
+\subsection{Oracle Labels on the Local Grid}
+\label{sec:results-labels}
+
+\begin{table*}[!t]
+\caption{The eight cells over the 1{,}200 gradable prompts, one sample per
+prompt and cell. Accuracy counts a capped generation as a failure, and
+Capped is the share of generations that reached the token cap. Tokens are
+input plus output, reasoning included. Latency and energy are means per
+generation; energy is dynamic board energy
+(Section~\ref{sec:energy}), and J per solved divides it by accuracy.}
+\label{tab:cells}
+\centering
+\generated{tables/cells.tex}{\input{tables/cells}}
+\end{table*}
+
+\begin{table}[!t]
+\caption{Accuracy of each cell by family, in percent, over 400 prompts per
+family.}
+\label{tab:family-accuracy}
+\centering
+\generated{tables/family_accuracy.tex}{\input{tables/family_accuracy}}
+\end{table}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/cstar_energy_j.pdf}
+{\includegraphics[width=\columnwidth]{figures/cstar_energy_j}}
+\caption{The minimum sufficient cell $\cstar(q)$, in joules, over all
+prompts and per family. ``None'' marks prompts that no cell answers.}
+\label{fig:cstar}
+\end{figure}
+
+Every gradable prompt was run through all eight cells: 9{,}600
+generations in 386 measurement windows and 31.6 hours of GPU time.
+Twenty-six windows were discarded under the rules of
+Section~\ref{sec:energy} and rerun, and no accepted window was flagged as
+contaminated.
+
+Table~\ref{tab:cells} gives the cells. Without thinking, accuracy rises at
+every size step, from 40.2\% at 0.6B to 83.6\% at 8B, and energy per
+generation from 54\,J to 362\,J. Thinking multiplies the output by 7.4 to
+8.4 times and the energy by seven to nine. What that buys
+depends on size. Thinking adds 12.8 points at 0.6B and 5.5 at 1.7B, but
+loses 2.2 points at 4B and 3.8 at 8B. The loss sits in math
+(Table~\ref{tab:family-accuracy}), where 4B and 8B answer 85.5\% and
+88.2\% without thinking and 73.0\% and 75.2\% with it. It tracks the cap.
+Between 16\% and 20\% of thinking generations reach 4{,}096 tokens at
+every size, against under 2\% of non-thinking ones, and a truncated answer
+fails. On multiple choice thinking helps at every size; on code it helps
+up to 4B and is level at 8B. As a result, the costliest cell is not the
+most accurate one: $c_7$ answers 3.8 points more than $c_8$ for an eighth
+of its energy.
+
+Fig.~\ref{fig:cstar} shows where the minimum sufficient cell falls. The
+smallest model without thinking is $\cstar(q)$ for 37.5\% of prompts, and
+the four non-thinking cells together for 89.2\%. A thinking cell is the
+cheapest sufficient choice for 3.6\%, and $c_8$ for 0.75\%. No cell answers
+7.25\% of prompts: 12.5\% of code, 6.25\% of math and 3.0\% of multiple
+choice. The families differ in where the rest of the mass lies. On math
+the smallest cell suffices for 52.8\% of prompts, while on code the modal
+$\cstar(q)$ is 4B without thinking, at 32.8\%.
+
+Counted in tokens, the labels move up the grid. A non-thinking answer is
+about as long at 8B as at 0.6B, 223 output tokens against 220, and the
+token cost of \eqref{eq:tokcost} has no term for model size, so size is
+nearly free and $\cstar(q)$ is $c_7$ for 31.3\% of prompts and $c_5$ for
+26.9\%. In energy an output token costs 0.24\,J at 0.6B and 1.6\,J at 8B.
+A token count cannot see that factor of 6.6, and it drives several of the
+results below.
+
+The attribution of energy within a window does not drive them.
+Apportioning each window's dynamic energy by token share instead of
+generation time leaves $\cstar(q)$ unchanged for 97.3\% of prompts, and
+per-generation energies under the two rules have a rank correlation of
+0.997.
+
+\subsection{The Escalation Tax on the Local Grid}
+\label{sec:results-tax}
+
+\begin{table*}[!t]
+\caption{Escalation policies on the local grid over the 1{,}200 gradable
+prompts, in joules. Cost per solved divides a policy's mean energy per
+prompt by its solved rate, as in \eqref{eq:persolved}. The tax and its two
+components are means over servable prompts, and the last column divides
+the tax by the mean cost of $\cstar(q)$, 190.6\,J. Imperfect detection is
+the illustrative point $p_{\mathrm{acc}} = 0.15$, $p_{\mathrm{rej}} =
+0.05$.}
+\label{tab:tax-energy}
+\centering
+\generated{tables/tax_energy_j.tex}{\input{tables/tax_energy_j}}
+\end{table*}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/tax_energy_j.pdf}
+{\includegraphics[width=\columnwidth]{figures/tax_energy_j}}
+\caption{The escalation tax per prompt, in joules, split into escalation
+and stickiness, under oracle detection (solid) and imperfect detection
+(hatched). Error bars are 95\% bootstrap intervals on the total. P4 starts
+uniformly over the cells.}
+\label{fig:tax-energy}
+\end{figure}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/detection_energy_j.pdf}
+{\includegraphics[width=\columnwidth]{figures/detection_energy_j}}
+\caption{Cost per solved prompt (top) and solved rate (bottom) of the
+manual policies as the probability of accepting a wrong answer grows, at
+three probabilities of rejecting a right one. P3 makes a single attempt
+and keeps its answer, so detection errors do not move it.}
+\label{fig:detection}
+\end{figure}
+
+Table~\ref{tab:tax-energy} and Fig.~\ref{fig:tax-energy} give the tax.
+With every failure detected, each policy pays a tax whose interval
+excludes zero. The oracle solves the 92.8\% of prompts that some cell can
+answer, at 634.8\,J per solved prompt [533.2, 741.1].
+
+Leaving the heaviest cell selected is the most expensive habit. P3 pays a
+tax of 2{,}470.6\,J per prompt [2{,}364.2, 2{,}579.1], 12.96 times the
+cost of $\cstar(q)$, and all of it is stickiness. It also solves the fewest
+prompts, 79.8\%, because $c_8$ is not the most accurate cell. Per solved
+prompt it pays 3{,}611.7\,J, 5.7 times what the oracle pays.
+
+The frugal climb comes close to the oracle. P1 solves 92.2\% of prompts,
+0.6 points fewer than the oracle, at 945.7\,J per solved prompt [803.2,
+1{,}094.5], 1.5 times the oracle's figure. Its tax, 169.4\,J [139.8, 202.2]
+or 0.89 times the cost of $\cstar(q)$, is 71\% escalation. The reason is
+the cost order of the grid. The first four rungs of P1 are the four
+non-thinking cells in order of mean energy; they are also the four
+cheapest cells, and between them they are $\cstar(q)$ for 89.2\% of
+prompts. A user who climbs with thinking off meets the minimum sufficient
+cell in roughly the order an oracle would rank the cells, and pays mainly
+for the cheaper attempts that failed on the way.
+
+Turning thinking on before moving up a size undoes this. P2 pays a tax of
+8.66 times the cost of $\cstar(q)$, 57\% of it escalation, and solves
+87.1\% of prompts. Its second rung, 0.6B with thinking, costs more energy
+than any of the three non-thinking cells above it and answers fewer
+prompts than any of them. The population policies fall between the
+extremes. P4 with a uniform start pays 4.80 times the cost of
+$\cstar(q)$, three-quarters of it stickiness from starting above
+$\cstar(q)$. With half of all queries starting at $c_8$ it pays 8.30
+times, and random assignment with recovery at $c_8$ pays 8.16 times. In
+every family P1 pays the least and P3 the most. P3's tax is largest on
+math, 14.1 times the cost of $\cstar(q)$, where $c_8$ fails on a quarter of
+prompts, and P1's is smallest there, at 0.77 times.
+
+Detection errors lower the tax and take answers with it. At the
+illustrative point, P1's cost per solved prompt falls to 711.5\,J, because
+a wrong answer accepted early ends the climb before the expensive rungs.
+Its solved rate falls to 79.9\%, below both variants of P4. Every rung is
+another chance to accept a wrong answer, so the policies that make the
+most attempts lose the most: P1 loses 12.3 points and P2 12.2, while P4
+with a uniform start loses 5.0. Fig.~\ref{fig:detection} traces the
+trade. With no right answers rejected, P1's solved rate falls to P3's once
+one wrong answer in five is accepted, 80.2\% against 79.8\%, and below it
+beyond that; at that point P1 still spends 680\,J per solved prompt against
+P3's 3{,}612\,J. Oracle
+detection is therefore the regime in which the manual policies answer the
+most prompts, not the one in which they spend the least.
+
+The unit changes the ranking. Measured in tokens, P3's tax falls to 4.40
+times the cost of $\cstar(q)$ while P2's stays at 8.65, and per solved
+prompt P3 spends 2{,}482 tokens against P2's 4{,}719. Tokens charge P2 for
+every thinking rung and charge P3 almost nothing for model size, so a
+token count ranks sticking with the largest model as the cheaper of the
+two habits. Measured energy ranks it as the more expensive, 3{,}611.7\,J
+per solved prompt against 2{,}970.7\,J.
+
+\subsection{Routing on the Local Grid}
+\label{sec:results-routing}
+
+\tbd{Written from the final analysis, once the fine-tuned encoders, the
+language-model routers and the cascade have run: cost--quality frontiers,
+net saving against P1 and against the cascade, router overhead, and the
+ordering of router families gross and net of their own cost.}
+
+\subsection{Energy of the Reasoning-Mode Axis}
+\label{sec:results-mode}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/mode_energy_j.pdf}
+{\includegraphics[width=\columnwidth]{figures/mode_energy_j}}
+\caption{Energy per solved prompt with thinking, relative to the same
+size without thinking and to the next size up without thinking. Error
+bars are 95\% bootstrap intervals, and the dashed line marks parity. 8B
+has no next size.}
+\label{fig:mode}
+\end{figure}
+
+Thinking does not cost a fixed multiple of non-thinking energy
+(Fig.~\ref{fig:mode}). Per solved prompt it costs 6.9 times as much as
+the same model without thinking at 0.6B, 6.4 times at 1.7B, 7.2 at 4B and
+8.3 at 8B, and the intervals at 1.7B, [5.9, 6.9], and 8B, [7.8, 8.9], do
+not overlap. The ratio varies more by family than by size. On math it
+stays between 4.9 and 6.1. On code it reaches 12.9 at 4B and 15.8 at 8B.
+On multiple choice it peaks at 0.6B, at 15.2, where a non-thinking answer
+costs 10\,J.
+
+Thinking is also never the cheaper way to buy accuracy on this grid. Below
+8B, the next size up without thinking answers more prompts than thinking
+does---59.5\% against 53.0\% at 0.6B, 79.0\% against 65.0\% at 1.7B and
+83.6\% against 76.8\% at 4B---and spends 3.8, 4.7 and 5.5 times less
+energy per solved prompt, with intervals of [3.5, 4.1], [4.3, 5.1] and
+[5.1, 6.0]. The same holds in every family, with two exceptions in
+accuracy. On code at 0.6B thinking answers 2.8 points more than 1.7B
+without it, at 4.5 times the energy per solved prompt, and on multiple
+choice at 4B the two tie.
+
+This conclusion does not wait for the cap reruns. Suppose every capped
+thinking generation had been correct, at the energy it used before it was
+cut off. Thinking would then answer 71.9\%, 84.9\% and 93.0\% of prompts
+at 0.6B, 1.7B and 4B, more than the next size up at every step, and would
+still spend 2.8, 3.6 and 4.6 times as much energy per solved prompt. The
+bound favours thinking twice over, since an answer that needs a longer
+budget also needs more energy. \tbd{Cap reruns: how often an 8{,}192-token
+budget turns a capped failure into a success, how often that moves
+$\cstar(q)$, and the energy of the longer generations.}
+
+Within a size, the premium is one of length. A thinking generation spends
+between 0.94 and 1.15 times the energy per output token of a non-thinking
+generation at the same size, so output tokens price the mode axis to
+within about 15\%, while they miss the factor of 6.6 between sizes. A count
+that includes the prompt does understate the mode premium: 4.2 to 6.1
+times per solved prompt against 6.4 to 8.3 in energy, because a prompt of
+about 115 tokens is a third of a short answer's count and a small fraction
+of a thinking one's.
+
+\subsection{Asymmetry of Misallocation}
+\label{sec:results-asymmetry}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/asymmetry_energy_j.pdf}
+{\includegraphics[width=\columnwidth]{figures/asymmetry_energy_j}}
+\caption{Extra energy per prompt, over the cost of $\cstar(q)$, of routing
+one tier too low and one tier too high, with a failed answer recovered at
+$c_8$. Tiers are cells in order of mean energy. Error bars are 95\%
+bootstrap intervals.}
+\label{fig:asymmetry}
+\end{figure}
+
+A router's two errors are priced by sending each servable prompt to the
+tier just below its $\cstar(q)$ and to the tier just above, with a failed
+answer recovered at $c_8$ as a router's would be
+(Section~\ref{sec:routers}). Tiers are the cells in order of mean energy,
+$c_1, c_3, c_5, c_7, c_2, c_4, c_6, c_8$, so a step up in energy is not
+always a step up in accuracy: the tier above $c_7$ is 0.6B with thinking.
+Fig.~\ref{fig:asymmetry} gives the result. One tier too low fails on
+79.8\% of the 663 prompts that have a lower tier and costs 2{,}625.9\,J
+more than $\cstar(q)$ [2{,}461.8, 2{,}790.1], 13.8 times the mean cost of
+$\cstar(q)$. One tier too high fails on 24.1\% of the 1{,}104 prompts that
+have a higher tier and costs 968.6\,J more [861.4, 1{,}080.8]. Routing too
+low is 2.71 times as costly [2.43, 3.04] in energy and 2.85 times [2.55,
+3.19] in latency. The ratio is largest on math, 3.44, where the lower tier
+fails 96\% of the time, and smallest on multiple choice, 1.91.
+
+That is a factor of about three rather than ten, and in tokens the
+asymmetry reverses, to 0.86 [0.77, 0.97]. The non-thinking cells lie within
+50 tokens of one another, so their token order has little to do with size:
+the tier below $c_3$ is 4B and the tier below $c_5$ is 8B. A step down in
+tokens then succeeds on 62\% of prompts, while a step up is often to a
+thinking cell whose output is several times as long. In energy
+and latency, then, a router should demand more confidence before it routes
+a prompt down than before it routes it up, which a threshold $\tau$ above
+one half does and an argmax over $\cstar(q)$ does not. In tokens it should
+not.
 
 \subsection{The Escalation Tax on a Public Benchmark}
 \label{sec:results-public}
@@ -84,9 +352,9 @@ Another 29.8\% are answered most cheaply by a model off the frontier,
 which matters for what follows.
 
 Table~\ref{tab:public-tax} gives the policies. Sticky use of the top of
-the ladder (P3) costs 7.96 times the minimum sufficient cost, close to the
-local grid's figure, and answers 58.8\% of queries. Climbing the frontier
-(P1) costs 2.69 times, answers 76.2\% and takes 2.27 attempts per query.
+the ladder (P3) pays a tax of 7.96 times the minimum sufficient cost and
+answers 58.8\% of queries. Climbing the frontier (P1) pays 2.69 times,
+answers 76.2\% and takes 2.27 attempts per query.
 The oracle answers 82.0\% at \$20.88 per thousand queries. Per solved
 query the ordering is the same and the comparison is fair across policies
 of unequal success: \$25.47 for the oracle, \$57.38 for P1 and \$102.08
@@ -117,8 +385,8 @@ thinking answers 80.3\% against 58.6\% --- which is the same
 family-dependence the local grid shows.
 
 Scoring a judged Arena-Hard tie as half credit rather than requiring a
-full score moves nothing: P3 pays 8.14 times the minimum sufficient cost
-and P1 2.64 times, against 7.96 and 2.69.
+full score moves nothing: P3 pays a tax of 8.14 times the minimum
+sufficient cost and P1 2.64 times, against 7.96 and 2.69.
 
 \subsection{The Escalation Tax on a Hosted Frontier Ladder}
 \label{sec:results-hosted}
@@ -183,13 +451,13 @@ takes another 27.3\%, while on code the cheapest cell suffices for
 82.5\%.
 
 Table~\ref{tab:hosted-tax} gives the policies. Sticky use of the ladder's
-top rung (P3) costs 5.35 times the minimum sufficient cost and answers
-92.8\% of queries. Climbing the frontier (P1) costs 1.22 times, answers
-97.1\% and takes 1.38 attempts. The oracle answers 97.5\% at \$0.25 per
+top rung (P3) pays a tax of 4.35 times the minimum sufficient cost and
+answers 92.8\% of queries. Climbing the frontier (P1) pays 0.22 times,
+answers 97.1\% and takes 1.38 attempts. The oracle answers 97.5\% at \$0.25 per
 thousand queries. Per solved query P3 pays \$1.10 against the oracle's
 \$0.25, so escalation on this ladder is a factor of 4.4 on the price of an
-answer. Starting uniformly over the six cells and then climbing (P4) costs
-7.93 times, worse than either, because two of its six starting points are
+answer. Starting uniformly over the six cells and then climbing (P4) pays
+a tax of 6.93 times, more than either, because two of its six starting points are
 cells the frontier excludes. One static policy is worth naming:
 \texttt{gpt-5-mini} at minimal effort used alone costs within noise of the
 minimum sufficient cost --- a tax of $-0.04$ with a 95\% interval of
@@ -233,5 +501,14 @@ measurements of a named region.}
 \generated{tables/carbon.tex}{\input{tables/carbon}}
 \end{table}
 
-\tbd{Written with the local energy results: the tax in carbon terms, and
-whether the bracket is wide enough to reorder the policies.}
+Table~\ref{tab:carbon} converts the local tax to carbon. Carbon is energy
+multiplied by a grid intensity, so a grid rescales every policy by the same
+factor and cannot reorder them. What the bracket shows is how the choice of
+policy compares with the choice of grid. Per 1{,}000 queries, P3's tax is
+34\,g of CO$_2$e on a grid at 50\,gCO$_2$e/kWh and 480\,g at 700; P1's is
+2.4\,g and 33\,g. The two ranges barely meet. Leaving the largest model
+selected on a low-carbon grid emits about as much excess carbon as the
+frugal climb on a coal-heavy one, because the tax differs by a factor of
+14.6 between the two policies and the bracket spans a factor of 14. These
+are board-level figures for one laptop GPU, and they share the energy
+boundary of Section~\ref{sec:limitations}.

@@ -159,9 +159,12 @@ wherever they are reported.
 
 \emph{Failure detection.} An escalating user has to notice that an answer
 is wrong. We evaluate two regimes. Under \emph{oracle detection} the user
-always notices, and never discards a correct answer. This regime favours
-the manual policies, so it gives a lower bound on the tax, and it is the
-regime we quote in headline results. Under \emph{imperfect detection} the
+always notices, and never discards a correct answer. This regime gives the
+manual policies their highest solved rate, and it is the regime we quote in
+headline results. It does not bound their cost in either direction:
+rejecting a right answer adds attempts, while accepting a wrong one ends a
+climb early and lowers the cost together with the solved rate. Under
+\emph{imperfect detection} the
 user accepts a wrong answer with probability $p_{\mathrm{acc}}$ and
 rejects a correct one with probability $p_{\mathrm{rej}}$. The answer from
 the last rung is kept whatever its quality, because the ladder has run out.
