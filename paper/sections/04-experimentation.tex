@@ -138,9 +138,9 @@ not a reason to resample. Open-ended answers are judged as described next.
 \label{sec:judge}
 
 A judge drawn from the routed pool would grade its own family, so the
-primary judge comes from a different model family and runs locally
-\decision{judge model, pending approval to download: Llama~3.1 8B Instruct
-or Gemma~3 4B at Q4\_K\_M}. The open-ended family is labelled after the
+primary judge comes from a different model family and runs locally: Llama~3.1
+8B Instruct at Q4\_K\_M, through Ollama, once labelling has
+finished. The open-ended family is labelled after the
 three gradable families, and results in Section~\ref{sec:results} cover the
 gradable families unless stated otherwise. The judge scores
 each answer on a 1--5 rubric, against a reference answer where one exists,
@@ -150,8 +150,8 @@ the position and verbosity biases documented for model
 judges~\cite{zheng2023judging}.
 
 The judge is validated from two sides before its labels are used. A
-stratified sample of about 200 judged items is re-graded by a frontier model
-accessed through the OpenAI API, and agreement is reported as Cohen's
+stratified sample of about 200 judged items is re-graded by
+\texttt{gpt-5-mini} through the OpenAI API, and agreement is reported as Cohen's
 $\kappa$~\cite{cohen1960kappa}. The first author also labels about 100
 items blind, giving a human anchor and a judge--human $\kappa$. The decision
 rule is fixed in advance: if agreement with the human anchor is poor, the
@@ -200,8 +200,12 @@ prompts share one matrix of resampled prompt indices, so every comparison is
 paired by prompt and its interval is taken over the resampled differences.
 Two-sided $p$-values are obtained by inverting the percentile interval, as
 twice the smaller share of resampled differences on either side of zero,
-with a floor of $10^{-4}$. The Holm--Bonferroni procedure~\cite{holm1979simple} corrects the $p$-values within each group of
-comparisons that share a cost unit, recovery rule and detection regime. For
+with a floor of $10^{-4}$, one over the number of resamples. The
+Holm--Bonferroni procedure~\cite{holm1979simple} corrects the $p$-values
+within each family of comparisons that asks one question at a fixed cost
+unit, recovery rule and detection regime: routers against the manual
+policies, the oracle against the same, per-cell routers against direct
+ones, and one-shot routers against the cascade. For
 routers, $\tau$ is fixed on the validation split before the test split is
 resampled, so the intervals do not include the uncertainty of that choice.
 Each trainable router is trained with three seeds; intervals are reported
@@ -310,7 +314,7 @@ The run also exposed two properties of the grid that shape the labelling
 design. First, thinking dominates the compute budget. Across the eight
 cells, one sample per prompt took 112\,s on average, and the four thinking
 cells accounted for 88\% of that time. Second, the cap turns long thinking
-into failure. Between 22\% and 32\% of thinking responses hit the
+into failure. Between 21\% and 32\% of thinking responses hit the
 4{,}096-token cap, depending on size, and every capped response on the
 graded families was wrong. On
 the math and multiple-choice prompts, capped responses made up most
@@ -336,14 +340,131 @@ differently. To test whether the escalation-tax analysis carries over, the
 same policy and tax computations are applied, without local inference, to
 the per-model outcomes and costs published with
 LLMRouterBench~\cite{li2026llmrouterbench}. Each of its records stores a
-score, prompt and completion token counts, a dollar cost and a latency for
-one model on one query, which is what the resubmission term needs: a
-re-asked query pays its prompt tokens again at the stronger model's price.
+score and prompt and completion token counts for one model on one query,
+and, in its performance--cost setting, the provider's dollar charge, which
+is what the resubmission term needs: a re-asked query pays its prompt
+tokens again at the stronger model's price.
 RouterBench~\cite{hu2024routerbench} carries similar fields, but it is
 distributed as serialised Python objects, which execute code when loaded,
-so we do not use it. Energy is not available for these pools, so this arm
-reports tokens, dollars and latency only. \tbd{public-benchmark arm: run
-once the data download is approved}
+so we do not use it. Neither energy nor per-query latency is published for
+these pools, so this arm reports dollars and tokens only.
+
+We take the thirteen models of the performance--cost setting and the nine
+datasets every one of them was run on: AIME, Arena-Hard, GPQA, HLE,
+LiveCodeBench, LiveMathBench, MMLU-Pro, SimpleQA and SWE-bench Verified.
+The tenth dataset of that setting, $\tau^2$-bench, was not run with one
+pool model and is dropped, so that the pool stays fixed across datasets.
+Several datasets ship more than one evaluated subset; we keep, per dataset,
+the largest subset every pool model shares, identified by the release's own
+data fingerprint. That leaves 12{,}168 queries answered by all thirteen
+models. Scores are binary except on Arena-Hard, where a judged tie against
+the baseline scores one half; a tie is not a correct answer, so a query
+counts as answered at a full score, and the half-credit threshold is
+reported as a sensitivity check.
+
+Two things differ from the local grid. First, the ladder. The grid has a
+natural size-and-mode order, but a pool of thirteen models does not: a user
+escalating through it would not step onto a model that costs more than one
+already tried and answers no better. The ladder is therefore the
+cost--accuracy frontier of the pool in cost order, computed on the same
+queries, and its top rung plays the part $c_8$ plays locally. Second, the
+policies: P1, P3 and P4 carry over, but P2 turns thinking on before moving
+up a size and has no analogue in a pool with no mode axis. The two releases
+of Qwen3-235B-A22B, thinking and not, are compared separately as the public
+counterpart of H4. Because the frontier is a subset of the pool, a policy
+climbing it can fail on a query that some off-ladder model answers; the tax
+is therefore read alongside the success rate, and cost per solved query is
+the statistic comparable across policies. Intervals use 2{,}000 bootstrap
+resamples rather than the 10{,}000 used locally: the resampling matrix grows
+with the number of queries as well as the number of resamples, and this
+prompt set is ten times the size of the local corpus.
+
+\subsection{Hosted-Frontier Arm}
+\label{sec:hosted-arm}
+
+The local grid stops at 8B, and the public pool of
+Section~\ref{sec:public-arm} has no mode axis. A third arm restores both at
+once. Three hosted models --- \texttt{gpt-5-nano}, \texttt{gpt-5-mini} and
+\texttt{gpt-5} --- are crossed with two reasoning efforts, \texttt{minimal}
+and \texttt{high}, giving six cells $h_1 \dots h_6$ indexed size-major and
+mode-minor exactly as $c_1 \dots c_8$ are. List prices per million input and
+output tokens, as published on 12 September 2026, are \$0.05/\$0.40,
+\$0.25/\$2.00 and \$1.25/\$10.00, so the ladder spans a factor of 25 in
+price where the local grid spans far less.
+The prompts are drawn from those the local grid has already labelled, so
+every hosted $c^*$ is paired with a local one on the same query.
+
+Each request carries exactly the prompt text the local pool saw, as a single
+user message with no system message. The output caps mirror the local
+protocol, 4{,}096 tokens at high effort and 2{,}048 at minimal; on a
+reasoning model the cap counts reasoning tokens, so it bounds the same thing
+the local cap bounds, the trace included, and a truncated response is a
+failure exactly as a local cap hit is. That rule falls hardest on the
+high-effort cells, which spend most of their budget on reasoning tokens
+where the cheap mode emits none, so each cell is reported twice: the
+headline accuracy, in which a truncated generation is wrong, and the
+accuracy over the generations that stopped on their own. The first is what
+a user of that cell receives; the second separates a cell that reasons
+badly from one whose reasoning does not fit. Answers are graded by the same
+graders, and the pool summary, the $c^*$ distribution, the policy table and
+the mode comparison are computed by the same code as
+Section~\ref{sec:public-arm}. Because the two ladders differ by orders of
+magnitude in absolute price, the paired comparison is made by rank rather
+than by cell: which size step a prompt needs on its own ladder, and whether
+it needs the costly mode. It also counts what the hosted ladder rescues ---
+the prompts no local cell answers, and the hosted rung that answers them ---
+which is the one thing the local grid cannot report about itself.
+The escalation policies are those of Section~\ref{sec:public-arm}, built
+from the pool's own cost frontier, with one addition: that frontier contains
+no high-effort cell, so $P_2$ --- start cheap, then take the costly mode at
+each size in turn --- is named rather than discovered. Its rungs follow from
+the pool's shape, and the same rule applied to eight cells reproduces the
+local grid's $P_2$, so the arms report one policy under one name.
+
+Three limits are worth stating plainly. First, the hosted models reject the
+temperature and nucleus parameters the local protocol sets per mode, so
+sampling is the provider's default: the arm matches the prompt and the cap,
+not the decoding. Second, \texttt{reasoning\_effort} is not
+\texttt{/think} and \texttt{/no\_think}: the local switch is binary and acts
+on one model's chat template, while the hosted knob has four settings and
+belongs to the provider. Measured, the two ends behave alike --- across all
+120 pilot responses at \texttt{minimal}, each of the three models reported
+exactly zero reasoning tokens --- so the cheap mode really is reasoning off
+rather than reasoning reduced. We report that as a measurement rather than
+assume it, since a provider may change what a setting name means. Third,
+the provider returns the number of reasoning tokens but not the trace, so
+the leak and marker checks of Section~\ref{sec:gate-mode} have no counterpart,
+and no energy is measurable for a hosted model: this arm reports dollars and
+tokens only.
+
+A prompt enters the analysis only when all six cells answered it, so that the
+pool stays fixed across cells as it does across datasets in
+Section~\ref{sec:public-arm}. A few prompts lose a cell to the provider's
+content filter, which refuses the request outright; the whole prompt is then
+dropped rather than scored as a failure, because a refusal is not a wrong
+answer. Two of the 827 prompts collected were lost this way, one to a
+\texttt{gpt-5-mini} refusal and one to a \texttt{gpt-5} refusal, leaving
+825 for the analysis.
+
+Requests run through the provider's batch interface at half list price. A
+budget meter prices every batch at its worst case, every request emitting
+its full cap, and refuses to submit one that would carry cumulative spend
+past a fixed limit; actual cost is then computed from the token counts the
+provider itself reports. A pilot of 40 prompts first measures what high
+effort actually spends. Because real generations fall well short of their
+caps, the main stage then runs in waves: each wave is sized to the worst
+case the remaining budget allows, and settling it at its measured cost frees
+the difference for the next. The guard is never loosened --- committed spend
+is at every moment the worst case of everything unsettled --- yet the waves
+reach far more of the pool than one batch could. Ten waves collected 827 of
+the 860 eligible prompts for \$6.81, bringing the arm's total to \$7.07
+against a \$8.00 limit, where the first wave alone, priced at its worst
+case, took almost the whole limit for 195 prompts. The campaign stops once
+the budget left would fund a wave of fewer than twenty prompts, which is why
+33 prompts of the pool go unpriced; the analysis is over the 827 collected
+rather than the whole labelled set. Every cost reported here is summed from
+the usage each batch returns, and the total agrees to the cent with the
+provider's own billed figure for the key.
 
 \subsection{Reproducibility}
 \label{sec:repro}
@@ -356,6 +477,17 @@ digests. Raw generations are stored with their token counts, timings, seeds
 and energy. The processed tables that every result is computed from contain
 prompt identifiers but no prompt text, and the corpus can be rebuilt from
 the public source datasets with the recorded seed and fingerprints.
+
+The hosted arm adds a spend ledger. Every batch is recorded with its
+identifier, the worst case it was approved against and the cost finally
+settled from the provider's own token counts, so each dollar figure in this
+paper can be audited line by line rather than taken on trust. The prices
+themselves are recorded with the date they were read. The hosted models are
+not reproducible artefacts in the way a pinned local checkpoint is: a
+provider may change what a model, or an effort setting, does under an
+unchanged name. That is a limitation of any hosted measurement, and it is
+the reason the local grid rather than this arm carries the paper's primary
+claims.
 \decision{code and data availability statement and release timing, given
 the pending patent filing; a conservative draft is ``available from the
 corresponding author on reasonable request''}

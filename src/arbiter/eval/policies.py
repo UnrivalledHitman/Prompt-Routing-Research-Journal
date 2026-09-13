@@ -217,11 +217,15 @@ def select_cells(p_hat: np.ndarray, mean_cost: np.ndarray, tau: float) -> np.nda
     return choice
 
 
-def oracle_outcome(success: np.ndarray, cost: np.ndarray) -> Outcome:
-    """Route every prompt to ``c*(q)``; unservable prompts try c8 and fail."""
+def oracle_outcome(success: np.ndarray, cost: np.ndarray, top: int = TOP) -> Outcome:
+    """Route every prompt to ``c*(q)``; unservable prompts try ``top`` and fail.
+
+    ``top`` is the last rung of the ladder, c8 in the local grid. The public-benchmark
+    arm passes the top of its own pool.
+    """
     masked = np.where(success, cost, np.inf)
     choice = np.argmin(masked, axis=1)
-    choice[~success.any(axis=1)] = TOP
+    choice[~success.any(axis=1)] = top
     rows = np.arange(len(choice))
     c = cost[rows, choice]
     s = success[rows, choice].astype(float)

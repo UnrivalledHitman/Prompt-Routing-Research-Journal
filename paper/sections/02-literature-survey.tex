@@ -232,9 +232,15 @@ is a useful regime to report, since the energy-aware routers above ran on
 A100 and RTX~4090 hardware, but we treat it as context rather than as a
 contribution in its own right.
 
-% Table cells are drawn from notes/prior-art-register.md. "Decision point"
-% and "Efficiency reported" should be re-checked against each PDF before
-% submission; see the TODO list in the PR description.
+% Table cells are drawn from notes/prior-art-register.md. Every row now
+% agrees with the prose above, which states each system's own reported
+% figures. Two rows were checked against the full texts because the prose
+% did not pin the metric down: Router-R1's cost reward is output tokens
+% weighted by a function of parameter count, and the QoS router's headline
+% is a composite of quality and latency compliance rather than latency
+% alone. The four 2023--2024 rows are long-established. Rows still worth a
+% PDF pass before submission: SynapseRoute, DART, Learning When to Think
+% and Route to Reason, whose decision points come from their abstracts.
 \begin{table*}[!t]
 \centering
 \caption{Systems closest to this study. \emph{Axis} is what the router
@@ -257,7 +263,7 @@ Learning When to Think~\cite{kassenaar2026learningwhentothink} & Thinking level 
 Route to Reason~\cite{pan2026routetoreason} & Model and strategy & Before generation & Tokens \\
 GreenServ~\cite{ziller2026greenserv} & Model & Before generation & Measured energy (gross) \\
 EcoThink~\cite{li2026ecothink} & Retrieval or reasoning path & Before generation & Partly estimated energy, carbon (gross) \\
-QoS edge routing~\cite{yang2025qosrouting} & Edge expert & Before generation & Latency \\
+QoS edge routing~\cite{yang2025qosrouting} & Edge expert & Before generation & QoS score under a latency bound \\
 \midrule
 This study & Model size and reasoning mode & Before generation & Tokens, latency, measured energy (net of router) \\
 \bottomrule

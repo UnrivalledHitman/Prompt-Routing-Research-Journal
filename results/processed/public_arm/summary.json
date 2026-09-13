@@ -1,0 +1,43 @@
+{
+  "run_utc": "2026-09-12T00:26:12+00:00",
+  "queries": 12168,
+  "datasets": [
+    "aime",
+    "arenahard",
+    "gpqa",
+    "hle",
+    "livecodebench",
+    "livemathbench",
+    "mmlupro",
+    "simpleqa",
+    "swe-bench"
+  ],
+  "models": [
+    "deepseek-v3-0324",
+    "qwen3-235b-a22b-2507",
+    "deepseek-v3.1-terminus",
+    "kimi-k2-0905",
+    "intern-s1",
+    "gpt-5-chat",
+    "qwen3-235b-a22b-thinking-2507",
+    "gemini-2.5-flash",
+    "claude-sonnet-4",
+    "deepseek-r1-0528",
+    "glm-4.6",
+    "gpt-5",
+    "gemini-2.5-pro"
+  ],
+  "ladder": [
+    "deepseek-v3-0324",
+    "qwen3-235b-a22b-2507",
+    "gpt-5",
+    "gemini-2.5-pro"
+  ],
+  "success_threshold": 1.0,
+  "sensitivity_threshold": 0.5,
+  "n_boot": 2000,
+  "units": [
+    "dollars",
+    "tokens"
+  ]
+}

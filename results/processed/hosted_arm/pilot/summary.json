@@ -1,0 +1,21 @@
+{
+  "generated_utc": "2026-09-12T05:03:15+00:00",
+  "stage": "pilot",
+  "prompts": 40,
+  "responses": 240,
+  "cap_hits": 5,
+  "errors": 0,
+  "ladder": [
+    "h1",
+    "h3",
+    "h5"
+  ],
+  "n_boot": 10000,
+  "relative_tax": {
+    "P1": 0.3424,
+    "P3": 10.6019,
+    "P4-uniform": 17.4134,
+    "random": 17.8124,
+    "oracle": 0.0
+  }
+}

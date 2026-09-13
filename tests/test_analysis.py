@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from arbiter.energy.carbon import carbon_g
 from arbiter.eval import analysis
 from arbiter.eval.cascade import Verification
 from arbiter.eval.labels import LabelTable, assign_splits, cstar_cost
@@ -293,3 +294,55 @@ def test_run_cascade_with_a_perfect_free_verifier_matches_p1() -> None:
     assert row["solved_rate"] == pytest.approx(p1.solved.mean())
     assert row["escalation"] > 0.0
     assert run.overhead[0]["device"] == "gpu"
+
+
+def test_carbon_g_is_the_stated_arithmetic() -> None:
+    """3.6 MJ is one kWh, so a grid at 475 gCO2e/kWh emits 475 g for it."""
+    assert carbon_g(3.6e6, 475.0) == pytest.approx(475.0)
+    assert carbon_g(0.0, 475.0) == 0.0
+    # Linear in both arguments, which is why one intensity rescales to another.
+    assert carbon_g(1.8e6, 100.0) == pytest.approx(carbon_g(3.6e6, 50.0))
+
+
+def test_carbon_table_rescales_the_energy_rows_and_keeps_their_intervals() -> None:
+    """Carbon is the energy figure times the intensity, bounds included, per 1,000 queries."""
+    table, _ = make_table(per_family=16)
+    frame = analysis.policy_table(
+        table, ["energy_j", "tokens"], {"oracle": ORACLE}, {"uniform": [0.125] * 8}, 50, 0
+    )
+    intensities = {"low": 50.0, "high": 700.0}
+    carbon = analysis.carbon_table(frame, intensities)
+    # Only the energy rows convert; tokens are not joules.
+    assert set(carbon["unit"]) == {"energy_j"}
+    assert set(carbon["grid"]) == {"low", "high"}
+    assert len(carbon) == 2 * len(frame[frame["unit"] == "energy_j"])
+    energy = frame[(frame["unit"] == "energy_j") & (frame["policy"] == "P1")].iloc[0]
+    row = carbon[(carbon["policy"] == "P1") & (carbon["grid"] == "high")]
+    row = row[row["scope"] == energy["scope"]].iloc[0]
+    assert row["kwh"] == pytest.approx(energy["mean_cost"] * 1000.0 / 3.6e6)
+    assert row["carbon"] == pytest.approx(carbon_g(energy["mean_cost"] * 1000.0, 700.0))
+    assert row["carbon_tax"] == pytest.approx(carbon_g(energy["tax"] * 1000.0, 700.0))
+    assert row["carbon_tax_lo"] == pytest.approx(carbon_g(energy["tax_lo"] * 1000.0, 700.0))
+    assert row["carbon_tax_hi"] == pytest.approx(carbon_g(energy["tax_hi"] * 1000.0, 700.0))
+    # Fourteen times the intensity is fourteen times the carbon, the same energy.
+    low = carbon[(carbon["policy"] == "P1") & (carbon["grid"] == "low")]
+    low = low[low["scope"] == energy["scope"]].iloc[0]
+    assert row["carbon"] == pytest.approx(14.0 * low["carbon"])
+    assert row["kwh"] == pytest.approx(low["kwh"])
+
+
+def test_carbon_table_is_empty_when_the_energy_unit_was_not_analysed() -> None:
+    """A token-only analysis has no energy to convert, and must not invent any."""
+    frame = pd.DataFrame(
+        [
+            {
+                "scope": "all",
+                "unit": "tokens",
+                "detection": "oracle",
+                "policy": "P1",
+                "mean_cost": 100.0,
+                "tax": 10.0,
+            }
+        ]
+    )
+    assert analysis.carbon_table(frame, {"low": 50.0}).empty

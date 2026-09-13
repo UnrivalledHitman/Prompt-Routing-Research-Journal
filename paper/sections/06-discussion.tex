@@ -94,9 +94,18 @@ accepts a thinking budget, and the separation of the two modes was checked
 on 60 prompts per size with a lexical proxy
 (Section~\ref{sec:gate-mode}). Hosted frontier tiers differ from this pool
 in capability, in price and in how reasoning effort is exposed. The
-public-benchmark arm (Section~\ref{sec:public-arm}) is designed to test
-whether the tax analysis carries over to such pools, but it has no energy
-data.
+public-benchmark arm (Section~\ref{sec:public-arm}) tests whether the tax
+analysis carries over to such pools, and the hosted-frontier arm
+(Section~\ref{sec:hosted-arm}) restores the mode axis there with reasoning
+effort as a paid setting. Neither has energy data.
+
+\emph{The hosted arm is priced, not metered.} Its costs are one provider's
+list prices on one date, halved by the batch discount, and a price change
+moves every hosted figure. The provider reports the reasoning tokens it
+bills for but not the energy behind them, and its high-effort cells carry
+the local grid's cap rule, which truncates a minority of their generations;
+that is why each hosted cell is reported at two accuracies
+(Section~\ref{sec:hosted-arm}).
 
 \emph{One machine.} All measurements come from one laptop and one GPU.
 Other workloads that share the machine are kept out of the measurements by

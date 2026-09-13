@@ -83,11 +83,23 @@ def main() -> None:
     )
     corpus = read_corpus(args.corpus)
     items = [item for item in corpus if item.subset in args.subsets]
+    if not items:
+        raise SystemExit(f"{args.corpus} holds no prompts in subsets {args.subsets}")
     if args.kind == "verify":
+        if not args.generations.exists():
+            raise SystemExit(f"{args.generations} does not exist; run the labelling stage first")
         records, truncated = read_jsonl(args.generations)
         if truncated:
             LOGGER.warning("ignored a truncated last line in %s", args.generations)
-        write(args.out_dir, "verify", *probes.verify_items(items, records))
+        built, cells = probes.verify_items(items, records)
+        # An empty corpus would be written without complaint and then labelled for nothing,
+        # so say which input came up short rather than reporting "0 probes" as a result.
+        if not built:
+            raise SystemExit(
+                f"no verification probes from {args.generations}: it holds no base "
+                f"no-think answers for subsets {args.subsets}"
+            )
+        write(args.out_dir, "verify", built, cells)
         return
     write(args.out_dir, "route_zero", *probes.route_items(items))
     if args.splits is None:

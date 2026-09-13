@@ -149,7 +149,9 @@ before drafting.
   between its POMDP-over-model-sizes formulation and escalation-aware selection. This is the closest
   conceptual neighbour to the headline claim and counsel will need the distinction stated exactly.
 - `deepseek2025r1` — transcribe the full author list from the Nature record.
-- `yang2025qosrouting` — obtain IEEE TMC volume, issue and pages once assigned.
+- `yang2025qosrouting` — obtain IEEE TMC volume, issue and pages once assigned. The IEEE Xplore record
+  is document 11086391; the landing page did not render for an automated read, so the numbers need a
+  browser or an institutional login.
 - `chen2021humaneval` — 58 authors; decide truncation per IEEE Access style.
 - `he2021deberta` — confirm the ICLR 2021 proceedings record if citing the conference version.
 - **AdaptThink, ThinkSwitcher, HBPO, SelfBudgeter** — named inside survey C2's summary but never

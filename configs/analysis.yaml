@@ -50,6 +50,18 @@ cascade:
   thresholds: {start: 0.0, stop: 1.0, step: 0.02}
   extra_thresholds: [0.99, 0.995, 0.999]
 
+# Carbon (protocol 6.2). gCO2e = kWh * intensity. The intensity belongs to the grid, not
+# to this experiment, and grids differ by more than an order of magnitude, so results are
+# reported across a bracket rather than at one value. These brackets are round numbers
+# chosen to span the range grids occupy, and are labelled as assumed wherever they appear.
+# The conversion is linear, so a reader with a particular grid in mind can rescale.
+carbon:
+  intensities:
+    low_carbon: 50      # a grid carried by nuclear or hydro
+    mixed: 250          # a large renewable share with gas for the balance
+    world_average: 475  # the value usually quoted for the global average
+    coal_heavy: 700     # a grid carried by coal
+
 bootstrap:
   n_boot: 10000
   level: 0.95

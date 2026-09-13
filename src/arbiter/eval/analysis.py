@@ -27,6 +27,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from arbiter.energy.carbon import J_PER_KWH, carbon_g
 from arbiter.eval.cascade import Verification, cascade_outcome, cascade_sweep
 from arbiter.eval.labels import (
     CELL_NAMES,
@@ -78,6 +79,7 @@ STATISTICS = (
 )
 MANUAL = ("P1", "P2", "P3", "P4-uniform")
 COMPARED_BASELINES = (*MANUAL, "random")
+BLOCK = 4_000_000  # resampled values held at once, which bounds peak memory
 
 
 # ---------------------------------------------------------------------------
@@ -137,15 +139,30 @@ def _full(n: int) -> np.ndarray:
     return np.arange(n)[None, :]
 
 
+def _blocks(index: np.ndarray) -> Iterator[np.ndarray]:
+    """Split the resample matrix into row blocks, so a gather stays inside cache and RAM.
+
+    The blocks are contiguous and used in order, so every statistic is unchanged.
+    """
+    rows = max(1, BLOCK // max(int(index.shape[1]), 1))
+    for start in range(0, index.shape[0], rows):
+        yield index[start : start + rows]
+
+
 def _mean(values: np.ndarray, index: np.ndarray) -> np.ndarray:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
-        return np.nanmean(values[index], axis=1)
+        return np.concatenate([np.nanmean(values[block], axis=1) for block in _blocks(index)])
 
 
 def _ratio(numerator: np.ndarray, denominator: np.ndarray, index: np.ndarray) -> np.ndarray:
     with np.errstate(divide="ignore", invalid="ignore"):
-        return np.nansum(numerator[index], axis=1) / np.nansum(denominator[index], axis=1)
+        return np.concatenate(
+            [
+                np.nansum(numerator[block], axis=1) / np.nansum(denominator[block], axis=1)
+                for block in _blocks(index)
+            ]
+        )
 
 
 def _divide(a: float, b: float) -> float:
@@ -346,6 +363,42 @@ def policy_table(
     return pd.DataFrame(rows)
 
 
+def carbon_table(
+    policies: pd.DataFrame,
+    intensities: Mapping[str, float],
+    unit: str = "energy_j",
+    per: float = 1000.0,
+) -> pd.DataFrame:
+    """Convert the energy rows of a policy table to carbon at each grid intensity.
+
+    One row per scope, detection model, policy and intensity. The conversion is a
+    multiplication, so a figure's interval bounds carry over to carbon unchanged and no
+    resampling is repeated here. ``per`` is the number of queries the carbon is reported
+    for; 1,000 follows the convention of Luccioni et al.
+    """
+    rows = policies[policies["unit"] == unit]
+    out = []
+    for name, intensity in intensities.items():
+        for _, row in rows.iterrows():
+            record = {
+                "scope": row["scope"],
+                "unit": unit,
+                "detection": row["detection"],
+                "policy": row["policy"],
+                "grid": name,
+                "intensity_g_per_kwh": float(intensity),
+                "kwh": row["mean_cost"] * per / J_PER_KWH,
+            }
+            for statistic in ("mean_cost", "tax", "escalation", "stickiness"):
+                target = "carbon" if statistic == "mean_cost" else f"carbon_{statistic}"
+                for suffix in ("", "_lo", "_hi"):
+                    value = row.get(f"{statistic}{suffix}")
+                    if value is not None:
+                        record[f"{target}{suffix}"] = carbon_g(value * per, intensity)
+            out.append(record)
+    return pd.DataFrame(out)
+
+
 def detection_sweep(
     table: LabelTable,
     unit: str,
@@ -379,7 +432,7 @@ def detection_sweep(
 # ---------------------------------------------------------------------------
 
 
-def _cell_ratio(
+def cell_ratio(
     cost: np.ndarray, solved: np.ndarray, a: int, b: int, resamples: Resamples
 ) -> tuple[float, float, float]:
     """Return cost per solved prompt of cell ``a`` over cell ``b``, with its interval."""
@@ -425,14 +478,14 @@ def mode_signature(
                     _ratio(cost[:, no_think], solved[:, no_think], full)[0]
                 )
                 row["per_solved_think"] = float(_ratio(cost[:, think], solved[:, think], full)[0])
-            point, lo, hi = _cell_ratio(cost, solved, think, no_think, resamples)
+            point, lo, hi = cell_ratio(cost, solved, think, no_think, resamples)
             row.update(think_over_no_think=point, think_over_no_think_lo=lo)
             row["think_over_no_think_hi"] = hi
             if position + 1 < len(SIZES):
                 step = cell_index(SIZES[position + 1], "no_think")
                 row["next_size"] = SIZES[position + 1]
                 row["acc_next_no_think"] = float(solved[:, step].mean())
-                point, lo, hi = _cell_ratio(cost, solved, think, step, resamples)
+                point, lo, hi = cell_ratio(cost, solved, think, step, resamples)
                 row.update(think_over_size_step=point, think_over_size_step_lo=lo)
                 row["think_over_size_step_hi"] = hi
             rows.append(row)

@@ -33,10 +33,15 @@ hardware pay. It would also make the best choice for a query depend on the
 model already loaded, which a one-shot router of the kind studied here does
 not consider.
 
-\emph{Wider pools.} Pools that mix model families, quantisation levels and
-hosted frontier tiers would test whether the minimum sufficient
-configuration can still be predicted when cells differ in more than size
-and mode, and whether the tax grows with the price gap between tiers.
+\emph{Routing the wider pools.} The public and hosted arms show what the tax
+costs on pools that mix model families and frontier tiers, but both report
+manual policies and the oracle rather than a trained router. Adding one
+means recovering each public query's text from its source dataset and
+training on outcomes we did not generate, or paying to label enough hosted
+prompts to train on. Doing either, and adding quantisation as a third axis
+beside size and mode, would test whether the minimum sufficient
+configuration can still be predicted when cells differ in more than size and
+mode.
 
 \emph{Whole-system energy.} Measuring processor and memory power alongside
 the GPU would close the energy boundary, and it would give CPU routers a

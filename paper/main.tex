@@ -21,6 +21,7 @@
 %  \tbd{...}          number or statement that depends on an unrun experiment
 %  \citeneeded{...}   claim that needs a source not yet verified into refs.bib
 %  \decision{...}     open decision from notes/experimental-protocol.md S12
+%  \generated{f}{c}   float c, or a TBD marker while f is still ungenerated
 % =====================================================================
 
 \documentclass{ieeeaccess}
@@ -52,6 +53,10 @@
 \newcommand{\tbd}[1]{\textcolor{red}{[TBD: #1]}}
 \newcommand{\citeneeded}[1]{\textcolor{red}{[CITATION NEEDED: #1]}}
 \newcommand{\decision}[1]{\textcolor{orange}{[DECISION: #1]}}
+% \generated{file}{content}: typeset content once the analysis scripts have
+% written file, and a marker until they have, so the draft always compiles.
+\newcommand{\generated}[2]{\IfFileExists{#1}{#2}{\tbd{not yet generated:
+\url{#1}}}}
 
 % Notation used throughout
 \newcommand{\cells}{\mathcal{C}}
@@ -104,9 +109,11 @@ in a stratified corpus of mathematics, code, multiple-choice and open-ended
 tasks is run through all eight cells on a consumer laptop graphics card
 with measured board power. We compare classical classifiers, fine-tuned
 encoders and a small language model used as a router against manual
-escalation policies and a self-verifying cascade. \tbd{headline tax, net
-saving of the best router, energy per solved query, and the router-family
-ordering once charged}.
+escalation policies and a self-verifying cascade. The tax is then measured
+on two pools the laptop cannot host: thirteen public models priced by their
+providers, and six hosted cells in which reasoning effort is a paid
+setting. \tbd{headline tax, net saving of the best router, energy per
+solved query, and the router-family ordering once charged}.
 \end{abstract}
 
 \begin{keywords}

@@ -10,12 +10,228 @@
 %       static policies, P1--P4, the cascade and the oracle.
 %    D. Net-of-router accounting (H3): gross vs net ordering of families.
 %    E. Energy of the reasoning-mode axis (H4): joules per solved query by
-%       size, mode and family; where thinking costs more than a size step.
+%       size, mode and family; where thinking costs more than a size step,
+%       and the same tax in carbon across a bracket of grid intensities.
 %    F. Asymmetric misallocation (H5): regret decomposition, over-routing
 %       cost vs under-routing failure rate.
 % =====================================================================
 \section{Results}
 \label{sec:results}
 
-\tbd{Section to be written after the pilot and full labelling runs and the
-router evaluation.}
+\tbd{Subsections A--F to be written after the full labelling run and the
+router evaluation. The public-benchmark arm below needs no local
+inference and is final.}
+
+\subsection{The Escalation Tax on a Public Benchmark}
+\label{sec:results-public}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/public_frontier.pdf}
+{\includegraphics[width=\columnwidth]{figures/public_frontier}}
+\caption{The thirteen models of the public pool, the cost--accuracy
+frontier they define and where the escalation policies land on it. Cost is
+logarithmic, in US dollars per 1{,}000 queries. P3 sits on the top rung it
+always uses. P1 climbs the frontier and answers more queries than any
+single model in the pool, at a price between the two costliest rungs. The
+oracle answers still more for a third of what P3 costs.}
+\label{fig:public-frontier}
+\end{figure}
+
+\begin{table*}[!t]
+\caption{The public pool in cost order, over the 12{,}168 queries of nine
+datasets that all thirteen models answered. Cost is the provider's own
+charge, in US dollars per 1{,}000 queries. The $c^*$ share is the fraction
+of queries for which that model is the cheapest one that answers
+correctly, and the last row the queries no model answers. A bullet marks
+the four models on the cost--accuracy frontier, which are the rungs of the
+escalation ladder.}
+\label{tab:public-pool}
+\centering
+\generated{tables/public_pool.tex}{\input{tables/public_pool}}
+\end{table*}
+
+\begin{table*}[!t]
+\caption{Escalation policies on the public pool under oracle detection, in
+US dollars per 1{,}000 queries. P1 climbs the cost--accuracy frontier, P3
+uses its top rung once, P4 starts uniformly over the pool and then climbs,
+and Random picks a model uniformly and recovers at the top rung. A policy
+that answers fewer queries can show a negative tax, underpaying by
+failing, so the tax is read beside the solved column.}
+\label{tab:public-tax}
+\centering
+\generated{tables/public_tax.tex}{\input{tables/public_tax}}
+\end{table*}
+
+The local grid stops at 8B parameters. Section~\ref{sec:public-arm}
+recomputes the same quantities on the published outcomes of
+LLMRouterBench: thirteen flagship models, nine datasets and 12{,}168
+queries every model answered, priced by the providers themselves.
+
+Table~\ref{tab:public-pool} and Fig.~\ref{fig:public-frontier} give the
+pool in cost order. Its members span
+a factor of 79 in price, from \$0.76 to \$60.02 per thousand queries, and
+a factor of 1.6 in accuracy, from 36.9\% to 58.8\%. Price and accuracy are
+only loosely related: of the eleven models dearer than
+\texttt{qwen3-235b-a22b-2507}, nine answer fewer queries than it does. Only
+four of the thirteen lie on the cost--accuracy frontier, and those four
+are the ladder a rational escalator would climb. Between them the thirteen
+answer 82.0\% of the queries; the remaining 18.0\% are beyond the pool.
+The distribution of the minimum sufficient model repeats what the local
+grid shows: the two cheapest models are the cheapest sufficient choice for
+46.5\% of all queries, and the costliest model is that choice for 2.4\%.
+Another 29.8\% are answered most cheaply by a model off the frontier,
+which matters for what follows.
+
+Table~\ref{tab:public-tax} gives the policies. Sticky use of the top of
+the ladder (P3) costs 7.96 times the minimum sufficient cost, close to the
+local grid's figure, and answers 58.8\% of queries. Climbing the frontier
+(P1) costs 2.69 times, answers 76.2\% and takes 2.27 attempts per query.
+The oracle answers 82.0\% at \$20.88 per thousand queries. Per solved
+query the ordering is the same and the comparison is fair across policies
+of unequal success: \$25.47 for the oracle, \$57.38 for P1 and \$102.08
+for P3, so a user who always reaches for the strongest model pays four
+times what a perfect one-shot router would pay for the same answers.
+
+Two features of the pool are worth separating from the local grid. First,
+the frontier is a subset: a policy climbing it fails on queries only an
+off-frontier model answers, and then pays four cheap attempts instead of
+one expensive sufficient model. This is why the two cheapest static
+policies show a negative tax, and why on SimpleQA even P1 does; they
+underpay by failing, answering 41.3\% and 53.3\% of queries. Tax is
+meaningful only beside the success rate, which is why cost per solved
+query carries the comparison. Second, the dollar tax is larger than the
+token tax --- 7.96 against 2.04 for P3 --- because the price per token
+spans two orders of magnitude across providers while the answers
+themselves do not differ in length nearly as much. Escalation on a mixed
+pool is expensive in a way that token counts hide.
+
+The thinking and non-thinking releases of Qwen3-235B-A22B give the public
+counterpart of the mode axis. Thinking costs 9.11 times more per solved
+query [8.78, 9.47] and, over all nine datasets, answers slightly fewer
+queries (52.1\% against 53.3\%). The plain release already answers 53.3\%
+of queries on its own and only 9.3\% need thinking, so the mode is worth
+paying for on a small minority of queries and is picked per query or not
+at all. Where reasoning is the point the picture reverses --- on GPQA
+thinking answers 80.3\% against 58.6\% --- which is the same
+family-dependence the local grid shows.
+
+Scoring a judged Arena-Hard tie as half credit rather than requiring a
+full score moves nothing: P3 pays 8.14 times the minimum sufficient cost
+and P1 2.64 times, against 7.96 and 2.69.
+
+\subsection{The Escalation Tax on a Hosted Frontier Ladder}
+\label{sec:results-hosted}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/hosted_frontier.pdf}
+{\includegraphics[width=\columnwidth]{figures/hosted_frontier}}
+\caption{The six hosted cells on the cost--accuracy plane, open for
+minimal reasoning effort and filled for high. Cost is logarithmic, in US
+dollars per 1{,}000 queries. The grey line is the frontier the escalation
+policies climb. The mode axis reads as the horizontal step from an open
+marker to the filled marker of the same model.}
+\label{fig:hosted-frontier}
+\end{figure}
+
+\begin{table*}[!t]
+\caption{The six hosted cells: three model sizes crossed with two
+reasoning efforts, on the prompts of the local main subset. Output tokens
+include reasoning tokens, which the provider reports separately but bills
+as output. A cap hit is a truncated generation, counted as a failure
+exactly as a local cap hit is.}
+\label{tab:hosted-cells}
+\centering
+\generated{tables/hosted_cells.tex}{\input{tables/hosted_cells}}
+\end{table*}
+
+\begin{table*}[!t]
+\caption{Escalation policies on the hosted ladder under oracle detection,
+in US dollars per 1{,}000 queries. The static rows are the ladder rungs
+used alone. As on the public pool, a policy that answers fewer queries can
+show a negative tax by underpaying through failure, so the tax is read
+beside the solved column.}
+\label{tab:hosted-tax}
+\centering
+\generated{tables/hosted_tax.tex}{\input{tables/hosted_tax}}
+\end{table*}
+
+Six hosted cells cross three model sizes with two reasoning-effort
+settings, priced by the provider rather than metered on our hardware.
+Table~\ref{tab:hosted-cells} and Fig.~\ref{fig:hosted-frontier} give them
+over the 825 prompts of the main subset that every cell answered. They
+span a factor of 185 in price, from \$0.03 to \$5.77 per thousand queries,
+and 74.2\% to 92.8\% in accuracy. Four of the six lie on the
+cost--accuracy frontier and form the ladder $h_1 \rightarrow h_3
+\rightarrow h_5 \rightarrow h_4$: \texttt{gpt-5-nano} then
+\texttt{gpt-5-mini} at minimal effort, then \texttt{gpt-5} at minimal
+effort, then \texttt{gpt-5-mini} at high effort. Both cells left off the
+ladder are high-effort ones. \texttt{gpt-5-nano} at high effort costs
+twice \texttt{gpt-5-mini} at minimal and answers twelve points fewer.
+\texttt{gpt-5} at high effort is the costliest cell in the pool at \$5.77
+per thousand, 5.6 times the price of \texttt{gpt-5-mini} at high effort,
+and answers slightly fewer queries than it, 91.9\% against 92.8\%. The
+most expensive thing a user can buy here is not the most accurate one.
+
+The cheapest cell is the minimum sufficient choice for 74.2\% of queries
+and the second rung for another 16.0\%; 2.5\% are answered by no cell.
+Paid reasoning effort is the cheapest sufficient choice for 5.1\% of
+queries across its three cells. The split by family repeats the local
+grid's: on math the cheapest cell suffices for 58.6\% and the second rung
+takes another 27.3\%, while on code the cheapest cell suffices for
+82.5\%.
+
+Table~\ref{tab:hosted-tax} gives the policies. Sticky use of the ladder's
+top rung (P3) costs 5.35 times the minimum sufficient cost and answers
+92.8\% of queries. Climbing the frontier (P1) costs 1.22 times, answers
+97.1\% and takes 1.38 attempts. The oracle answers 97.5\% at \$0.25 per
+thousand queries. Per solved query P3 pays \$1.10 against the oracle's
+\$0.25, so escalation on this ladder is a factor of 4.4 on the price of an
+answer. Starting uniformly over the six cells and then climbing (P4) costs
+7.93 times, worse than either, because two of its six starting points are
+cells the frontier excludes. One static policy is worth naming:
+\texttt{gpt-5-mini} at minimal effort used alone costs within noise of the
+minimum sufficient cost --- a tax of $-0.04$ with a 95\% interval of
+$[-0.32, 0.41]$ --- while answering 89.5\% of queries. Most of what the
+ladder buys above that rung is bought at a steep multiple.
+
+The reasoning-effort axis is priced here rather than metered, and the
+price is a multiple rather than a margin: high effort costs 11.8, 5.45 and
+7.26 times minimal effort at \texttt{gpt-5-nano}, \texttt{gpt-5-mini} and
+\texttt{gpt-5}. What it buys shrinks as the model gets stronger. The share
+of queries minimal effort fails and high effort answers is 15.2\% at
+\texttt{gpt-5-nano}, 6.2\% at \texttt{gpt-5-mini} and 4.1\% at
+\texttt{gpt-5}, where overall accuracy moves by a tenth of a point, from
+91.8\% to 91.9\%, and falls on multiple choice from 94.9\% to 93.4\%.
+
+The cap does to the hosted cells what it does to the local grid.
+\texttt{gpt-5-nano} at high effort spends 1{,}845 reasoning tokens on the
+average prompt and hits its 4{,}096-token cap on 18.9\% of them. Counting
+a truncated generation as a failure, as the local grid does, leaves it at
+77.8\%; on the responses that finish it answers 96.0\%, against 74.5\% for
+the same model at minimal effort. On code, where its reasoning runs
+longest at 3{,}075 output tokens per prompt, high effort is worse than
+minimal outright, 65.3\% against 82.5\%. Reasoning that does not fit the
+budget is paid for and discarded, which is the same failure the local 0.6B
+and 1.7B thinking cells show.
+
+\subsection{Carbon of the Escalation Tax}
+\label{sec:results-carbon}
+
+\begin{table}[!t]
+\caption{Carbon of the escalation tax under oracle detection, in grams of
+CO$_2$e per 1{,}000 queries. The kWh column is the policy's own energy for
+those queries; every carbon figure follows from it by multiplication. The
+four columns are grid carbon intensities in gCO$_2$e/kWh: 50 for a grid
+carried by nuclear or hydro, 250 for a large renewable share, 475 for the
+figure usually quoted as the global average, and 700 for a grid carried by
+coal. They are round values spanning the range grids occupy, not
+measurements of a named region.}
+\label{tab:carbon}
+\centering
+\generated{tables/carbon.tex}{\input{tables/carbon}}
+\end{table}
+
+\tbd{Written with the local energy results: the tax in carbon terms, and
+whether the bracket is wide enough to reorder the policies.}

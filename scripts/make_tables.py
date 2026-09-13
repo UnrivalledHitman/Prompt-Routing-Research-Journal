@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +43,22 @@ ROUTERS = {
 }
 PER_CHECK = {"cascade-automix"}  # overhead is reported per verification call
 DIGITS = {"energy_j": 1, "board_j": 1, "tokens": 0, "tokens_output_heavy": 0, "latency_s": 2}
+PUBLIC_POLICIES = {
+    "P1": "P1, climb the frontier",
+    "P3": "P3, sticky top",
+    "P4-uniform": "P4, uniform start",
+    "random": "Random, then top",
+    "oracle": "Oracle",
+}
+# The hosted pool has a mode axis the public one lacks, so it also reports the
+# costly-mode-first policy. Its P1 stays the frontier climb the public arm reports.
+HOSTED_POLICIES = {
+    "P1": PUBLIC_POLICIES["P1"],
+    "P2": "P2, costly mode first",
+    **{name: label for name, label in PUBLIC_POLICIES.items() if name != "P1"},
+}
+HOSTED_EFFORTS = {"minimal": "Minimal", "high": "High"}
+PER_THOUSAND = 1000.0  # published costs are dollars per query; the tables report per 1,000
 
 
 def finite(value: Any) -> bool:  # noqa: ANN401
@@ -194,6 +210,32 @@ def table_tax(frame: pd.DataFrame, unit: str) -> str | None:
     return tabular("@{}llrrrrrr@{}", header, body, breaks)
 
 
+def table_carbon(frame: pd.DataFrame) -> str | None:
+    """Carbon of the escalation tax per 1,000 queries, across the grid-intensity bracket.
+
+    Rows are policies under oracle detection; columns are grid intensities, headed by the
+    intensity itself and named in the caption. The conversion from energy is a
+    multiplication, so this table adds no statistics to the energy tax table.
+    """
+    rows = frame[(frame["scope"] == "all") & (frame["detection"] == "oracle")]
+    if rows.empty:
+        return None
+    grids = rows[["grid", "intensity_g_per_kwh"]].drop_duplicates()
+    grids = grids.sort_values("intensity_g_per_kwh")
+    body = []
+    for policy in POLICIES:
+        block = rows[rows["policy"] == policy].set_index("grid")
+        if block.empty:
+            continue
+        line = [POLICIES[policy], num(block["kwh"].iloc[0], 3)]
+        line += [num(block.loc[g, "carbon_tax"], 2) for g in grids["grid"]]
+        body.append(line)
+    if not body:
+        return None
+    header = ["Policy", "kWh"] + [f"{i:.0f}" for i in grids["intensity_g_per_kwh"]]
+    return tabular("@{}lr" + "r" * len(grids) + "@{}", header, body)
+
+
 def table_routers(
     tests: pd.DataFrame,
     baselines: pd.DataFrame,
@@ -312,12 +354,109 @@ def table_robustness(
     return tabular("@{}lr@{}", ["Check", "Value"], body)
 
 
+def table_public_pool(pool: pd.DataFrame, cstar: pd.DataFrame) -> str | None:
+    """Accuracy, cost, $c^*$ share and ladder membership of every model in the public pool."""
+    rows = pool[pool["scope"] == "all"].sort_values("rung")
+    shares = cstar[(cstar["scope"] == "all") & (cstar["unit"] == "dollars")]
+    if rows.empty or shares.empty:
+        return None
+    share = dict(zip(shares["cstar"], shares["share"], strict=True))
+    body = [
+        [
+            rf"\texttt{{{row['model']}}}",
+            pct(row["accuracy"]),
+            num(PER_THOUSAND * row["mean_dollars"], 2),
+            num(PER_THOUSAND * row["dollars_per_solved"], 2),
+            pct(share.get(row["model"], float("nan"))),
+            r"$\bullet$" if row["on_ladder"] else "",
+        ]
+        for _, row in rows.iterrows()
+    ]
+    body.append(["No model answers", "--", "--", "--", pct(share.get("unservable")), ""])
+    header = ["Model", r"Acc.\ (\%)", r"Cost (\$/1{,}000)", r"\$ per solved (/1{,}000)",
+              r"$c^*$ share (\%)", "Ladder"]  # fmt: skip
+    return tabular("@{}lrrrrc@{}", header, body, breaks=[len(body) - 1], colsep=4)
+
+
+def table_public_tax(
+    frame: pd.DataFrame,
+    static: Callable[[str], str] | None = None,
+    labels: Mapping[str, str] | None = None,
+) -> str | None:
+    """Escalation tax on a priced pool, in dollars per 1,000 queries.
+
+    ``labels`` names and orders the policies; it defaults to the public arm's set.
+    """
+    labels = labels or PUBLIC_POLICIES
+    rows = frame[(frame["scope"] == "all") & (frame["unit"] == "dollars")].set_index("policy")
+    if rows.empty:
+        return None
+    names = [p for p in labels if p != "oracle" and p in rows.index]
+    statics = [p for p in rows.index if str(p).startswith("always-")]
+    body, breaks = [], [len(names), len(names) + len(statics)]
+    for policy in [*names, *statics, "oracle"]:
+        if policy not in rows.index:
+            continue
+        row = rows.loc[policy]
+        name = str(policy).removeprefix("always-")
+        fallback = static(name) if static else rf"Always \texttt{{{name}}}"
+        label = labels.get(policy, fallback)
+        body.append(
+            [
+                label,
+                pct(row["solved_rate"]),
+                num(row["attempts"], 2),
+                with_ci(row, "mean_cost", 2, PER_THOUSAND),
+                with_ci(row, "tax", 2, PER_THOUSAND),
+                num(row["relative_tax"], 2),
+            ]
+        )
+    header = ["Policy", r"Solved (\%)", "Attempts", r"Cost (\$/1{,}000) [95\% CI]",
+              r"Tax [95\% CI]", r"Tax / $c^*$ cost"]  # fmt: skip
+    return tabular("@{}lrrrrr@{}", header, body, breaks, colsep=4)
+
+
+def table_hosted_cells(cells: pd.DataFrame) -> str | None:
+    """Accuracy, output and reasoning tokens, cap-hit rate and price of every hosted cell.
+
+    Two accuracies: the headline one, in which a generation cut off at the cap is wrong, and
+    the same figure over the generations that finished on their own.
+    """
+    if cells.empty:
+        return None
+    body = [
+        [
+            f"$h_{row['cell'][1:]}$",
+            rf"\texttt{{{row['model']}}}",
+            HOSTED_EFFORTS.get(row["effort"], str(row["effort"])),
+            num(row["cap"], 0),
+            pct(row["accuracy"]),
+            pct(row["accuracy_finished"]),
+            num(row["mean_completion_tokens"], 0),
+            num(row["mean_reasoning_tokens"], 0),
+            pct(row["cap_hit_rate"]),
+            num(PER_THOUSAND * row["mean_cost_usd"], 2),
+        ]
+        for _, row in cells.iterrows()
+    ]
+    header = ["Cell", "Model", "Effort", "Cap", r"Acc.\ (\%)", r"Acc.\ fin.\ (\%)",
+              "Out.\\ tok.", "Reas.\\ tok.", r"Cap hit (\%)",
+              r"Cost (\$/1{,}000)"]  # fmt: skip
+    return tabular("@{}lllrrrrrrr@{}", header, body, colsep=3)
+
+
 def main() -> None:
     """Write every table for which the analysis wrote its inputs."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("analysis", type=Path)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "paper" / "tables")
     parser.add_argument("--units", nargs="+", default=["energy_j", "tokens"])
+    parser.add_argument(
+        "--public", type=Path, default=None, help="public-benchmark arm results directory"
+    )
+    parser.add_argument(
+        "--hosted", type=Path, default=None, help="hosted-frontier arm results directory"
+    )
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s | %(message)s"
@@ -325,7 +464,7 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     names = ("labels_cells", "tax_policies", "routers_test", "baselines_test", "comparisons",
              "frontier_area", "routers_overhead", "label_noise_cstar", "cap_sensitivity",
-             "energy_apportioning")  # fmt: skip
+             "energy_apportioning", "carbon")  # fmt: skip
     t = {name: read(args.analysis, name) for name in names}
     if t["labels_cells"] is not None:
         write(args.out, "cells", table_cells(t["labels_cells"]))
@@ -338,6 +477,8 @@ def main() -> None:
         ]
         if all(frame is not None for frame in router_inputs):
             write(args.out, f"routers_{unit}", table_routers(*router_inputs, unit))
+    if t["carbon"] is not None:
+        write(args.out, "carbon", table_carbon(t["carbon"]))
     if t["routers_overhead"] is not None:
         write(args.out, "overhead", table_overhead(t["routers_overhead"]))
     write(
@@ -345,6 +486,26 @@ def main() -> None:
         "robustness",
         table_robustness(t["label_noise_cstar"], t["cap_sensitivity"], t["energy_apportioning"]),
     )
+    if args.public is not None:
+        p = {name: read(args.public, name) for name in ("pool", "cstar", "tax_policies")}
+        if p["pool"] is not None and p["cstar"] is not None:
+            write(args.out, "public_pool", table_public_pool(p["pool"], p["cstar"]))
+        if p["tax_policies"] is not None:
+            write(args.out, "public_tax", table_public_tax(p["tax_policies"]))
+    if args.hosted is not None:
+        h = {n: read(args.hosted, n) for n in ("cells", "tax_policies")}
+        if h["cells"] is not None:
+            write(args.out, "hosted_cells", table_hosted_cells(h["cells"]))
+        if h["tax_policies"] is not None:
+            write(
+                args.out,
+                "hosted_tax",
+                table_public_tax(
+                    h["tax_policies"],
+                    lambda name: f"Always $h_{{{name[1:]}}}$",
+                    HOSTED_POLICIES,
+                ),
+            )
 
 
 if __name__ == "__main__":

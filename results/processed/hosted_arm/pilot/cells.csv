@@ -1,0 +1,7 @@
+cell,accuracy,mean_prompt_tokens,mean_completion_tokens,mean_reasoning_tokens,cap_hit_rate,mean_cost_usd,model,effort,cap
+h1,0.625,107.05,107.975,0.0,0.0,2.4271250000000002e-05,gpt-5-nano,minimal,2048
+h2,0.85,107.05,1738.45,1664.0,0.125,0.00035036625,gpt-5-nano,high,4096
+h3,0.975,107.05,147.375,0.0,0.0,0.00016075625,gpt-5-mini,minimal,2048
+h4,0.975,107.05,824.15,675.2,0.0,0.00083753125,gpt-5-mini,high,4096
+h5,1.0,107.05,131.675,0.0,0.0,0.00072528125,gpt-5,minimal,2048
+h6,1.0,107.05,886.7,760.0,0.0,0.00450040625,gpt-5,high,4096

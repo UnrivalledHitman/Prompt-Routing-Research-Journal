@@ -1,0 +1,13 @@
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lllrrrrrrr@{}}
+\toprule
+Cell & Model & Effort & Cap & Acc.\ (\%) & Acc.\ fin.\ (\%) & Out.\ tok. & Reas.\ tok. & Cap hit (\%) & Cost (\$/1{,}000) \\
+\midrule
+$h_1$ & \texttt{gpt-5-nano} & Minimal & 2{,}048 & 74.2 & 74.5 & 142 & 0 & 0.5 & 0.03 \\
+$h_2$ & \texttt{gpt-5-nano} & High & 4{,}096 & 77.8 & 96.0 & 1{,}908 & 1{,}845 & 18.9 & 0.38 \\
+$h_3$ & \texttt{gpt-5-mini} & Minimal & 2{,}048 & 89.5 & 89.6 & 168 & 0 & 0.1 & 0.18 \\
+$h_4$ & \texttt{gpt-5-mini} & High & 4{,}096 & 92.8 & 96.5 & 1{,}010 & 886 & 3.8 & 1.02 \\
+$h_5$ & \texttt{gpt-5} & Minimal & 2{,}048 & 91.8 & 91.9 & 146 & 0 & 0.1 & 0.79 \\
+$h_6$ & \texttt{gpt-5} & High & 4{,}096 & 91.9 & 97.3 & 1{,}140 & 1{,}042 & 5.6 & 5.77 \\
+\bottomrule
+\end{tabular}
