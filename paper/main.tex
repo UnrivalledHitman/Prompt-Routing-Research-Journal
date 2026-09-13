@@ -5,15 +5,16 @@
 %  DRAFT STATUS
 %  ------------
 %  Written by Claude as a first draft for Indrajeet and his mentor to
-%  rewrite. Sections I--IV are drafted. Sections V--VII are stubs until
-%  the labelling and routing experiments have produced results.
+%  rewrite. Sections I--IV, VI-B and VII are drafted. Section V and
+%  Sections VI-A and VI-C wait for the labelling and routing results.
 %
 %  TEMPLATE
 %  --------
-%  IEEEtran (journal mode) is a stand-in because it ships with every TeX
-%  distribution. IEEE Access requires its own ieeeaccess.cls from the IEEE
-%  Author Center. The section files are template-agnostic, so the port is
-%  confined to this file: title block, \history, \doi, \corresp, keywords.
+%  Official IEEE Access LaTeX template (ACCESS_latex_template_20260513,
+%  from ieeeaccess.ieee.org). ieeeaccess.cls loads the bundled IEEEtran.cls.
+%  Its fonts (.pfb, .tfm, .fd, .map), logos and spotcolor.sty stay in this
+%  directory, because pdflatex looks for them next to main.tex. IEEE fills
+%  in \history and \doi on acceptance.
 %
 %  MARKERS
 %  -------
@@ -22,17 +23,31 @@
 %  \decision{...}     open decision from notes/experimental-protocol.md S12
 % =====================================================================
 
-\documentclass[journal]{IEEEtran}
+\documentclass{ieeeaccess}
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
+\usepackage{textcomp}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{url}
+
+% Bold math in Times, as in the IEEE Access sample file.
+\makeatletter
+\AtBeginDocument{\DeclareMathVersion{bold}
+\SetSymbolFont{operators}{bold}{T1}{times}{b}{n}
+\SetSymbolFont{NewLetters}{bold}{T1}{times}{b}{it}
+\SetMathAlphabet{\mathrm}{bold}{T1}{times}{b}{n}
+\SetMathAlphabet{\mathit}{bold}{T1}{times}{b}{it}
+\SetMathAlphabet{\mathbf}{bold}{T1}{times}{b}{n}
+\SetMathAlphabet{\mathtt}{bold}{OT1}{pcr}{b}{n}
+\SetSymbolFont{symbols}{bold}{OMS}{cmsy}{b}{n}
+\renewcommand\boldmath{\@nomath\boldmath\mathversion{bold}}}
+\makeatother
 
 \newcommand{\tbd}[1]{\textcolor{red}{[TBD: #1]}}
 \newcommand{\citeneeded}[1]{\textcolor{red}{[CITATION NEEDED: #1]}}
@@ -49,18 +64,27 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 
 \begin{document}
+\history{Draft for internal review, not for circulation. Date of publication
+xxxx 00, 0000, date of current version xxxx 00, 0000.}
+\doi{10.1109/ACCESS.2024.0429000}
 
 \title{The Escalation Tax: One-Shot Selection of the Minimum Sufficient
 Model Size and Reasoning Mode, with Router Cost Charged}
 
-\author{Indrajeet~Mondal%
-\thanks{\decision{affiliation, department, city and country; mentor
-co-authorship and ordering; ORCID iDs; corresponding-author e-mail}}}
+\author{\uppercase{Indrajeet Mondal}\authorrefmark{1}
+\decision{mentor co-authorship and author order; IEEE membership; ORCID
+iDs}}
 
-\markboth{Draft for internal review -- not for circulation}{Mondal:
-The Escalation Tax}
+\address[1]{\decision{department, institution, city and postal code,
+country; e-mail}}
+\tfootnote{\decision{funding statement, or remove}}
 
-\maketitle
+\markboth
+{I. Mondal: The Escalation Tax}
+{I. Mondal: The Escalation Tax}
+
+\corresp{Corresponding author: Indrajeet Mondal
+(e-mail: \decision{corresponding-author e-mail}).}
 
 \begin{abstract}
 Tiered language-model services leave the user to choose both a model size
@@ -72,23 +96,27 @@ premium on prompts that never needed it. We call the resulting excess over
 the cheapest configuration that would have succeeded the \emph{escalation
 tax}, formalise it, and decompose it into an escalation component and a
 stickiness component. We then ask whether a small predictor, placed in
-front of an eight-cell pool of Qwen3 models (0.6B to 8B parameters, each
-with thinking on and off), can select that minimum sufficient configuration
-before any generation, and whether the saving survives once the router is
-charged for its own tokens, latency and energy. Every prompt in a
-stratified corpus of mathematics, code, multiple-choice and open-ended
-tasks is run through all eight cells on a consumer laptop GPU with measured
-board power. We compare classical classifiers, fine-tuned encoders and a
-small language model used as a router against manual escalation policies
-and a self-verifying cascade. \tbd{headline tax, net saving of the best
-router, energy per solved query, and the router-family ordering once
-charged}.
+front of an eight-cell pool of Qwen3 models (0.6 to 8 billion parameters,
+each with thinking on and off), can select that minimum sufficient
+configuration before any generation, and whether the saving survives once
+the router is charged for its own tokens, latency and energy. Every prompt
+in a stratified corpus of mathematics, code, multiple-choice and open-ended
+tasks is run through all eight cells on a consumer laptop graphics card
+with measured board power. We compare classical classifiers, fine-tuned
+encoders and a small language model used as a router against manual
+escalation policies and a self-verifying cascade. \tbd{headline tax, net
+saving of the best router, energy per solved query, and the router-family
+ordering once charged}.
 \end{abstract}
 
-\begin{IEEEkeywords}
-Large language models, model routing, reasoning effort, test-time compute,
-energy efficiency, inference cost, hybrid thinking.
-\end{IEEEkeywords}
+\begin{keywords}
+Energy efficiency, hybrid thinking, inference cost, large language models,
+model routing, reasoning effort, test-time compute.
+\end{keywords}
+
+\titlepgskip=-21pt
+
+\maketitle
 
 \input{sections/01-introduction}
 \input{sections/02-literature-survey}
@@ -100,5 +128,12 @@ energy efficiency, inference cost, hybrid thinking.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs,refs-methods}
+
+\begin{IEEEbiographynophoto}{Indrajeet Mondal}
+\decision{author biography, with a photograph 1\,in wide by 1.25\,in tall;
+one entry per author}
+\end{IEEEbiographynophoto}
+
+\EOD
 
 \end{document}
