@@ -137,26 +137,39 @@ not a reason to resample. Open-ended answers are judged as described next.
 \subsection{Judging Open-Ended Answers}
 \label{sec:judge}
 
-A judge drawn from the routed pool would grade its own family, so the
-primary judge comes from a different model family and runs locally: Llama~3.1
-8B Instruct at Q4\_K\_M, through Ollama, once labelling has
-finished. The open-ended family is labelled after the
-three gradable families, and results in Section~\ref{sec:results} cover the
-gradable families unless stated otherwise. The judge scores
-each answer on a 1--5 rubric, against a reference answer where one exists,
-and an answer succeeds with a score of 4 or more. Answers are scored one at
-a time rather than in pairs, and presentation order is randomised, to limit
-the position and verbosity biases documented for model
-judges~\cite{zheng2023judging}.
+A judge drawn from the routed pool would grade its own family, so the judge
+is Llama~3.1 8B Instruct~\cite{grattafiori2024llama3} at Q4\_K\_M, run
+through Ollama only after labelling has finished. The open-ended family is
+labelled after the three gradable families, and results in
+Section~\ref{sec:results} cover the gradable families unless stated
+otherwise.
 
-The judge is validated from two sides before its labels are used. A
-stratified sample of about 200 judged items is re-graded by
-\texttt{gpt-5-mini} through the OpenAI API, and agreement is reported as Cohen's
-$\kappa$~\cite{cohen1960kappa}. The first author also labels about 100
-items blind, giving a human anchor and a judge--human $\kappa$. The decision
-rule is fixed in advance: if agreement with the human anchor is poor, the
-open-ended family is reported with an explicit caveat or moved to a
-secondary analysis.
+The judge sees the request, the human-written Dolly response as a reference
+and the visible answer, and scores the answer from 1 to 5 on a fixed rubric;
+a score of 4 or more is a success. For open requests such as brainstorming,
+the rubric treats the reference as one acceptable answer among many and asks
+for content, not length, to be judged. Answers are scored one at a time
+rather than in pairs, in a seeded random order, to limit the position and
+verbosity biases documented for model judges~\cite{zheng2023judging}.
+Decoding is greedy and constrained to a JSON reply, so scores are
+reproducible. An answer cut off by its token cap, or with no visible text,
+fails without being judged.
+
+The judge is validated from two sides before its labels are used. About 200
+judged answers, stratified by Dolly category and verdict, are re-scored with
+the same rubric by \texttt{gpt-5-mini} through the OpenAI API, a hosted
+reference well above the local judge in capability and outside its family,
+under a spend ceiling of \$0.36 that stops the run rather than passing it;
+and the first author scores about 100 of them blind to model, mode and judge
+score.
+Agreement is reported as Cohen's $\kappa$~\cite{cohen1960kappa} on the
+success decision and as quadratic-weighted $\kappa$~\cite{cohen1968weighted}
+on the scores. The rule for using the labels was fixed before any judge
+output existed and rests on the judge--human $\kappa$ for the success
+decision: at 0.60 or above, the open-ended family is reported with the
+others; from 0.40 to 0.60, it carries an explicit caveat; below 0.40, it
+moves to a secondary analysis. The cut-offs are the conventional boundaries
+of moderate and substantial agreement~\cite{landis1977measurement}.
 
 \subsection{Baselines}
 \label{sec:baselines}

@@ -215,23 +215,55 @@ sweep the quality threshold at test time.
 ### 5.4 Judging open-ended outputs, and validating the judge
 
 A judge drawn from the routed pool would be circular, so the primary judge is **out-of-family and outside
-the pool**. **[DECISION]** Candidate: a Llama- or Gemma-family instruct model at 4-bit that fits the
-8 GB budget. To be fixed once VRAM headroom is measured against the largest routed cell.
+the pool**: `llama3.1:8b-instruct-q4_K_M` (Llama 3.1 8B Instruct, 4.58 GiB), fixed on 2026-09-12 when
+Indrajeet approved the download. It is loaded only after labelling, never alongside a routed model, and it
+will not judge while a routed model is loaded. Settings are in `configs/judge.yaml`; the code is
+`src/arbiter/eval/judge.py` and `scripts/run_judge.py`.
 
-Scoring is a rubric on a 1-5 scale against a reference where one exists, with a success threshold of >= 4.
-Position and verbosity biases are mitigated by randomising presentation order and by scoring single
-responses rather than pairs.
+Scoring is a rubric on a 1-5 scale against the Dolly reference, with a success threshold of >= 4. The judge
+sees the request (with any Dolly context), the reference and the visible answer; never the think trace,
+the model or the mode. For open requests such as brainstorming or creative writing, the rubric treats the
+reference as one acceptable answer among many, and it asks for content to be scored, not length.
+Position and verbosity biases are mitigated by scoring single responses rather than pairs, in a seeded
+random order. Decoding is greedy (temperature 0, fixed seed) and constrained to a JSON schema
+`{reason, score}`, so scores are reproducible. A reply whose score cannot be read is retried once with a
+longer output budget and counts as a failure if still unreadable. An answer that hit its token cap, or has
+no visible text, fails without being judged. Each judge run records the rubric's hash, the model digest and
+the counts of unreadable replies and shortened references (`judge_runs.jsonl`).
 
 **Judge validation.** Cheap judges are the standard attack surface for this kind of paper, so the judge is
-itself evaluated:
-1. A stratified sample of ~200 judged items is graded by the frontier OpenAI judge, and agreement is
-   reported as Cohen's kappa. This is what the ~INR 1000 credit is for; it is enough for this and not for
-   bulk grading.
-2. Indrajeet hand-labels ~100 items blind, giving a human anchor and a judge-human kappa.
+itself evaluated (`scripts/sample_judge_validation.py`, `scripts/judge_agreement.py`):
+1. ~200 judged items, stratified by Dolly category and judge verdict, are re-scored by a hosted reference
+   model with the same rubric and schema (`scripts/judge_openai.py`). **Resolved 2026-09-13:** the model
+   is `gpt-5-mini` and Indrajeet authorised **$0.36** for it. That authorisation is separate from the
+   $8.00 of the hosted arm (§14), and the two are not fungible -- the hosted arm closed at $7.07 and its
+   $0.93 of headroom is not spent here.
 
-If kappa against the human anchor is poor, the open-ended family is reported with an explicit caveat or
-demoted to a secondary analysis. That decision is made before seeing routing results, and recorded here,
-so it cannot become a post-hoc rescue.
+   `--estimate` prints an **upper bound**, not the expected spend: it prices every request at the full
+   prompt budget (~9,000 tokens, §5.4 `num_ctx`) and the full reply budget, which bounds 200 items at
+   about $1.25 on `gpt-5-mini` against a realistic ~$0.30, since an open-ended request is 83 tokens at
+   the median and a judged answer a few hundred. The ceiling is therefore enforced by `--max-usd`, which
+   charges the next item its full prompt and reply budget and refuses it if that could carry the running
+   spend past the ceiling, rather than by the estimate. The guard counts in dollars, the unit the
+   authorisation is given in, so no exchange rate stands between the two; `--inr-per-usd` only adds a
+   rupee figure to the log for a credit priced that way. If the guard stops the run short of 200 items,
+   the sample is reported at the size reached and any increase goes back to Indrajeet before a further
+   request is sent.
+2. Indrajeet scores ~100 of those items blind, from a sheet that shows the request, reference and answer
+   but not the model, mode or judge score, giving a human anchor.
+
+Agreement is Cohen's kappa on the success decision and quadratic-weighted kappa on the 1-5 scores, each
+with a 10,000-resample percentile bootstrap interval.
+
+**Pre-registered rule (fixed 2026-09-12, before any judge output existed).** The deciding statistic is the
+judge-human kappa on the success decision:
+- kappa >= 0.60: the open-ended family is reported alongside the gradable families;
+- 0.40 <= kappa < 0.60: it is reported with an explicit caveat wherever its numbers appear;
+- kappa < 0.40: it moves to a secondary analysis and is left out of headline numbers.
+
+The cut-offs are the moderate and substantial boundaries of Landis and Koch (1977). Judge-frontier kappa is
+reported but does not decide. The rule is recorded before any routing result exists, so it cannot become a
+post-hoc rescue. For the mentor: confirm the cut-offs before the human labels are collected.
 
 ---
 
@@ -390,7 +422,7 @@ model loads into four and avoids reload thrash on a memory-tight GPU.
 | 3 | Main labelling, 900 further gradable prompts | ~28 h | After the pilot is clean |
 | 3a | Noise subset, 75 prompts x 2 extra samples | ~4.7 h | — |
 | 3b | Cap sensitivity, think cap 8192 on cap-hit prompts | ~5 h | — |
-| 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Judge confirmed 2026-09-13 |
+| 3c | Open-ended family, 400 prompts, plus judge | ~14 h + ~4.5 h | Downloads approved 2026-09-12; judge confirmed 2026-09-13 |
 | 4 | Full router sweep, ablations, seeds | ~6-10 h | — |
 | 5 | Public-benchmark arm (no local inference) | 4 min (actual) | **Done 2026-09-12**, see §13.5 |
 | 6 | Hosted-frontier arm (no local inference, $8 cap) | minutes (batch) | **Started 2026-09-12**, see §14 |
@@ -533,16 +565,18 @@ silicon and will not be claimed to.
 
 ## 12. Open decisions
 
-1. **Open-ended dataset** — source, licence, redistributability. Blocks §4.
-2. **Judge model identity** — resolved 2026-09-13: `llama3.1:8b-instruct-q4_K_M`, confirmed by Indrajeet
-   (§5.4, §13.2). The validation reference is `gpt-5-mini` under a $0.36 ceiling he authorised, separate
-   from and not fungible with the $8.00 of the hosted arm (§14).
-3. **`p_accept` / `p_retry`** — cite, measure, or sweep and label as assumed. Blocks the headline tax number.
-4. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship
+1. **Open-ended dataset** — resolved 2026-09-12: Dolly-15k (§13.2).
+2. **Judge model identity** — resolved 2026-09-12, confirmed by Indrajeet 2026-09-13:
+   `llama3.1:8b-instruct-q4_K_M` (§5.4, §13.2).
+3. **Validation reference model and its spend** — resolved 2026-09-13: `gpt-5-mini` under a $0.36 ceiling
+   authorised by Indrajeet, enforced by `--max-usd` (§5.4).
+4. **`p_accept` / `p_retry`** — resolved 2026-09-11: swept over a grid and labelled as assumed, with the
+   headline tax under oracle detection (§13).
+5. **Title-block details** — author name, institution, department, city/country, mentor's co-authorship
    and ORCID. Needed for the LaTeX template, not for any experiment.
 
-Items 1-3 are resolved provisionally in §13. Item 4 and a code/data availability statement remain with
-Indrajeet and the mentor.
+Items 1-4 are resolved; 1, 2 and 4 are recorded in §13. Item 5 and a code/data availability statement
+remain with Indrajeet and the mentor.
 
 ---
 
@@ -571,13 +605,15 @@ failure. Because the think cap could make larger models look worse than they are
 reruns prompts that hit the cap with an 8,192-token cap, and the paper reports how many oracle labels
 change.
 
-### 13.2 Open-ended family and judge
+### 13.2 Open-ended family and judge (downloads approved 2026-09-12)
 
-Source: `databricks/databricks-dolly-15k` (CC BY-SA 3.0, 12.5 MB), stratified by category, human-written
-responses as references. Judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GiB, which `ollama list` shows as 4.9 GB; out-of-family), confirmed
-by Indrajeet 2026-09-13 and already present in Ollama. The judge runs after labelling, never loaded
-alongside a routed model. Until the family's labels and the judge validation exist, the corpus has 1,200
-gradable prompts and every result states that the open-ended family is not yet included.
+Source: `databricks/databricks-dolly-15k` (CC BY-SA 3.0, 12.5 MB), stratified by category, with the
+human-written responses as references. Judge: `llama3.1:8b-instruct-q4_K_M` (4.58 GiB, which `ollama list` shows as 4.9 GB; out-of-family), run
+after labelling and never loaded alongside a routed model (§5.4). Indrajeet approved both downloads on
+2026-09-12 and confirmed the judge on 2026-09-13; it is already present in Ollama. The family is added by enabling `dolly` in `configs/corpus.yaml`. Each source draws from its
+own seeded stream, so the 1,200 gradable prompts should not change; the rebuilt manifest is checked against
+the existing one. Until the family's labels and the judge validation exist, every result states that the
+open-ended family is not yet included.
 
 ### 13.3 Energy windows, from the smoke stage
 
