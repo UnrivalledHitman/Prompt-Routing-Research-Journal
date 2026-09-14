@@ -263,7 +263,8 @@ judge-human kappa on the success decision:
 
 The cut-offs are the moderate and substantial boundaries of Landis and Koch (1977). Judge-frontier kappa is
 reported but does not decide. The rule is recorded before any routing result exists, so it cannot become a
-post-hoc rescue. For the mentor: confirm the cut-offs before the human labels are collected.
+post-hoc rescue. Confirmed unchanged at 0.60 and 0.40 on 2026-09-14, before the judge had scored the
+open-ended family and before any human label was collected.
 
 ---
 
