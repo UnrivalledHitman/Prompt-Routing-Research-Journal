@@ -1,0 +1,40 @@
+% =====================================================================
+%  VIII. CONCLUSION
+%  Numbers repeat Section V and must stay identical to it. The routing
+%  sentences wait for the final analysis.
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+A user who tries a configuration, judges the answer and resends the prompt
+to a stronger one pays for every attempt, and none of the routing studies we
+located measures that cost. We defined it as the escalation tax, split it
+into escalation and stickiness, and measured it on three pools: 1{,}200
+gradable prompts run through all eight cells of a Qwen3 size-by-mode grid on
+a laptop GPU with metered board energy, thirteen public models priced by
+their providers, and six hosted cells in which reasoning effort is a paid
+setting.
+
+The tax is large, and most of it comes from where a user stays rather than
+how they climb. Leaving the 8B thinking cell selected pays a tax of 12.96
+times the minimum sufficient energy and answers 79.8\% of prompts, while a
+frugal climb pays 0.89 times and answers 92.2\%. The same ordering holds on
+the public pool, with taxes of 7.96 against 2.69 times the minimum
+sufficient cost, and on the hosted ladder, 4.35 against 0.22.
+
+Thinking was never the cheaper way to buy accuracy on the local grid. Below
+8B, the next size up without thinking answered more prompts than thinking at
+the same size, for 3.8 to 5.5 times less energy per solved prompt. Routing
+one tier too low cost 2.71 times as much energy as routing one tier too
+high. Counted in tokens, that asymmetry reverses, and sticking with the
+largest model looks cheaper than trying thinking first, the opposite of what
+the meter shows. Cost has to be measured in the unit that is actually paid.
+\tbd{Routing: net saving of the best router against P1 and against the
+cascade, and whether the ordering of router families changes once each is
+charged for its own cost.}
+
+For a user without a router, the evidence points to a short rule: start
+small with reasoning off, move up a size before turning reasoning on, and
+treat extended reasoning as a choice made per prompt rather than a setting
+left on. \tbd{Whether a one-shot router improves on that rule enough to
+justify deploying it.}
