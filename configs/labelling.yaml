@@ -68,6 +68,10 @@ stages:
   # reruns use 9,216, the largest tested context that places it fully. The longest 8B prompt
   # in the rerun sample is 371 tokens, so every rerun still has its full 8,192-token budget.
   cap_8b: {select: cells, cells_file: results/processed/cap_reruns.csv, sizes: [8b], samples: [0], variant: cap8192, num_ctx: 9216, decoding: {think: {num_predict: 8192}, no_think: {num_predict: 8192}}}
+  # Energy reruns (protocol 13.7): generations whose energy was excluded because the machine
+  # was on battery or telemetry stalled, run again on mains power with their original seeds.
+  # Only their energy and wall time are used; their correctness labels stay from the first run.
+  energy_rerun: {select: cells, cells_file: results/processed/energy_reruns.csv, samples: [0], raw_dir: results/raw/energy_rerun}
   # Probes (paper sections III-D and III-F), built by scripts/build_probes.py. Each asks for a
   # short reply whose first visible token's distribution, returned as log probabilities, is
   # the result; eight tokens leave room for any leading whitespace. Sampling is untruncated at

@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from arbiter.energy import attribution
@@ -150,3 +151,41 @@ def test_attribute_stage_excludes_gaps_and_battery_instead_of_raising(tmp_path: 
     assert rows["w2"]["energy_excluded"] == "sampling_gap"
     assert rows["w3"]["energy_excluded"] == "on_battery"
     assert np.isnan(rows["w2"]["energy_dyn_j"]) and np.isnan(rows["w3"]["energy_dyn_j"])
+
+
+def _energy_rows(excluded: dict[str, str], dyn_j: float, window: str) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {"prompt_id": pid, "tag": "q", "mode": "think", "sample": 0, "variant": "base",
+             "window_id": window, "wall_s": 2.0, "energy_dyn_j": np.nan if reason else dyn_j,
+             "energy_excluded": reason}
+            for pid, reason in excluded.items()
+        ]
+    )  # fmt: skip
+
+
+def test_apply_reruns_replaces_only_excluded_rows_and_is_idempotent() -> None:
+    """Excluded rows take the rerun; measured rows and excluded reruns are left alone."""
+    energy = _energy_rows({"a": "", "b": "on_battery", "c": "sampling_gap"}, 5.0, "orig")
+    reruns = _energy_rows({"b": "", "c": "sampling_gap"}, 7.0, "rerun")
+    out = attribution.apply_reruns(energy, reruns)
+    rows = out.set_index("prompt_id")
+    assert rows.loc["a", "energy_dyn_j"] == 5.0 and rows.loc["a", "energy_source"] == "original"
+    assert rows.loc["b", "energy_dyn_j"] == 7.0 and rows.loc["b", "window_id"] == "rerun"
+    assert rows.loc["b", "energy_source"] == "rerun"
+    assert rows.loc["b", "energy_replaced"] == "on_battery"
+    assert rows.loc["b", "energy_excluded"] == ""
+    assert rows.loc["c", "energy_excluded"] == "sampling_gap"
+    assert np.isnan(rows.loc["c", "energy_dyn_j"])
+    again = attribution.apply_reruns(out, reruns)
+    pd.testing.assert_frame_equal(again, out)
+
+
+def test_apply_reruns_rejects_unknown_and_duplicate_generations() -> None:
+    """A rerun must match exactly one generation of the energy table."""
+    energy = _energy_rows({"a": "on_battery"}, 5.0, "orig")
+    with pytest.raises(ValueError, match="not in the energy table"):
+        attribution.apply_reruns(energy, _energy_rows({"z": ""}, 1.0, "rerun"))
+    twice = pd.concat([_energy_rows({"a": ""}, 1.0, "rerun")] * 2, ignore_index=True)
+    with pytest.raises(ValueError, match="duplicate"):
+        attribution.apply_reruns(energy, twice)

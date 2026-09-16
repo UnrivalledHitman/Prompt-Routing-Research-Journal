@@ -115,8 +115,18 @@ def build_label_table(
     frame = grades[(grades["sample"] == sample) & (grades["variant"] == variant)].copy()
     if energy is not None:
         extra = [c for c in ("energy_dyn_token_j",) if c in energy.columns]
-        joules = energy[[*KEY, "energy_dyn_j", "energy_board_j", *extra]]
-        frame = frame.merge(joules, on=KEY, how="left", validate="one_to_one")
+        measured = ["wall_s"] if "wall_s" in energy.columns else []
+        joules = energy[[*KEY, "energy_dyn_j", "energy_board_j", *extra, *measured]]
+        frame = frame.merge(
+            joules.rename(columns={"wall_s": "energy_wall_s"}),
+            on=KEY,
+            how="left",
+            validate="one_to_one",
+        )
+        if measured:
+            # Latency comes from the generation whose energy was measured. The two differ
+            # only where a generation was rerun for its energy (protocol section 13.7).
+            frame["wall_s"] = frame["energy_wall_s"].fillna(frame["wall_s"])
     else:
         frame["energy_dyn_j"] = np.nan
         frame["energy_board_j"] = np.nan

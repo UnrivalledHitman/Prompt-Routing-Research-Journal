@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from arbiter.energy.telemetry import (
     apportion,
@@ -48,6 +49,54 @@ from arbiter.utils.jsonl import read_jsonl
 
 LOGGER = logging.getLogger("arbiter.attribution")
 MAX_GAP_S = 1.0  # ten missed samples at the 100 ms interval
+KEY = ["prompt_id", "tag", "mode", "sample", "variant"]
+
+
+def apply_reruns(energy: pd.DataFrame, reruns: pd.DataFrame) -> pd.DataFrame:
+    """Replace excluded rows with the energy of the same generations rerun on mains power.
+
+    A rerun row replaces the row with the same key only if that row is excluded and the
+    rerun row is not. The replaced row keeps its original exclusion reason in
+    ``energy_replaced``; ``energy_source`` says which measurement a row holds. Applying
+    the same reruns twice changes nothing.
+
+    Raises
+    ------
+    ValueError
+        If a rerun key appears twice, or matches no row of ``energy``.
+    """
+    out = energy.copy()
+    for column, default in (("energy_source", "original"), ("energy_replaced", "")):
+        if column not in out.columns:
+            out[column] = default
+    out["energy_excluded"] = out["energy_excluded"].fillna("")
+    reruns = reruns.assign(energy_excluded=reruns["energy_excluded"].fillna(""))
+    if reruns.duplicated(KEY).any():
+        raise ValueError("duplicate generations in the rerun table")
+    index = {key: i for i, key in enumerate(out[KEY].itertuples(index=False, name=None))}
+    unknown = [key for key in reruns[KEY].itertuples(index=False, name=None) if key not in index]
+    if unknown:
+        raise ValueError(f"rerun generations not in the energy table: {unknown[:5]}")
+    usable = reruns[reruns["energy_excluded"] == ""]
+    replaced = 0
+    for _, row in usable.iterrows():
+        i = index[tuple(row[KEY])]
+        if out.at[i, "energy_excluded"] == "":
+            continue
+        reason = out.at[i, "energy_excluded"]
+        for column in reruns.columns:
+            out.at[i, column] = row[column]
+        out.at[i, "energy_source"] = "rerun"
+        out.at[i, "energy_replaced"] = reason
+        replaced += 1
+    LOGGER.info(
+        "replaced %d excluded generations with reruns; %d reruns were themselves excluded; "
+        "%d rows still excluded",
+        replaced,
+        len(reruns) - len(usable),
+        int((out["energy_excluded"] != "").sum()),
+    )
+    return out
 
 
 def baseline_power_w(
