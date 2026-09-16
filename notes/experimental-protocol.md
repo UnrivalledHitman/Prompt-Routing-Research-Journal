@@ -742,15 +742,44 @@ already enforced and is not relaxed after the fact.
 
 **Effect.** 9 windows are excluded: 5 on battery and 4 with a gap, 43 generations over 30 Dolly prompts.
 No window of the 1,200 gradable prompts is affected, and all 9,600 energy values attributed before are
-unchanged to the joule. Until the affected windows are rerun on mains power, analyses that include the
-open-ended family use 370 of its 400 prompts and say so. Rerunning them needs about 30 minutes of 8B and
-1.7B generation and is a separate, approved GPU run.
+unchanged to the joule.
+
+**Reruns (2026-09-17).** The 43 generations were rerun on mains power with their original seeds, decoding
+and context (`energy_rerun` stage, 23 minutes; `scripts/select_energy_reruns.py`,
+`scripts/apply_energy_reruns.py`). Every rerun window was accepted, one after a discard for another
+workload, and each excluded row now holds the rerun's energy and wall time, with the original reason in
+`energy_replaced`. Correctness labels stay from the first run, so the open-ended family again has all 400
+prompts. 28 of the 43 rerun answers match the original text exactly. See section 13.8 for the server
+version under which they ran.
 
 **Harness change.** From this point a stage asks Windows not to sleep while it runs, each window and
 baseline waits for mains power before it starts, and a window is discarded and rerun if mains power is
 lost during it or the recorder logs a stall longer than `window.max_gap_s` (1.0 s). Both facts are
 recorded on the window (`on_battery`, `stall_s`), so a window kept on its last attempt is still excluded
 from energy. Keeping the machine awake does not survive closing the lid.
+
+### 13.8 Energy reruns, probes and final analysis (run 2026-09-17)
+
+**Server version.** Ollama had updated itself to 0.34.1 before this run; every earlier stage ran on 0.34.0.
+The driver stayed at 616.92 and the Qwen3 digests matched. The energy reruns are the only measurements
+that share cells with 0.34.0 runs. Against the 0.34.0 generations of the same family, size and mode, their
+median dynamic energy per generated token is 2% lower at 8B no-think (19 reruns), 5% lower at 8B think (18)
+and 8% lower at 1.7B no-think (6), and median throughput is 2-3% lower. Their sessions also idled at about
+6.5 W against 3.9 W before, which lowers dynamic energy by construction, so the version effect cannot be
+separated from the baseline difference at these sample sizes. None of these shifts is large enough to move
+a cell's rank, and the reruns affect the open-ended family only.
+
+**Probes.** `verify` (6,400 generations, 39 min), `route_zero` (1,600, 7 min) and `route_few` (1,200, 6 min)
+ran on 0.34.1 under the section 13.7 harness. The 6-10 hour estimate in `configs/progress.yaml` assumed full
+generations; the probes stop after eight tokens.
+
+**Final analysis.** `results/processed/analysis/final`: 1,200 gradable prompts, every router family (R1,
+R1c, R2, R3-LoRA, R3 zero- and few-shot) and the reactive cascade, 10,000 bootstrap resamples, 89 minutes.
+
+**Hosted pairing not computed.** `run_hosted_analysis.py --local` regrades the hosted arm's raw responses,
+and `results/raw/hosted/` is no longer on this machine; it was gitignored and never committed. The hosted
+arm's committed tables are unaffected. Pairing prompt by prompt needs those responses again, which the 35
+batch ids in `results/processed/hosted_arm/ledger.jsonl` should allow downloading without new spend.
 
 ## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
 
