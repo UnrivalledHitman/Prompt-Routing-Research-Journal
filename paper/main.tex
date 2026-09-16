@@ -92,28 +92,29 @@ country; e-mail}}
 (e-mail: \decision{corresponding-author e-mail}).}
 
 \begin{abstract}
-Tiered language-model services leave the user to choose both a model size
-and, increasingly, whether the model should reason before answering. Users
-misallocate in two opposite directions. They start small and escalate after
-each failure, paying in full for every discarded attempt and for resending
-the prompt, or they leave a heavyweight configuration selected and pay a
-premium on prompts that never needed it. We call the resulting excess over
-the cheapest configuration that would have succeeded the \emph{escalation
-tax}, formalise it, and decompose it into an escalation component and a
-stickiness component. We then ask whether a small predictor, placed in
-front of an eight-cell pool of Qwen3 models (0.6 to 8 billion parameters,
-each with thinking on and off), can select that minimum sufficient
-configuration before any generation, and whether the saving survives once
-the router is charged for its own tokens, latency and energy. Every prompt
-in a stratified corpus of mathematics, code, multiple-choice and open-ended
-tasks is run through all eight cells on a consumer laptop graphics card
-with measured board power. We compare classical classifiers, fine-tuned
-encoders and a small language model used as a router against manual
-escalation policies and a self-verifying cascade. The tax is then measured
-on two pools the laptop cannot host: thirteen public models priced by their
-providers, and six hosted cells in which reasoning effort is a paid
-setting. \tbd{headline tax, net saving of the best router, energy per
-solved query, and the router-family ordering once charged}.
+Tiered language-model services leave users to choose a model size and,
+increasingly, whether the model should reason before answering. Users
+misallocate in two directions: they start small and escalate after each
+failure, paying for every discarded attempt, or they leave a heavyweight
+configuration selected and overpay on prompts that never needed it. We call
+the excess over the cheapest configuration that would have succeeded the
+\emph{escalation tax}, formalise it, and split it into escalation and
+stickiness. We then ask whether a small router in front of eight Qwen3
+configurations (0.6 to 8 billion parameters, thinking on and off) can pick
+that minimum sufficient configuration before generation once charged for
+its own tokens, latency and energy. Every prompt of a stratified corpus of
+mathematics, code, multiple-choice and open-ended tasks runs through all
+eight configurations on a laptop GPU with measured board power. We compare
+classical classifiers, fine-tuned encoders and a small language model as
+routers against manual escalation policies and a self-verifying cascade, and
+measure the tax on two pools the laptop cannot host: thirteen public models
+and six hosted configurations with paid reasoning effort. Leaving the
+largest thinking configuration selected pays 12.96 times the minimum
+sufficient energy and a frugal climb 0.89 times, at 3{,}612 and 946\,J per
+solved prompt against the oracle's 635\,J. No router beats the frugal climb
+on held-out prompts: the best, a TF-IDF classifier, spends 1.30 times its
+energy per solved prompt, but 61\% less than the sticky default and 34\%
+less than the cascade. Router overhead stays under 1\% of routed energy.
 \end{abstract}
 
 \begin{keywords}

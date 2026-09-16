@@ -36,9 +36,13 @@ ROUTERS = {
     "R1a-tfidf-lr": "TF-IDF + LR",
     "R1b-features-lightgbm": "Features + LightGBM",
     "R1b-features-xgboost": "Features + XGBoost",
+    "R1c-minilm-lr": "MiniLM + LR",
     "R1-direct-tfidf-lr": "Direct: TF-IDF + LR",
+    "R2-distilbert": "DistilBERT",
+    "R2-deberta-v3-small": "DeBERTa-v3-small",
     "R3-qwen3-0.6b-zero-shot": "Qwen3-0.6B, zero-shot",
     "R3-qwen3-0.6b-few-shot": "Qwen3-0.6B, few-shot",
+    "R3-qwen3-0.6b-lora": "Qwen3-0.6B, LoRA",
     "cascade-automix": "AutoMix-style cascade",
 }
 PER_CHECK = {"cascade-automix"}  # overhead is reported per verification call
@@ -307,7 +311,7 @@ def table_overhead(frame: pd.DataFrame) -> str | None:
     ].mean()
     body = [
         [
-            router_text(str(router)) + (", per check" if router in PER_CHECK else ""),
+            "Cascade, per check" if router in PER_CHECK else router_text(str(router)),
             str(device).upper(),
             num(1000 * row["p50_s"], 2),
             num(1000 * row["p95_s"], 2),

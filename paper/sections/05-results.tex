@@ -3,13 +3,13 @@
 %  Order follows the hypotheses in notes/experimental-protocol.md S1:
 %    A. Oracle labels on the local grid (per-cell success and cost, c*)
 %    B. The escalation tax (H1)
-%    C. Routing, gross and net of router cost (H2, H3)  -- waits for the
-%       fine-tuned encoders, the language-model routers and the cascade
+%    C. Routing, gross and net of router cost (H2, H3)
 %    D. Energy of the reasoning-mode axis (H4)
 %    E. Asymmetry of misallocation (H5)
 %    F-H. Public pool, hosted ladder, carbon
-%  Local numbers come from results/processed/analysis/main (gradable
-%  families, 1,200 prompts); router numbers are on its test split only.
+%  Local numbers come from results/processed/analysis/final (gradable
+%  families, 1,200 prompts), whose label, tax and mode tables are identical
+%  to analysis/main; router numbers are on its test split only.
 % =====================================================================
 \section{Results}
 \label{sec:results}
@@ -193,10 +193,122 @@ per solved prompt against 2{,}970.7\,J.
 \subsection{Routing on the Local Grid}
 \label{sec:results-routing}
 
-\tbd{Written from the final analysis, once the fine-tuned encoders, the
-language-model routers and the cascade have run: cost--quality frontiers,
-net saving against P1 and against the cascade, router overhead, and the
-ordering of router families gross and net of their own cost.}
+\begin{table*}[!t]
+\caption{Routers on the 243 test prompts, in joules, with a failed routed
+answer recovered at $c_8$ and every failure detected. Net cost is the mean
+energy per prompt with the router's own energy included; its interval is for
+the first training seed, and the standard deviation across three seeds
+follows in parentheses. Saving and $\Delta$ solved are paired differences
+against P1, positive when the router is cheaper or solves more, with
+Holm-corrected $p$-values. Area is the normalised area under the router's
+cost--quality frontier as $\tau$ varies. For the cascade, $\tau$ is its
+verification threshold.}
+\label{tab:routers}
+\centering
+\generated{tables/routers_energy_j.tex}{\input{tables/routers_energy_j}}
+\end{table*}
+
+\begin{table}[!t]
+\caption{Router overhead per decision, averaged over seeds and both
+training objectives. CPU energy is an upper bound, decision time multiplied
+by 54\,W; GPU energy is metered. The LoRA router is charged the zero-shot
+probe's cost. Cascade figures are per verification check, and a query may
+need several.}
+\label{tab:overhead}
+\centering
+\generated{tables/overhead.tex}{\input{tables/overhead}}
+\end{table}
+
+\begin{figure}[!t]
+\centering
+\generated{figures/frontier_energy_j.pdf}
+{\includegraphics[width=\columnwidth]{figures/frontier_energy_j}}
+\caption{Solved rate against net mean energy per prompt on the test split:
+each router as $\tau$ varies (dashed for cost-sensitive training), the
+cascade as its threshold varies, the eight cells used alone, the manual
+policies and the oracle. Cost is logarithmic.}
+\label{fig:frontier}
+\end{figure}
+
+Routers were trained on 716 prompts, had $\tau$ chosen on 241 and were
+evaluated once on the remaining 243. Table~\ref{tab:routers} gives the test
+results in joules, with a failed routed answer recovered at $c_8$ and every
+failure detected, and Fig.~\ref{fig:frontier} the cost--quality frontiers.
+On these prompts P1 solves 92.2\% at 831.5\,J per prompt [578.2, 1{,}122.1]
+and the oracle 93.0\% at 565.5\,J.
+
+No router beats the frugal climb, and neither does the cascade. The best
+router, logistic regression on TF-IDF $n$-grams, solves 88.5\% at
+1{,}041.0\,J [801.0, 1{,}304.7], which is 209.5\,J more than P1 [67.7,
+363.6] and 3.7 points fewer [1.6, 6.2]. Its net energy per solved prompt is
+1.30 times P1's [1.10, 1.63]. Every other router and the cascade also spends
+more than P1 and solves fewer prompts, with Holm-corrected $p \leq 0.03$ in
+every case. The shortfall belongs to the routers, not the grid: the oracle
+spends 32\% less than P1 [24, 41].
+
+Against the habits that start high, the same router removes most of the
+tax. Charged for its own energy, it spends 61\% less than P3 [53, 69] and
+solves 7.4 points more [4.1, 10.7]. It spends 52\% less than P2 [43, 60],
+45\% less than random assignment [37, 53], and 29\% less than P4 with a
+uniform start [23, 36] at a solved rate within a point of it ($-0.6$
+[$-1.9$, 0.4]).
+
+The loss to P1 sits in recovery. A routed answer that fails is resent to
+$c_8$, the costliest cell and a less accurate one than $c_7$. The TF-IDF
+router guards against that with a high threshold, $\tau = 0.84$: of the
+test prompts some cell can answer, it sends 76.1\% to a costlier cell than
+$\cstar(q)$ that still succeeds, 9.7\% to a cell that fails and 14.2\%
+exactly to $\cstar(q)$. Its tax, 2.70 times the cost of $\cstar(q)$, is
+95\% stickiness, where P1's is mostly escalation. When a failed routed
+answer instead climbs the P1 ladder from the routed cell, the gap closes.
+Every router then lies within 6\% of P1's energy per solved prompt, solving
+the same share of prompts or at most 1.2 points fewer, and four are 2.6\% to
+3.4\% cheaper than P1 (Holm-corrected $p = 0.009$).
+
+Imperfect detection reverses the comparison of solved rates. At the
+illustrative point P1 solves 80.3\% of prompts, because each of its 1.92
+attempts is another chance to accept a wrong answer. The TF-IDF router makes
+1.18 attempts and solves 87.4\%, which is 7.1 points more [4.2, 9.7], at 1.76
+times P1's energy per solved prompt [1.50, 2.16].
+
+The cascade loses to most routers. It solves 85.6\% at 1{,}587.2\,J per
+prompt, and 11 of the 15 one-shot routers are significantly cheaper, the
+TF-IDF router by
+34\% [23, 45] ($p = 0.002$). Its verification checks are not the reason, at
+9.7\,J each (Table~\ref{tab:overhead}). The check a model runs on its own
+answer accepts a wrong one on 33.6\% of the prompts some cell can answer,
+and each of those answers goes to $c_8$ as a misrouted one does. The cascade
+makes 2.39 attempts per prompt, more than any router.
+
+Charging each router for its own energy changes little. No router costs more
+than 7.6\,J per decision, 0.6\% of the energy of the queries it routes, and
+only three routers change rank between gross and net cost, all within 7\,J
+of one another. In tokens the charge matters. The R3 routers pay for their
+own prompts, 281 tokens per decision zero-shot and 1{,}141 few-shot, and the
+LoRA router falls from fifth to eleventh of 17. The verdict against P1 also
+depends on the unit. The TF-IDF router needs 1.35 times P1's latency per
+solved prompt [1.13, 1.69] but only 0.76 times its tokens [0.65, 0.89],
+because in tokens a failed small attempt costs about as much as an answer
+from $c_7$, so P1's climb is dear, while in energy it is nearly free.
+
+Ranked by their best member, the router families keep their order gross and
+net. Logistic regression on
+TF-IDF $n$-grams and on frozen MiniLM embeddings rank first and second. The
+fine-tuned encoders approach them only with cost-sensitive training, which
+lowered DistilBERT's net cost from 1{,}649.7\,J to 1{,}130.6\,J and
+DeBERTa-v3-small's from 1{,}491.7\,J to 1{,}216.2\,J; it did not help the
+TF-IDF router. Qwen3-0.6B with trained LoRA adapters reaches 1{,}262.9\,J.
+The prompted R3 routers finish last, beside the cascade: asked for the
+cheapest sufficient configuration, the 0.6B model routes low, and the
+few-shot prompt sends 52.7\% of answerable prompts to a cell that fails.
+Predicting success per cell also beats classifying $\cstar(q)$ directly, by
+480.3\,J per prompt with the same TF-IDF features [241.6, 723.8]. The linear
+routers give the same result with every training seed, while the
+gradient-boosted and fine-tuned ones vary with standard deviations of up to
+128.5\,J. Table~\ref{tab:overhead} gives the overhead. The TF-IDF router
+decides in 1.7\,ms at a bound of 0.10\,J, the MiniLM router in 24\,ms, the
+encoders in 74 to 135\,ms, and the R3 routers in 43 to 56\,ms on the GPU at
+a metered 2.7 to 2.9\,J.
 
 \subsection{Energy of the Reasoning-Mode Axis}
 \label{sec:results-mode}
@@ -237,9 +349,14 @@ cut off. Thinking would then answer 71.9\%, 84.9\% and 93.0\% of prompts
 at 0.6B, 1.7B and 4B, more than the next size up at every step, and would
 still spend 2.8, 3.6 and 4.6 times as much energy per solved prompt. The
 bound favours thinking twice over, since an answer that needs a longer
-budget also needs more energy. \tbd{Cap reruns: how often an 8{,}192-token
-budget turns a capped failure into a success, how often that moves
-$\cstar(q)$, and the energy of the longer generations.}
+budget also needs more energy. The cap reruns confirm it. Of 219 capped
+generations rerun with an 8{,}192-token budget, 32.4\% succeed and 27.9\%
+reach the longer cap as well. The share rescued rises with size for
+thinking, from 15.0\% at 0.6B to 52.5\% at 8B, and the answers it buys are
+long: a rescued 8B thinking answer has a median of 5{,}201 output tokens and
+8.6\,kJ, against a mean of 362\,J for an 8B non-thinking generation. A
+rescue moves $\cstar(q)$ for 6.4\% of the rerun generations and makes 4.6\%
+of them servable.
 
 Within a size, the premium is one of length. A thinking generation spends
 between 0.94 and 1.15 times the energy per output token of a non-thinking

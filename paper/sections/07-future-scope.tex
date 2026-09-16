@@ -74,5 +74,14 @@ router current without relabelling every prompt in every cell. That is a
 partial-feedback problem, because only the routed cell's outcome is ever
 observed.
 
-\tbd{Directions motivated by the routing results, and any of the above they
-undercut, once Section~\ref{sec:results-routing} is written.}
+\emph{Routers that recover well.} The routing results place the loss in
+recovery rather than in prediction alone (Section~\ref{sec:results-routing}).
+A router could be trained against the recovery rule it will face, since the
+threshold that minimises cost when failures jump to $c_8$ is not the one
+that minimises it when they climb. The choice between jumping and climbing
+after a failure could itself be learned per prompt. A router could also
+propose a starting rung for the frugal climb instead of a final cell,
+keeping the climb's cheap failures while skipping rungs a prompt clearly
+needs. The same results qualify routing the wider pools: a trained router
+there is worth building only with a recovery rule that does not undo its
+saving.

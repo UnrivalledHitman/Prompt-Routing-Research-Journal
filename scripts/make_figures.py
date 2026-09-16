@@ -48,8 +48,12 @@ ROUTERS = {
     "R1a-tfidf-lr": ("TF-IDF + LR", "C0"),
     "R1b-features-lightgbm": ("Features + LightGBM", "C1"),
     "R1b-features-xgboost": ("Features + XGBoost", "C2"),
+    "R1c-minilm-lr": ("MiniLM + LR", "C3"),
+    "R2-distilbert": ("DistilBERT", "C7"),
+    "R2-deberta-v3-small": ("DeBERTa-v3-small", "C8"),
     "R3-qwen3-0.6b-zero-shot": ("Qwen3-0.6B, zero-shot", "C4"),
     "R3-qwen3-0.6b-few-shot": ("Qwen3-0.6B, few-shot", "C5"),
+    "R3-qwen3-0.6b-lora": ("Qwen3-0.6B, LoRA", "C9"),
     "cascade-automix": ("AutoMix-style cascade", "C6"),
 }
 ERROR_KW = {"elinewidth": 0.6, "capsize": 1.5}

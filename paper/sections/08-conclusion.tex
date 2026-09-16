@@ -1,7 +1,6 @@
 % =====================================================================
 %  VIII. CONCLUSION
-%  Numbers repeat Section V and must stay identical to it. The routing
-%  sentences wait for the final analysis.
+%  Numbers repeat Section V and must stay identical to it.
 % =====================================================================
 \section{Conclusion}
 \label{sec:conclusion}
@@ -29,12 +28,17 @@ one tier too low cost 2.71 times as much energy as routing one tier too
 high. Counted in tokens, that asymmetry reverses, and sticking with the
 largest model looks cheaper than trying thinking first, the opposite of what
 the meter shows. Cost has to be measured in the unit that is actually paid.
-\tbd{Routing: net saving of the best router against P1 and against the
-cascade, and whether the ordering of router families changes once each is
-charged for its own cost.}
+On held-out prompts no router beat the frugal climb. The best, logistic
+regression on TF-IDF features, spent 1.30 times its energy per solved prompt
+and answered 3.7 points fewer, while spending 61\% less than leaving the 8B
+thinking cell selected and 34\% less than a self-verifying cascade. Charging
+routers for their own energy barely changed their ranking, since none cost
+more than 7.6\,J per decision. The loss to the climb came from recovering
+failed routes at the top of the grid.
 
 For a user without a router, the evidence points to a short rule: start
 small with reasoning off, move up a size before turning reasoning on, and
 treat extended reasoning as a choice made per prompt rather than a setting
-left on. \tbd{Whether a one-shot router improves on that rule enough to
-justify deploying it.}
+left on. A one-shot router did not improve on that rule when every failure
+was recognised. It earned its place against the habits that start high, and
+where failures go unnoticed.
