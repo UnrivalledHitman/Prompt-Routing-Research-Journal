@@ -30,6 +30,7 @@ window:
   tail_s: 6.0           # idle hold after the last generation; smoothed power needs ~5 s to decay
   tail_check_s: 2.0     # end of the tail inspected for another workload
   max_load_s: 1.0       # a generation that took longer to load reloaded the model
+  max_gap_s: 1.0        # a longer telemetry gap is a stall or a system suspend; the window is rerun
   max_attempts: 4
 
 session:

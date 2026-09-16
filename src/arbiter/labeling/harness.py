@@ -14,11 +14,14 @@ Per model session:
    recorded (gate 2 found a one-off prefill stall per server session).
 3. Check the model sits fully in VRAM.
 4. Record an idle baseline window with the model loaded.
-5. For each batch and mode: run the generations, hold a tail so the smoothed power
-   reading decays inside the window, then inspect utilisation at the end of the
-   tail. If another workload is using the GPU, or a generation had to reload the
-   model, the window is discarded and rerun once the GPU is idle again.
+5. For each batch and mode: wait for mains power, run the generations, hold a tail so
+   the smoothed power reading decays inside the window, then inspect utilisation at
+   the end of the tail. If another workload is using the GPU, a generation had to
+   reload the model, the machine lost mains power, or telemetry stalled (a system
+   suspend), the window is discarded and rerun.
 6. Record a closing baseline window and unload.
+
+The stage asks Windows not to sleep while it runs (protocol section 13.7).
 
 Telemetry streams to one CSV per session. Generations and windows are appended to
 JSONL after each accepted window, so an interrupted stage resumes at its first
@@ -51,6 +54,7 @@ import yaml
 from arbiter.data.corpus import PromptItem, Tokenizer, count_tokens, read_corpus
 from arbiter.energy.telemetry import TelemetryRecorder, TelemetrySample
 from arbiter.utils.jsonl import append_jsonl, read_jsonl
+from arbiter.utils.power import KeepAwake, ac_online
 
 LOGGER = logging.getLogger("arbiter.labelling")
 T = TypeVar("T")
@@ -266,6 +270,21 @@ def tail_contaminated(
     return mean > max_util_pct, mean
 
 
+def power_contaminated(
+    ac_readings: Sequence[bool | None], stall_s: float, max_gap_s: float
+) -> tuple[bool, bool]:
+    """Decide whether a window lost mains power or had its telemetry stall.
+
+    Returns
+    -------
+    tuple of bool
+        ``(on_battery, stalled)``. An unreadable power state (None) does not count as
+        battery. A stall longer than ``max_gap_s`` is usually a system suspend, which
+        also stretches the wall time of the generation it interrupts.
+    """
+    return any(reading is False for reading in ac_readings), stall_s > max_gap_s
+
+
 # ---------------------------------------------------------------------------
 # Files
 # ---------------------------------------------------------------------------
@@ -476,6 +495,30 @@ class GpuGuard:
                 last_log = now
             time.sleep(self._poll_s * 6)
 
+    def wait_for_mains(self, reason: str) -> float:
+        """Return once the machine is on mains power; an unreadable state does not hold.
+
+        Returns
+        -------
+        float
+            Seconds spent waiting.
+        """
+        start = time.perf_counter()
+        last_log = start - self._log_every_s
+        while ac_online() is False:
+            self.raise_if_failed()
+            now = time.perf_counter()
+            if now - last_log >= self._log_every_s:
+                LOGGER.warning(
+                    "waiting for mains power (%s): %.0f min so far", reason, (now - start) / 60
+                )
+                last_log = now
+            time.sleep(self._poll_s)
+        waited = time.perf_counter() - start
+        if waited > self._poll_s:
+            LOGGER.info("mains power back after %.1f min (%s)", waited / 60, reason)
+        return waited
+
 
 # ---------------------------------------------------------------------------
 # Generation
@@ -624,14 +667,21 @@ def run_window(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Run one contiguous single-mode window, including its tail and contamination check."""
     window_cfg = ctx.cfg["window"]
+    ac_readings = [ac_online()]
     start = time.perf_counter()
-    records = [generate_one(ctx, spec, item, mode, sample) for item, sample in todo]
+    records = []
+    for item, sample in todo:
+        records.append(generate_one(ctx, spec, item, mode, sample))
+        ac_readings.append(ac_online())
     gen_end = time.perf_counter()
     time.sleep(float(window_cfg["tail_s"]))
     end = time.perf_counter()
+    ac_readings.append(ac_online())
     tail = recorder.window(end - float(window_cfg["tail_check_s"]), end)
     busy, tail_util = tail_contaminated(tail, float(ctx.cfg["gpu_guard"]["max_util_pct"]))
     reloaded = any(r["load_duration_s"] > float(window_cfg["max_load_s"]) for r in records)
+    stall_s = recorder.longest_stall_s(start, end)
+    on_battery, stalled = power_contaminated(ac_readings, stall_s, float(window_cfg["max_gap_s"]))
     window = {
         "start_perf": start,
         "gen_end_perf": gen_end,
@@ -641,7 +691,9 @@ def run_window(
         "tail_util_mean": tail_util,
         "other_workload": busy,
         "reloaded": reloaded,
-        "contaminated": busy or reloaded,
+        "on_battery": on_battery,
+        "stall_s": stall_s,
+        "contaminated": busy or reloaded or on_battery or stalled,
         "timestamp_utc": utc_now(),
     }
     return window, records
@@ -661,14 +713,21 @@ def measure_baseline(
     attempts = 3
     for attempt in range(1, attempts + 1):
         guard.raise_if_failed()
+        guard.wait_for_mains(kind)
+        ac_readings = [ac_online()]
         start = time.perf_counter()
         time.sleep(seconds)
         end = time.perf_counter()
+        ac_readings.append(ac_online())
         samples = recorder.window(start, end)
         utils = [s.util_pct for s in samples if s.util_pct is not None]
         powers = [s.power_mw for s in samples if s.power_mw is not None]
         util = statistics.fmean(utils) if utils else None
-        contaminated = util is not None and util > max_util
+        stall_s = recorder.longest_stall_s(start, end)
+        on_battery, stalled = power_contaminated(
+            ac_readings, stall_s, float(ctx.cfg["window"]["max_gap_s"])
+        )
+        contaminated = (util is not None and util > max_util) or on_battery or stalled
         window = {
             "window_id": f"{session_id}-{kind}-a{attempt}",
             "session_id": session_id,
@@ -682,6 +741,8 @@ def measure_baseline(
             "end_perf": end,
             "util_mean": util,
             "power_mean_w": statistics.fmean(powers) / 1000.0 if powers else None,
+            "on_battery": on_battery,
+            "stall_s": stall_s,
             "contaminated": contaminated,
             "accepted": not contaminated or attempt == attempts,
             "timestamp_utc": utc_now(),
@@ -713,9 +774,10 @@ def run_batch_mode(
 ) -> float | None:
     """Run one batch in one mode until a window is accepted.
 
-    A window is rerun if a request fails, another workload was using the GPU, or the
-    model had to be reloaded. On the final attempt a contaminated window is kept and
-    its records are flagged.
+    A window is rerun if a request fails, another workload was using the GPU, the
+    model had to be reloaded, the machine lost mains power, or telemetry stalled. On
+    the final attempt a contaminated window is kept and its records are flagged; energy
+    attribution then excludes it if it was on battery or stalled.
 
     Returns
     -------
@@ -746,6 +808,7 @@ def run_batch_mode(
             "telemetry_file": f"telemetry/{session_id}.csv",
         }
         guard.raise_if_failed()
+        guard.wait_for_mains(window_id)
         try:
             if not is_loaded(ctx.client, tag):
                 placement = load_model(ctx, spec, guard)
@@ -760,11 +823,14 @@ def run_batch_mode(
         window = {**base, **window}
         if window["contaminated"] and attempt < max_attempts:
             LOGGER.warning(
-                "%s: discarded (other workload %s, tail util %s, reloaded %s); rerunning",
+                "%s: discarded (other workload %s, tail util %s, reloaded %s, on battery %s, "
+                "telemetry stall %.1f s); rerunning",
                 window_id,
                 window["other_workload"],
                 window["tail_util_mean"],
                 window["reloaded"],
+                window["on_battery"],
+                window["stall_s"],
             )
             append_jsonl(
                 ctx.windows_path, [{**window, "accepted": False, "reason": "contaminated"}]
@@ -808,6 +874,7 @@ def run_session(ctx: Context, spec: dict[str, Any], items: Sequence[PromptItem])
     recorder = TelemetryRecorder(
         stage.raw_dir / "telemetry" / f"{session_id}.csv",
         float(cfg["telemetry"]["interval_ms"]) / 1000.0,
+        stall_s=float(cfg["window"]["max_gap_s"]),
     )
     recorder.start()
     guard = GpuGuard(recorder, cfg["gpu_guard"])
@@ -946,9 +1013,10 @@ def run_stage(cfg: dict[str, Any], stage_name: str, repo_root: Path, config_path
             windows_path=stage.raw_dir / "windows.jsonl",
             sessions_path=stage.raw_dir / "sessions.jsonl",
         )
-        for spec in cfg["models"]:
-            if stage.sizes is None or spec["size"] in stage.sizes:
-                run_session(ctx, spec, items)
+        with KeepAwake():
+            for spec in cfg["models"]:
+                if stage.sizes is None or spec["size"] in stage.sizes:
+                    run_session(ctx, spec, items)
     finally:
         pynvml.nvmlShutdown()
     LOGGER.info("stage %s complete", stage.name)

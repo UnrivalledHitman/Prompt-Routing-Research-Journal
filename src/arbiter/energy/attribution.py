@@ -1,4 +1,4 @@
-"""Energy attribution for labelling windows (experimental protocol, section 6.2).
+"""Energy attribution for labelling windows (experimental protocol, sections 6.2 and 13.7).
 
 For an accepted batch window ``w`` in a session whose idle power is ``P_base``:
 
@@ -12,22 +12,42 @@ power reading is charged to that window's generations rather than lost.
 ``P_base`` is the energy of the session's accepted baseline windows divided by their
 total duration, measured with the model loaded and idle. The dynamic figure is the
 primary cost measure; board energy is reported alongside it.
+
+A window's energy is left unmeasured (NaN, with the reason in ``energy_excluded``)
+when it cannot be compared with the rest of the grid:
+
+* ``sampling_gap``: telemetry has a gap longer than ``max_gap_s`` inside the window.
+  A system suspend is the usual cause, and it also stretches the wall time of the
+  generation it interrupts, so wall-time shares would be wrong as well.
+* ``on_battery``: the window overlaps a period without mains power, during which the
+  GPU runs under a lower power limit. The harness records this for new windows;
+  for earlier ones the periods come from the operating system's event log.
+
+The analysis drops prompts with an unmeasured cell, so an excluded window removes
+its prompts from the analysis instead of pricing them wrongly.
 """
 
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from arbiter.energy.telemetry import apportion, integrate_energy, load_telemetry
+from arbiter.energy.telemetry import (
+    apportion,
+    integrate_energy,
+    load_clock,
+    load_telemetry,
+    max_gap_in_window,
+)
 from arbiter.utils.jsonl import read_jsonl
 
 LOGGER = logging.getLogger("arbiter.attribution")
+MAX_GAP_S = 1.0  # ten missed samples at the 100 ms interval
 
 
 def baseline_power_w(
@@ -54,28 +74,73 @@ def baseline_power_w(
     return energy / duration
 
 
+def window_exclusion(
+    t: np.ndarray,
+    window: dict[str, Any],
+    clock: tuple[np.ndarray, np.ndarray] | None = None,
+    on_battery: Sequence[tuple[float, float]] = (),
+    max_gap_s: float = MAX_GAP_S,
+) -> str | None:
+    """Return why a window's energy cannot be used, or None if it can.
+
+    Parameters
+    ----------
+    t : ndarray
+        Times of the session's valid power samples (``perf_s``).
+    window : dict
+        The window record; ``on_battery`` and ``stall_s`` are used when present.
+    clock : tuple of ndarray, optional
+        ``perf_s`` and ``epoch_s`` of every telemetry row, to place the window in
+        wall-clock time. Required when ``on_battery`` is given.
+    on_battery : sequence of (float, float)
+        Unix-time intervals without mains power.
+    max_gap_s : float
+        Longest tolerated interval without a valid power sample.
+    """
+    start, end = window["start_perf"], window["end_perf"]
+    if window.get("on_battery"):
+        return "on_battery"
+    if (window.get("stall_s") or 0.0) > max_gap_s or max_gap_in_window(t, start, end) > max_gap_s:
+        return "sampling_gap"
+    if on_battery:
+        if clock is None:
+            raise ValueError("on_battery intervals need the session clock")
+        wall_start, wall_end = np.interp([start, end], *clock)
+        if any(wall_start <= until and wall_end >= since for since, until in on_battery):
+            return "on_battery"
+    return None
+
+
 def attribute_window(
     t: np.ndarray,
     power_w: np.ndarray,
     window: dict[str, Any],
     records: Sequence[dict[str, Any]],
     baseline_w: float,
+    exclusion: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Split one window's board and dynamic energy across its generations by wall time."""
+    """Split one window's board and dynamic energy across its generations by wall time.
+
+    With an ``exclusion`` reason, every energy figure is NaN and the reason is recorded.
+    """
     duration = window["end_perf"] - window["start_perf"]
-    board = integrate_energy(t, power_w, window["start_perf"], window["end_perf"])
-    dynamic = board - baseline_w * duration
     weights = [r["wall_s"] for r in records]
-    tokens = [r.get("eval_count") or 0 for r in records]
-    token_weights = tokens if sum(tokens) > 0 else weights
+    if exclusion is None:
+        board = integrate_energy(t, power_w, window["start_perf"], window["end_perf"])
+        dynamic = board - baseline_w * duration
+        tokens = [r.get("eval_count") or 0 for r in records]
+        token_weights = tokens if sum(tokens) > 0 else weights
+        shares = zip(
+            apportion(board, weights),
+            apportion(dynamic, weights),
+            apportion(dynamic, token_weights),
+            strict=True,
+        )
+    else:
+        board = dynamic = float("nan")
+        shares = iter([(board, board, board)] * len(records))
     rows = []
-    for record, e_board, e_dyn, e_dyn_tokens in zip(
-        records,
-        apportion(board, weights),
-        apportion(dynamic, weights),
-        apportion(dynamic, token_weights),
-        strict=True,
-    ):
+    for record, (e_board, e_dyn, e_dyn_tokens) in zip(records, shares, strict=True):
         rows.append(
             {
                 "prompt_id": record["prompt_id"],
@@ -95,13 +160,27 @@ def attribute_window(
                 "window_board_j": board,
                 "window_dyn_j": dynamic,
                 "contaminated": bool(window.get("contaminated", False)),
+                "energy_excluded": exclusion or "",
             }
         )
     return rows
 
 
-def attribute_stage(raw_dir: Path) -> list[dict[str, Any]]:
+def attribute_stage(
+    raw_dir: Path,
+    on_battery: Sequence[tuple[float, float]] = (),
+    max_gap_s: float = MAX_GAP_S,
+) -> list[dict[str, Any]]:
     """Attribute energy to every generation recorded in a labelling stage directory.
+
+    Parameters
+    ----------
+    raw_dir : Path
+        Stage directory with ``generations.jsonl``, ``windows.jsonl`` and telemetry.
+    on_battery : sequence of (float, float)
+        Unix-time intervals without mains power; overlapping windows are excluded.
+    max_gap_s : float
+        Longest tolerated interval without a power sample inside a batch window.
 
     Raises
     ------
@@ -119,11 +198,14 @@ def attribute_stage(raw_dir: Path) -> list[dict[str, Any]]:
         by_session[window["session_id"]].append(window)
 
     rows: list[dict[str, Any]] = []
+    excluded: Counter[str] = Counter()
     for session_id, session_windows in by_session.items():
         batches = [w for w in session_windows if w["kind"] == "batch" and w.get("accepted")]
         if not batches:
             continue
-        t, power_w = load_telemetry(raw_dir / session_windows[0]["telemetry_file"])
+        telemetry_path = raw_dir / session_windows[0]["telemetry_file"]
+        t, power_w = load_telemetry(telemetry_path)
+        clock = load_clock(telemetry_path) if on_battery else None
         baseline_w = baseline_power_w(t, power_w, session_windows)
         for window in batches:
             records = by_window.pop(window["window_id"], [])
@@ -132,8 +214,17 @@ def attribute_stage(raw_dir: Path) -> list[dict[str, Any]]:
                     f"{window['window_id']}: {len(records)} generations recorded, "
                     f"window says {window['n_generations']}"
                 )
-            rows.extend(attribute_window(t, power_w, window, records, baseline_w))
+            reason = window_exclusion(t, window, clock, on_battery, max_gap_s)
+            if reason is not None:
+                excluded[reason] += 1
+                LOGGER.warning(
+                    "%s: energy excluded (%s), %d generations", window["window_id"], reason,
+                    len(records),
+                )  # fmt: skip
+            rows.extend(attribute_window(t, power_w, window, records, baseline_w, reason))
         LOGGER.info("%s: %d windows, baseline %.2f W", session_id, len(batches), baseline_w)
     if by_window:
         raise ValueError(f"generations without an accepted window: {sorted(by_window)[:5]}")
+    if excluded:
+        LOGGER.warning("windows with energy excluded: %s", dict(excluded))
     return rows

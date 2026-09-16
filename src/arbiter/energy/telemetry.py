@@ -71,16 +71,26 @@ class TelemetryRecorder(threading.Thread):
         History available to :meth:`window`.
     device_index : int
         NVML device index.
+    stall_s : float
+        Consecutive samples further apart than this are kept as a stall, for the whole
+        session and independently of ``keep_s``. A system suspend shows up this way.
     """
 
     def __init__(
-        self, path: Path, interval_s: float, keep_s: float = 900.0, device_index: int = 0
+        self,
+        path: Path,
+        interval_s: float,
+        keep_s: float = 900.0,
+        device_index: int = 0,
+        stall_s: float = 1.0,
     ) -> None:
         super().__init__(daemon=True, name="nvml-telemetry")
         self.path = path
         self._interval_s = interval_s
         self._device_index = device_index
+        self._stall_s = stall_s
         self._recent: deque[TelemetrySample] = deque(maxlen=int(keep_s / interval_s) + 1)
+        self._stalls: list[tuple[float, float]] = []
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
         self._first_sample = threading.Event()
@@ -106,10 +116,14 @@ class TelemetryRecorder(threading.Thread):
                 writer.writerow(CSV_COLUMNS)
                 next_t = time.perf_counter()
                 last_flush = next_t
+                previous: float | None = None
                 while not self._stop_event.is_set():
                     sample = self._read(handle)
                     with self._lock:
                         self._recent.append(sample)
+                        if previous is not None and sample.perf_s - previous > self._stall_s:
+                            self._stalls.append((previous, sample.perf_s))
+                    previous = sample.perf_s
                     writer.writerow(
                         [
                             _cell(sample.perf_s, ".4f"),
@@ -157,6 +171,11 @@ class TelemetryRecorder(threading.Thread):
         with self._lock:
             return [s for s in self._recent if start <= s.perf_s <= end]
 
+    def longest_stall_s(self, start: float, end: float) -> float:
+        """Return the longest stretch of ``[start, end]`` covered by a recorded stall."""
+        with self._lock:
+            return longest_gap_s(self._stalls, start, end)
+
     def stop(self) -> None:
         """Stop sampling and close the CSV file."""
         self._stop_event.set()
@@ -193,6 +212,25 @@ def load_telemetry(path: Path, max_valid_w: float = MAX_VALID_W) -> tuple[np.nda
     return np.asarray(times, dtype=np.float64), np.asarray(watts, dtype=np.float64)
 
 
+def load_clock(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Read ``perf_s`` and ``epoch_s`` from every row, to place windows in wall-clock time."""
+    with path.open(newline="", encoding="utf-8") as fh:
+        rows = [(float(r["perf_s"]), float(r["epoch_s"])) for r in csv.DictReader(fh)]
+    clock = np.asarray(rows, dtype=np.float64).reshape(-1, 2)
+    return clock[:, 0], clock[:, 1]
+
+
+def longest_gap_s(gaps: Sequence[tuple[float, float]], start: float, end: float) -> float:
+    """Return the longest overlap of any ``(from, to)`` gap with ``[start, end]``, or 0."""
+    return max([0.0, *(min(to, end) - max(since, start) for since, to in gaps)])
+
+
+def max_gap_in_window(t: np.ndarray, start: float, end: float) -> float:
+    """Return the longest interval without a sample in ``[start, end]``, edges included."""
+    inside = t[(t > start) & (t < end)]
+    return float(np.max(np.diff(np.concatenate(([start], inside, [end])))))
+
+
 def integrate_energy(
     t: np.ndarray, power_w: np.ndarray, start: float, end: float, max_gap_s: float = 1.0
 ) -> float:
@@ -218,7 +256,7 @@ def integrate_energy(
     ps = np.concatenate(
         ([np.interp(start, t, power_w)], power_w[inside], [np.interp(end, t, power_w)])
     )
-    gap = float(np.max(np.diff(ts)))
+    gap = max_gap_in_window(t, start, end)
     if gap > max_gap_s:
         raise ValueError(f"{gap:.2f} s gap between samples inside window [{start:.3f}, {end:.3f}]")
     return float(np.trapezoid(ps, ts))

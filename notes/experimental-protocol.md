@@ -715,6 +715,43 @@ the machine. What changed across that restart, and what did not:
   it fully at 9,216 and 8,704 tokens. The 8B reruns therefore run as their own stage, `cap_8b`, at 9,216
   tokens: the longest 8B prompt in the sample is 371 tokens, so each keeps its full 8,192-token budget.
 
+### 13.7 Battery and suspend during the open-ended main stage (found 2026-09-16)
+
+The overnight chain stopped at energy attribution on 2026-09-14: `integrate_energy` refused a window with
+a 1.38 s gap between power samples. A scan of all 1,232 accepted windows, before any open-ended energy
+figure was computed, found two different problems.
+
+**The laptop ran on battery during the 8B session of the open-ended main stage.** The Windows event log
+(Kernel-Power 105) shows mains power lost from 17:11:19 to 17:55:48 IST on 2026-09-14, with the battery
+falling from 100% to 63%. Over those 44 minutes busy board power at the 95th percentile fell from about
+98 W to about 51 W while throughput fell only from about 45 to 40 tokens/s, so energy per token measured
+there is roughly half the grid's. Windows twice suspended the machine inside running windows ("Austerity
+Battery Drain", then hibernate): telemetry stops for 846 s in `b0014-think` and 886 s in `b0016-no_think`,
+and one generation in each (`dolly-13191`, `dolly-2323`) records the suspension as wall time. The answers
+completed normally, so correctness labels are unaffected. Mains power was also lost for 50 s and 7 s on
+2026-09-13, when no stage was running.
+
+**Two short telemetry stalls,** 1.38 s (open-ended pilot, 8B) and 1.29 s (open-ended main, 1.7B), at
+74-87 degC with no suspend. The recorder missed about 13 samples.
+
+**Rule.** A batch window's energy is not used if telemetry has a gap longer than 1.0 s inside it, or if
+the window overlaps a period without mains power. The periods are listed in `configs/power_source.yaml`.
+The window keeps its rows with NaN energy and the reason in `energy_excluded`; the analysis drops prompts
+with an unmeasured cell rather than pricing them wrongly. The 1.0 s limit is the one `integrate_energy`
+already enforced and is not relaxed after the fact.
+
+**Effect.** 9 windows are excluded: 5 on battery and 4 with a gap, 43 generations over 30 Dolly prompts.
+No window of the 1,200 gradable prompts is affected, and all 9,600 energy values attributed before are
+unchanged to the joule. Until the affected windows are rerun on mains power, analyses that include the
+open-ended family use 370 of its 400 prompts and say so. Rerunning them needs about 30 minutes of 8B and
+1.7B generation and is a separate, approved GPU run.
+
+**Harness change.** From this point a stage asks Windows not to sleep while it runs, each window and
+baseline waits for mains power before it starts, and a window is discarded and rerun if mains power is
+lost during it or the recorder logs a stall longer than `window.max_gap_s` (1.0 s). Both facts are
+recorded on the window (`on_battery`, `stall_s`), so a window kept on its last attempt is still excluded
+from energy. Keeping the machine awake does not survive closing the lid.
+
 ## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
 
 The local grid stops at 8B and the public arm (§13.5) has no mode axis. This arm restores both at once: a
