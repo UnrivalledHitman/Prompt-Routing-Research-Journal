@@ -601,6 +601,21 @@ minimal outright, 65.3\% against 82.5\%. Reasoning that does not fit the
 budget is paid for and discarded, which is the same failure the local 0.6B
 and 1.7B thinking cells show.
 
+The hosted prompts are the local main subset, so each has a $\cstar(q)$ on
+both ladders and the two can be paired prompt by prompt
+(Section~\ref{sec:hosted-arm}). Of the 825 prompts, 765 are servable in
+both. The local grid leaves 55 unservable and the hosted ladder 21; the
+hosted cells answer 39 of the 55 the local pool cannot, 24 of them at its two
+cheapest rungs, and 16 prompts defeat both. What does not carry across is the
+rank. On the prompts both arms answer, the correlation between how far up its
+own ladder a prompt must be sent locally and on the hosted ladder is 0.05
+($p = 0.16$), so a prompt that needs a large local model is not the one that
+needs an expensive hosted tier. The mode axis carries better: the cheap mode
+is the cheapest sufficient choice for 96.2\% of the locally servable prompts
+and minimal effort for 96.1\% of the hosted ones, and both hold together for
+92.8\%. A router trained on one pool therefore transfers its reasoning-mode
+decision more readily than its size decision.
+
 \subsection{Carbon of the Escalation Tax}
 \label{sec:results-carbon}
 

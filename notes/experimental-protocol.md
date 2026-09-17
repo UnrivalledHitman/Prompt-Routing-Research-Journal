@@ -776,10 +776,26 @@ generations; the probes stop after eight tokens.
 **Final analysis.** `results/processed/analysis/final`: 1,200 gradable prompts, every router family (R1,
 R1c, R2, R3-LoRA, R3 zero- and few-shot) and the reactive cascade, 10,000 bootstrap resamples, 89 minutes.
 
-**Hosted pairing not computed.** `run_hosted_analysis.py --local` regrades the hosted arm's raw responses,
-and `results/raw/hosted/` is no longer on this machine; it was gitignored and never committed. The hosted
-arm's committed tables are unaffected. Pairing prompt by prompt needs those responses again, which the 35
-batch ids in `results/processed/hosted_arm/ledger.jsonl` should allow downloading without new spend.
+**Hosted responses recovered, pairing computed (2026-09-18).** `results/raw/hosted/` had been gitignored
+and was no longer on this machine, so `run_hosted_analysis.py --local` had nothing to regrade. The 30
+settled main-stage batches were downloaded again from their ids in `results/processed/hosted_arm/ledger.jsonl`
+(a recovery script that reads the ledger and never writes it; downloading a finished batch costs nothing).
+All 4,960 records came back, every batch's recomputed cost matched its settled figure to the cent, and the
+regenerated `cells.csv`, `pool.csv`, `cstar.csv`, `tax_policies.csv` and `mode_pairs.csv` are byte-identical
+to the committed ones, which is a check on both the recovery and the pipeline's determinism.
+
+**Judge validation, frontier side only (run 2026-09-18).** `scripts/judge_agreement.py` on the 200-answer
+frontier sample: the local judge passes 67% of those answers and `gpt-5-mini` 51%, agreeing on 70% of them,
+Cohen's kappa 0.40 [0.27, 0.52] on the success decision and quadratic-weighted kappa 0.59 [0.48, 0.68] on
+the scores. The local judge is the more lenient of the two. The reporting rule of section 5.4 rests on the
+judge-human kappa, and `human_sheet.csv` is still unscored, so `open_family_status` stays `pending` and no
+open-ended result is reported.
+
+The pairing (`pairing.csv`, `pairing_contingency.csv`, and `summary.json`) covers the 825 prompts, 765 of
+them servable on both ladders. Rank does not transfer: Spearman correlation 0.05 between the local and
+hosted rungs a prompt needs (p = 0.16). Mode does: the cheap mode is `c*`'s mode for 96.2% of locally
+servable prompts, minimal effort for 96.1% of hosted ones, and both for 92.8%. The hosted cells answer 39
+of the 55 prompts the local pool cannot, 24 at its two cheapest rungs.
 
 ## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
 

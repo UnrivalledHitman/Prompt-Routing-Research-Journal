@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-12T10:06:26+00:00",
+  "generated_utc": "2026-09-17T22:05:21+00:00",
   "stage": "main",
   "prompts": 825,
   "prompts_seen": 827,
@@ -22,5 +22,25 @@
     "P2": 1.409,
     "oracle": 0.0
   },
-  "pairing": null
+  "pairing": {
+    "unit": "energy_j",
+    "paired": 825,
+    "servable_both": 765,
+    "local_unservable": 55,
+    "hosted_unservable": 21,
+    "local_cheap_mode_share": 0.9621,
+    "hosted_cheap_mode_share": 0.9608,
+    "both_cheap_mode_share": 0.9281,
+    "size_rank_spearman": 0.0511,
+    "size_rank_p": 0.15776248677984125,
+    "rescued_by_hosted": {
+      "unservable": 16,
+      "h3": 12,
+      "h1": 12,
+      "h4": 7,
+      "h5": 3,
+      "h2": 3,
+      "h6": 2
+    }
+  }
 }

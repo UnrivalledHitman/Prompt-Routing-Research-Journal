@@ -1,0 +1,28 @@
+{
+  "rule": {
+    "primary_kappa": 0.6,
+    "caveat_kappa": 0.4,
+    "fixed": "2026-09-12"
+  },
+  "human_sheet_rows": 100,
+  "human_scored": 0,
+  "local_vs_frontier": {
+    "n": 200,
+    "success_rate_a": 0.67,
+    "success_rate_b": 0.51,
+    "percent_agreement": 0.7,
+    "kappa_binary": 0.3958920660491341,
+    "kappa_binary_ci": [
+      0.2719176626764951,
+      0.5167159795855514
+    ],
+    "kappa_quadratic": 0.5867346938775511,
+    "kappa_quadratic_ci": [
+      0.47687265823808117,
+      0.676341618854991
+    ]
+  },
+  "local_vs_human": null,
+  "frontier_vs_human": null,
+  "open_family_status": "pending"
+}
