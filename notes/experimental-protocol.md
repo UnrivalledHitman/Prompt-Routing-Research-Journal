@@ -784,12 +784,20 @@ All 4,960 records came back, every batch's recomputed cost matched its settled f
 regenerated `cells.csv`, `pool.csv`, `cstar.csv`, `tax_policies.csv` and `mode_pairs.csv` are byte-identical
 to the committed ones, which is a check on both the recovery and the pipeline's determinism.
 
-**Judge validation, frontier side only (run 2026-09-18).** `scripts/judge_agreement.py` on the 200-answer
-frontier sample: the local judge passes 67% of those answers and `gpt-5-mini` 51%, agreeing on 70% of them,
-Cohen's kappa 0.40 [0.27, 0.52] on the success decision and quadratic-weighted kappa 0.59 [0.48, 0.68] on
-the scores. The local judge is the more lenient of the two. The reporting rule of section 5.4 rests on the
-judge-human kappa, and `human_sheet.csv` is still unscored, so `open_family_status` stays `pending` and no
-open-ended result is reported.
+**Judge validation (frontier side 2026-09-18, human side 2026-09-21).** `scripts/judge_agreement.py`:
+
+- Local judge vs `gpt-5-mini`, 200 answers: agreement 70%, Cohen's kappa 0.40 [0.27, 0.52] on the success
+  decision, quadratic-weighted kappa 0.59 [0.48, 0.68] on the scores. Pass rates 67% and 51%.
+- Local judge vs first author, 100 answers scored blind: agreement 72%, **kappa 0.42 [0.23, 0.59]**,
+  weighted 0.67 [0.52, 0.77]. Pass rates 65% and 57%.
+- `gpt-5-mini` vs first author, same 100: agreement 87%, kappa 0.74 [0.60, 0.86], weighted 0.86
+  [0.77, 0.92]. Pass rates 50% and 57%.
+
+Under the rule fixed on 2026-09-12 (judge-human kappa 0.60 or above: primary; 0.40 to 0.60: caveat; below
+0.40: secondary), `open_family_status` is **caveat**. The local judge is more lenient than both the human
+and the frontier model, so open-ended success rates, and every `c*` built on them, lean towards cheaper
+cells. The first author's sheet was saved with renamed headers; `human_sheet_as_scored.csv` keeps it as
+saved, and `human_sheet.csv` restores the original headers with every value unchanged.
 
 The pairing (`pairing.csv`, `pairing_contingency.csv`, and `summary.json`) covers the 825 prompts, 765 of
 them servable on both ladders. Rank does not transfer: Spearman correlation 0.05 between the local and
