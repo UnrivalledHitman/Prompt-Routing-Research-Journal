@@ -4,7 +4,7 @@
 %  S13 (decisions); prior-art register S-F.
 %  Subsection B is written from the design and does not depend on results.
 %  Subsections A and C are written from the local, public and hosted
-%  results; their router paragraphs wait for the final analysis.
+%  results, and their router paragraphs from results/processed/analysis/final.
 % =====================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -43,7 +43,8 @@ contain, so for those the climb cannot stop at $\cstar(q)$, and P1 pays
 2.69 times.
 
 \emph{The costliest configuration is not the most accurate.} This holds in
-every pool we measured. Locally, $c_7$ answers more prompts than $c_8$. On
+every pool we measured on tasks with a checkable answer. On the gradable
+families $c_7$ answers more prompts than $c_8$. On
 the public pool, nine of the eleven models dearer than
 \texttt{qwen3-235b-a22b-2507} answer fewer queries than it does. On the
 hosted ladder, \texttt{gpt-5} at high effort answers fewer than
@@ -52,7 +53,10 @@ the generation budget. Between 16\% and 20\% of local thinking generations,
 and 18.9\% of \texttt{gpt-5-nano}'s at high effort, run out of tokens
 before they answer, and a truncated answer fails. A budget is part of any
 deployed configuration, so sticky use of the top rung pays twice: once in
-cost, and again in the answers it loses.
+cost, and again in the answers it loses. Open-ended requests are the
+exception: there the cap rarely binds and $c_8$ is the most accurate cell
+(Section~\ref{sec:results-open}), and sticky use of it still pays 5.39 times
+the minimum sufficient energy.
 
 \emph{Thinking is priced by length, and length varies by family.} Energy per
 output token barely moves with the mode (Section~\ref{sec:results-mode}),
@@ -81,10 +85,39 @@ lower because the grid is not monotone: a costlier tier is not a safer
 one. That factor also depends on recovering at $c_8$, the costliest cell,
 and a cheaper recovery would narrow it.
 
-\tbd{Written from the final analysis: why the router families order as they
-do once charged, the prompts on which every router fails, and whether the
-cascade's information from generating first is worth its verification
-cost.}
+\emph{A router loses to the frugal climb in recovery, not in prediction
+alone.} P1's failures are cheap because its early rungs are the cheapest
+cells. A router's failure is expensive because it recovers at $c_8$, which
+costs eight times $c_7$ and answers fewer prompts. A router can avoid that
+only by routing high, and the selected threshold does: the best router sends
+three answerable prompts in four to a costlier cell than they need, so its
+tax is almost all stickiness. Recovering by climbing from the routed cell
+brings every router within 6\% of P1. The oracle's 32\% saving over P1
+therefore needs a router that is rarely wrong, and the best router we
+trained picks $\cstar(q)$ exactly for one prompt in seven.
+
+\emph{Router cost does not separate the families on this grid; training data
+does.} Every router's own energy is under 1\% of what it routes, so charging
+it leaves the energy ranking almost untouched. The order comes instead from
+how well each family learns from 716 training prompts. A linear model on
+$n$-grams or frozen embeddings needs little data, and the fine-tuned
+encoders came close to it only when cost-sensitive weights focused training
+on the errors that cost most. A 0.6B language model prompted to name the
+cheapest sufficient configuration routes low, and on this grid routing low
+is the expensive error (Section~\ref{sec:results-asymmetry}). Trained with
+LoRA on the zero-shot prompt it spends a fifth less than prompted zero-shot,
+but stays behind the linear routers. Only in tokens, where
+R3 pays for reading its own prompt, does charging a router reorder the
+families.
+
+\emph{Generating first did not pay for the cascade.} Its checks cost 9.7\,J
+each, so verification is not what makes it expensive. The information is
+weak: a small model checking its own answer accepts a wrong one on a third
+of answerable prompts, and a wrong answer that passes the check costs as
+much as a misroute. The cascade therefore pays P1's escalation and a
+router's recovery together. A stronger verifier, or AutoMix's
+meta-verifier, which we omit, could change that
+(Section~\ref{sec:limitations}).
 
 \subsection{Limitations}
 \label{sec:limitations}
@@ -125,15 +158,17 @@ often.
 
 \emph{Labels come from one sample under fixed caps.} With $k = 1$, each
 $s(q, c)$ is a single draw of a stochastic outcome, and $\cstar(q)$ inherits
-its noise. The noise subset measures how often a label changes on
-resampling (Section~\ref{sec:decoding}). The bootstrap, however, resamples
+its noise. On the noise subset a cell's label differs between two samples
+8.9\% of the time, $\cstar(q)$ in tokens agrees between two samples for
+72.0\% of prompts, and the single-sample $\cstar(q)$ matches the majority of
+three for 84.0\% (Section~\ref{sec:decoding}). The bootstrap, however, resamples
 prompts with their labels held fixed, so its intervals do not include that
 uncertainty. The labels also depend on the generation caps. A thinking
 answer cut off at 4{,}096 tokens counts as a failure, which is the right
 rule for deployment but makes thinking cells look worse than they would with
-a longer budget. The cap reruns measure how often a longer cap would move
-$\cstar(q)$, but on a sample of capped generations rather than on all of
-them. Finally, the labels are tied to the recommended sampling settings of
+a longer budget. A longer cap moved $\cstar(q)$ for 6.4\% of the 219 capped
+generations rerun (Section~\ref{sec:results-mode}), a sample rather than
+all of them. Finally, the labels are tied to the recommended sampling settings of
 each mode, and other settings could change them.
 
 \emph{Grading is imperfect.} Math answers are compared after extraction and
@@ -141,10 +176,12 @@ normalisation, which can reject a correct answer written in an unusual form.
 An unparseable multiple-choice answer counts as a failure even when the
 intended option is clear to a reader. Code is judged by the datasets' own
 unit tests, which can pass an incorrect function. The open-ended family
-depends on a model judge whose agreement with a stronger model and with
-human labels bounds how far its labels can be trusted
-(Section~\ref{sec:judge}), and results cover the gradable families unless
-stated otherwise.
+depends on a model judge that agrees with a human only moderately, at
+$\kappa = 0.42$, and passes more answers than either the human or
+\texttt{gpt-5-mini} (Section~\ref{sec:judge}). Its results are reported
+separately and with that caveat, and every other result covers the gradable
+families. Re-grading the family with \texttt{gpt-5-mini}, which agrees with
+the human at $\kappa = 0.74$, would tighten it.
 
 \emph{The energy boundary is the GPU board.} NVML reports GPU board power,
 so our joules exclude the processor, system memory, storage and display,
@@ -191,10 +228,10 @@ reason the corpus includes an open-ended family.
 
 \emph{The comparators are simplified.} The cascade follows AutoMix without
 its POMDP meta-verifier, reads its confidence from a single forward pass,
-and climbs only the P1 ladder. R3 reads its choice from next-token
-probabilities and is not trained for routing. Both simplifications may
-understate what a stronger cascade or a trained language-model router could
-achieve. All routers are trained and evaluated on one split, and $\tau$ is
+and climbs only the P1 ladder. The prompted R3 routers read their choice from
+next-token probabilities without training, and the LoRA variant was trained
+on 716 prompts. Both simplifications may understate what a stronger cascade
+or a language-model router trained on more data could achieve. All routers are trained and evaluated on one split, and $\tau$ is
 fixed on its validation part, so the reported intervals exclude the
 uncertainty of that choice (Section~\ref{sec:stats}).
 
@@ -209,9 +246,10 @@ smallest adequate model, with extended reasoning off and a one-step-up
 control in view, puts its users on the frugal climb. That climb spends 1.5
 times the oracle's energy per solved prompt on the local grid, against 5.7
 times for leaving the largest thinking cell selected. Turning reasoning on
-by default is the harder choice to defend. On the local grid thinking lost
-accuracy at 4B and 8B within the cap, and it was never the cheaper way to
-buy accuracy. At \texttt{gpt-5} on the hosted ladder, high effort answered
+by default is the harder choice to defend. On the gradable families
+thinking lost accuracy at 4B and 8B within the cap, and it was never the
+cheaper way to buy accuracy; on open-ended requests it was cheap, but still
+one step among several rather than a default. At \texttt{gpt-5} on the hosted ladder, high effort answered
 4.1\% of queries that minimal effort missed, at 7.26 times the price, and
 overall accuracy moved by a tenth of a point. Reasoning is worth paying for
 on a minority of prompts, which argues for choosing it per prompt, not
@@ -241,6 +279,16 @@ and hosted pools also show negative taxes for static policies that underpay
 by failing, so a tax, like a cost, means little without the solved rate
 beside it.
 
-\tbd{Written from the final analysis: whether routing before generation is
-justified as a default once the router is charged, and against which
-policies it is.}
+\emph{Deploy a one-shot router against habits, not against a disciplined
+climb.} Charged for its own energy, the best router spends 61\% less than
+leaving the 8B thinking cell selected, and answers more prompts. It spends
+29\% less than users who start at a uniformly random cell, and answers about
+as many. It does not beat a user who climbs sizes with thinking off and
+recognises every failure: that user spends a fifth less energy per prompt
+and answers 3.7 points more. Two conditions favour the router. When failures
+are not always recognised, it answers 7.1 points more than the climb, because
+it makes fewer attempts at which to accept a wrong answer. And when its
+failures are recovered by climbing rather than by jumping to the largest
+cell, it comes within 6\% of the climb's energy. A service that routes should
+therefore recover by climbing, and it gains most for users who cannot check
+answers.

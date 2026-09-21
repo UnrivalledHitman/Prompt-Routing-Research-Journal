@@ -44,6 +44,15 @@ def test_tail_contaminated_uses_mean_utilisation() -> None:
     assert harness.tail_contaminated([_sample(None)], 15) == (False, None)
 
 
+def test_power_contaminated_flags_battery_and_stalls() -> None:
+    """Any battery reading or a stall past the limit flags the window; unknown power does not."""
+    assert harness.power_contaminated([True, True], 0.0, 1.0) == (False, False)
+    assert harness.power_contaminated([True, False, True], 0.0, 1.0) == (True, False)
+    assert harness.power_contaminated([None, None], 0.0, 1.0) == (False, False)
+    assert harness.power_contaminated([True], 1.0, 1.0) == (False, False)
+    assert harness.power_contaminated([True], 846.5, 1.0) == (False, True)
+
+
 def test_select_items_filters_limits_and_shuffles_deterministically() -> None:
     """Selection honours subset, noise and per-family limits with a stable order."""
     config = harness.load_config(REPO_ROOT / "configs" / "labelling.yaml")

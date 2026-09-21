@@ -3,9 +3,16 @@
 \toprule
 Router & Device & p50 (ms) & p95 (ms) & J/decision \\
 \midrule
-Direct: TF-IDF + LR & CPU & 1.38 & 2.21 & 0.080 \\
-TF-IDF + LR & CPU & 2.59 & 3.89 & 0.148 \\
-Features + LightGBM & CPU & 3.96 & 5.06 & 0.211 \\
-Features + XGBoost & CPU & 2.56 & 3.53 & 0.143 \\
+Direct: TF-IDF + LR & CPU & 0.92 & 1.22 & 0.051 \\
+TF-IDF + LR & CPU & 1.70 & 2.18 & 0.096 \\
+Features + LightGBM & CPU & 2.90 & 3.18 & 0.157 \\
+Features + XGBoost & CPU & 1.89 & 2.14 & 0.102 \\
+MiniLM + LR & CPU & 24.13 & 46.64 & 1.432 \\
+DeBERTa-v3-small & CPU & 134.75 & 229.14 & 7.555 \\
+DistilBERT & CPU & 73.55 & 149.41 & 4.401 \\
+Qwen3-0.6B, few-shot & GPU & 43.11 & 62.51 & 2.656 \\
+Qwen3-0.6B, LoRA & GPU & 55.76 & 78.53 & 2.924 \\
+Qwen3-0.6B, zero-shot & GPU & 55.76 & 78.53 & 2.924 \\
+Cascade, per check & GPU & 106.55 & 298.40 & 9.732 \\
 \bottomrule
 \end{tabular}

@@ -1,0 +1,58 @@
+{
+  "rule": {
+    "primary_kappa": 0.6,
+    "caveat_kappa": 0.4,
+    "fixed": "2026-09-12"
+  },
+  "human_sheet_rows": 100,
+  "human_scored": 100,
+  "local_vs_frontier": {
+    "n": 200,
+    "success_rate_a": 0.67,
+    "success_rate_b": 0.51,
+    "percent_agreement": 0.7,
+    "kappa_binary": 0.3958920660491341,
+    "kappa_binary_ci": [
+      0.2719176626764951,
+      0.5167159795855514
+    ],
+    "kappa_quadratic": 0.5867346938775511,
+    "kappa_quadratic_ci": [
+      0.47687265823808117,
+      0.676341618854991
+    ]
+  },
+  "local_vs_human": {
+    "n": 100,
+    "success_rate_a": 0.65,
+    "success_rate_b": 0.57,
+    "percent_agreement": 0.72,
+    "kappa_binary": 0.41544885177453017,
+    "kappa_binary_ci": [
+      0.23263327948303714,
+      0.5901639344262295
+    ],
+    "kappa_quadratic": 0.6652383502945902,
+    "kappa_quadratic_ci": [
+      0.5233323534951253,
+      0.7692954857520722
+    ]
+  },
+  "frontier_vs_human": {
+    "n": 100,
+    "success_rate_a": 0.5,
+    "success_rate_b": 0.57,
+    "percent_agreement": 0.87,
+    "kappa_binary": 0.74,
+    "kappa_binary_ci": [
+      0.6014348345954563,
+      0.86
+    ],
+    "kappa_quadratic": 0.8594132029339854,
+    "kappa_quadratic_ci": [
+      0.7737994785758762,
+      0.9160036798739775
+    ]
+  },
+  "open_family_status": "caveat"
+}

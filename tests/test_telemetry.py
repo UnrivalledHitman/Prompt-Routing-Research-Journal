@@ -74,3 +74,34 @@ def test_load_telemetry_drops_impossible_power_reads(tmp_path: Path) -> None:
     t, p = telemetry.load_telemetry(path)
     assert t.tolist() == [1.0, 1.2]
     assert p.tolist() == [1.2, 2.8]
+
+
+def test_load_clock_keeps_rows_without_power(tmp_path: Path) -> None:
+    """The perf-to-wall-clock mapping uses every row, including failed power reads."""
+    path = tmp_path / "t.csv"
+    path.write_text(
+        "perf_s,epoch_s,power_mw,util_pct,temp_c,mem_used_mb\n"
+        "1.0,100.0,5000,0,40,900\n"
+        "1.1,100.1,,0,40,900\n",
+        encoding="utf-8",
+    )
+    perf, epoch = telemetry.load_clock(path)
+    assert perf.tolist() == [1.0, 1.1]
+    assert epoch.tolist() == [100.0, 100.1]
+
+
+def test_max_gap_in_window_counts_the_edges() -> None:
+    """A window starting well before its first sample has a gap at the edge."""
+    t = np.array([1.0, 1.1, 1.2, 3.0, 3.1])
+    assert telemetry.max_gap_in_window(t, 1.0, 1.2) == pytest.approx(0.1)
+    assert telemetry.max_gap_in_window(t, 1.0, 3.1) == pytest.approx(1.8)
+    assert telemetry.max_gap_in_window(t, 0.0, 1.1) == pytest.approx(1.0)
+
+
+def test_longest_gap_s_is_the_overlap_with_the_window() -> None:
+    """Only the part of a stall inside the window counts; stalls outside count as zero."""
+    stalls = [(10.0, 20.0), (40.0, 41.5)]
+    assert telemetry.longest_gap_s(stalls, 15.0, 45.0) == pytest.approx(5.0)
+    assert telemetry.longest_gap_s(stalls, 30.0, 45.0) == pytest.approx(1.5)
+    assert telemetry.longest_gap_s(stalls, 21.0, 39.0) == 0.0
+    assert telemetry.longest_gap_s([], 0.0, 1.0) == 0.0

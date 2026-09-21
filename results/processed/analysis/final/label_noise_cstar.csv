@@ -1,0 +1,5 @@
+scope,unit,n_prompts,n_samples,cell_pairwise_disagreement,cstar_pairwise_agreement,cstar_first_vs_majority,servability_varies
+all,tokens,75,3,0.0888889,0.72,0.84,0.0533333
+code,tokens,25,3,0.0933333,0.746667,0.84,0.12
+math,tokens,25,3,0.1,0.546667,0.68,0.04
+mcq,tokens,25,3,0.0733333,0.866667,1,0

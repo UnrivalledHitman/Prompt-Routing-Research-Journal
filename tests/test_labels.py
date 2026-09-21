@@ -44,6 +44,19 @@ def test_build_label_table_pivots_cells_into_grid_order() -> None:
     assert not table.capped.any()
 
 
+def test_build_label_table_takes_latency_from_the_energy_measurement() -> None:
+    """A cell rerun for its energy uses the rerun's wall time; cells without energy keep theirs."""
+    grades = _grades(["a"])
+    energy = grades[[*labels.KEY, "wall_s"]].assign(energy_dyn_j=1.0, energy_board_j=2.0)
+    energy.loc[3, "wall_s"] = 0.25
+    energy = energy.drop(index=5)
+    table = labels.build_label_table(grades, energy)
+    expected = [float(i + 1) for i in range(8)]
+    expected[3] = 0.25
+    assert table.costs["latency_s"][0].tolist() == expected
+    assert np.isnan(table.costs["energy_j"][0, 5])
+
+
 def test_build_label_table_rejects_duplicate_cells() -> None:
     """The same prompt and cell twice is a data error."""
     grades = _grades(["a"])

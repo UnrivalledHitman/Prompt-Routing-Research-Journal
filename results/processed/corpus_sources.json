@@ -58,5 +58,14 @@
     "fingerprint": "a4361c3f3e560fcd",
     "taken": 200,
     "excluded": 3
+  },
+  "dolly": {
+    "hf_id": "databricks/databricks-dolly-15k",
+    "hf_config": null,
+    "split": "train",
+    "licence": "CC-BY-SA-3.0",
+    "n_rows": 15011,
+    "fingerprint": "2537fb912ac88184",
+    "taken": 400
   }
 }

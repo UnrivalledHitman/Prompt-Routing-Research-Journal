@@ -1,0 +1,37 @@
+router,params,val_objective,chosen
+R1a-tfidf-lr,{'c': 0.1},1205.91,True
+R1a-tfidf-lr,{'c': 1.0},1409.46,False
+R1a-tfidf-lr,{'c': 10.0},1609.43,False
+R1b-features-lightgbm,{},,True
+R1b-features-xgboost,{},,True
+R1a-tfidf-lr-cs,{'c': 0.1},1203.54,True
+R1a-tfidf-lr-cs,{'c': 1.0},1276.8,False
+R1a-tfidf-lr-cs,{'c': 10.0},1411.21,False
+R1b-features-lightgbm-cs,{},,True
+R1b-features-xgboost-cs,{},,True
+R1-direct-tfidf-lr,{'c': 0.1},2180.24,False
+R1-direct-tfidf-lr,{'c': 1.0},1960.7,True
+R1-direct-tfidf-lr,{'c': 10.0},2110.09,False
+R3-qwen3-0.6b-zero-shot,{},,True
+R3-qwen3-0.6b-few-shot,{},,True
+R1c-minilm-lr,{'c': 0.1},1201.68,True
+R1c-minilm-lr,{'c': 1.0},1435.84,False
+R1c-minilm-lr,{'c': 10.0},1574.37,False
+R2-distilbert,"{'learning_rate': 2e-05, 'epochs': 4}",2164.5,False
+R2-distilbert,"{'learning_rate': 5e-05, 'epochs': 4}",2087.24,False
+R2-distilbert,"{'learning_rate': 5e-05, 'epochs': 8}",1932.14,True
+R2-deberta-v3-small,"{'learning_rate': 2e-05, 'epochs': 4}",2325.25,False
+R2-deberta-v3-small,"{'learning_rate': 5e-05, 'epochs': 4}",2011.63,False
+R2-deberta-v3-small,"{'learning_rate': 5e-05, 'epochs': 8}",2006.47,True
+R1c-minilm-lr-cs,{'c': 0.1},1186.08,True
+R1c-minilm-lr-cs,{'c': 1.0},1282.45,False
+R1c-minilm-lr-cs,{'c': 10.0},1409.02,False
+R2-distilbert-cs,"{'learning_rate': 2e-05, 'epochs': 4}",1853.86,False
+R2-distilbert-cs,"{'learning_rate': 5e-05, 'epochs': 4}",1580.82,False
+R2-distilbert-cs,"{'learning_rate': 5e-05, 'epochs': 8}",1381.36,True
+R2-deberta-v3-small-cs,"{'learning_rate': 2e-05, 'epochs': 4}",1860.73,False
+R2-deberta-v3-small-cs,"{'learning_rate': 5e-05, 'epochs': 4}",1405.55,True
+R2-deberta-v3-small-cs,"{'learning_rate': 5e-05, 'epochs': 8}",1721.03,False
+R3-qwen3-0.6b-lora,"{'learning_rate': 0.0001, 'epochs': 2}",1547.77,False
+R3-qwen3-0.6b-lora,"{'learning_rate': 0.0002, 'epochs': 3}",1528.05,True
+cascade-automix,{},,True

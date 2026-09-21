@@ -88,11 +88,21 @@ The contributions are as follows.
         non-physical on laptop GPUs.
 \end{itemize}
 
-\tbd{one paragraph stating the headline findings once Sections V and VI
-exist: size of the tax under oracle detection, net saving
-of the best router against the best manual policy and against the cascade,
-whether the router-family ordering changes once routers are charged, and
-where in the grid thinking costs more energy than moving up a size.}
+The tax is large, and most of it comes from where a user stays rather than
+how they climb. Leaving the 8B thinking cell selected pays 12.96 times the
+minimum sufficient energy and answers 79.8\% of prompts; a frugal climb with
+thinking off pays 0.89 times and answers 92.2\%. On these gradable tasks,
+moving up a size below 8B without thinking answers more prompts than turning
+thinking on, for 3.8 to 5.5 times less energy per solved prompt. On
+open-ended requests, graded by a model judge that agrees with a human only
+moderately, thinking is far cheaper, yet the frugal climb still pays the
+least tax. On held-out prompts no router beats
+the frugal climb. The best spends 1.30 times its energy per solved prompt,
+though 61\% less than the sticky default and 34\% less than a self-verifying
+cascade. Charging routers for their own energy barely changes their ranking
+in energy and reorders them only in tokens. The loss to the climb comes from
+recovering failed routes at the largest cell, and recovering by climbing
+brings every router within 6\% of it.
 
 The rest of the paper is organised as follows. Section~\ref{sec:literature}
 surveys routing, reasoning-effort control and energy measurement for

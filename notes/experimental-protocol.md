@@ -263,7 +263,8 @@ judge-human kappa on the success decision:
 
 The cut-offs are the moderate and substantial boundaries of Landis and Koch (1977). Judge-frontier kappa is
 reported but does not decide. The rule is recorded before any routing result exists, so it cannot become a
-post-hoc rescue. For the mentor: confirm the cut-offs before the human labels are collected.
+post-hoc rescue. Confirmed unchanged at 0.60 and 0.40 on 2026-09-14, before the judge had scored the
+open-ended family and before any human label was collected.
 
 ---
 
@@ -691,6 +692,118 @@ subset chosen per dataset.
 - **Result.** P3 costs 7.96x the minimum sufficient cost and answers 58.8% of queries; P1 costs 2.69x and
   answers 76.2%; the oracle answers 82.0%. Per solved query, $102.08, $57.38 and $25.47 per 1,000. The
   tax survives the move to a frontier pool.
+
+### 13.6 Cap, noise and open-ended stages (run from 2026-09-13)
+
+The local grid's main stage finished on 2026-09-13. The remaining GPU stages run back to back, in the
+order cap, noise, the open-ended family (pilot, then main), the judge, and the probes, after a restart of
+the machine. What changed across that restart, and what did not:
+
+- **Driver.** 616.56 for gate 1, the pilot and the main stage; 616.92 from the cap stage on. The update
+  arrived with the restart and was not chosen. Every run record carries its driver version, and the noise
+  stage re-samples prompts and cells the main stage measured, so it doubles as a check that energy per
+  token did not move with the driver.
+- **Unchanged.** Ollama 0.34.0, started from the same Startup shortcut with no `OLLAMA_*` variables set;
+  the four Qwen3 digests, compared with those recorded at the main stage; and the 1,200 gradable prompts,
+  which the corpus rebuild that adds Dolly reproduces record for record.
+- **Cap reruns.** 219 capped generations, up to 40 per cell and all of them where a cell had fewer
+  (`scripts/select_cap_reruns.py --per-cell 40` on the full 9,600-generation grades), bounded at 5.7 GPU
+  hours. Thinking hit the 4,096-token cap on 16-20% of prompts at every size and non-thinking on about 1%.
+- **8B cap context.** The 0.6B, 1.7B and 4B reruns ran at a 10,240-token context. At that context Ollama
+  placed only 92% of qwen3:8b in VRAM (6,044 of 6,566 MB), five load attempts in a row on 2026-09-14, and
+  the harness stopped rather than measure a partly offloaded model. A placement test on an idle GPU loaded
+  it fully at 9,216 and 8,704 tokens. The 8B reruns therefore run as their own stage, `cap_8b`, at 9,216
+  tokens: the longest 8B prompt in the sample is 371 tokens, so each keeps its full 8,192-token budget.
+
+### 13.7 Battery and suspend during the open-ended main stage (found 2026-09-16)
+
+The overnight chain stopped at energy attribution on 2026-09-14: `integrate_energy` refused a window with
+a 1.38 s gap between power samples. A scan of all 1,232 accepted windows, before any open-ended energy
+figure was computed, found two different problems.
+
+**The laptop ran on battery during the 8B session of the open-ended main stage.** The Windows event log
+(Kernel-Power 105) shows mains power lost from 17:11:19 to 17:55:48 IST on 2026-09-14, with the battery
+falling from 100% to 63%. Over those 44 minutes busy board power at the 95th percentile fell from about
+98 W to about 51 W while throughput fell only from about 45 to 40 tokens/s, so energy per token measured
+there is roughly half the grid's. Windows twice suspended the machine inside running windows ("Austerity
+Battery Drain", then hibernate): telemetry stops for 846 s in `b0014-think` and 886 s in `b0016-no_think`,
+and one generation in each (`dolly-13191`, `dolly-2323`) records the suspension as wall time. The answers
+completed normally, so correctness labels are unaffected. Mains power was also lost for 50 s and 7 s on
+2026-09-13, when no stage was running.
+
+**Two short telemetry stalls,** 1.38 s (open-ended pilot, 8B) and 1.29 s (open-ended main, 1.7B), at
+74-87 degC with no suspend. The recorder missed about 13 samples.
+
+**Rule.** A batch window's energy is not used if telemetry has a gap longer than 1.0 s inside it, or if
+the window overlaps a period without mains power. The periods are listed in `configs/power_source.yaml`.
+The window keeps its rows with NaN energy and the reason in `energy_excluded`; the analysis drops prompts
+with an unmeasured cell rather than pricing them wrongly. The 1.0 s limit is the one `integrate_energy`
+already enforced and is not relaxed after the fact.
+
+**Effect.** 9 windows are excluded: 5 on battery and 4 with a gap, 43 generations over 30 Dolly prompts.
+No window of the 1,200 gradable prompts is affected, and all 9,600 energy values attributed before are
+unchanged to the joule.
+
+**Reruns (2026-09-17).** The 43 generations were rerun on mains power with their original seeds, decoding
+and context (`energy_rerun` stage, 23 minutes; `scripts/select_energy_reruns.py`,
+`scripts/apply_energy_reruns.py`). Every rerun window was accepted, one after a discard for another
+workload, and each excluded row now holds the rerun's energy and wall time, with the original reason in
+`energy_replaced`. Correctness labels stay from the first run, so the open-ended family again has all 400
+prompts. 28 of the 43 rerun answers match the original text exactly. See section 13.8 for the server
+version under which they ran.
+
+**Harness change.** From this point a stage asks Windows not to sleep while it runs, each window and
+baseline waits for mains power before it starts, and a window is discarded and rerun if mains power is
+lost during it or the recorder logs a stall longer than `window.max_gap_s` (1.0 s). Both facts are
+recorded on the window (`on_battery`, `stall_s`), so a window kept on its last attempt is still excluded
+from energy. Keeping the machine awake does not survive closing the lid.
+
+### 13.8 Energy reruns, probes and final analysis (run 2026-09-17)
+
+**Server version.** Ollama had updated itself to 0.34.1 before this run; every earlier stage ran on 0.34.0.
+The driver stayed at 616.92 and the Qwen3 digests matched. The energy reruns are the only measurements
+that share cells with 0.34.0 runs. Against the 0.34.0 generations of the same family, size and mode, their
+median dynamic energy per generated token is 2% lower at 8B no-think (19 reruns), 5% lower at 8B think (18)
+and 8% lower at 1.7B no-think (6), and median throughput is 2-3% lower. Their sessions also idled at about
+6.5 W against 3.9 W before, which lowers dynamic energy by construction, so the version effect cannot be
+separated from the baseline difference at these sample sizes. None of these shifts is large enough to move
+a cell's rank, and the reruns affect the open-ended family only.
+
+**Probes.** `verify` (6,400 generations, 39 min), `route_zero` (1,600, 7 min) and `route_few` (1,200, 6 min)
+ran on 0.34.1 under the section 13.7 harness. The 6-10 hour estimate in `configs/progress.yaml` assumed full
+generations; the probes stop after eight tokens.
+
+**Final analysis.** `results/processed/analysis/final`: 1,200 gradable prompts, every router family (R1,
+R1c, R2, R3-LoRA, R3 zero- and few-shot) and the reactive cascade, 10,000 bootstrap resamples, 89 minutes.
+
+**Hosted responses recovered, pairing computed (2026-09-18).** `results/raw/hosted/` had been gitignored
+and was no longer on this machine, so `run_hosted_analysis.py --local` had nothing to regrade. The 30
+settled main-stage batches were downloaded again from their ids in `results/processed/hosted_arm/ledger.jsonl`
+(a recovery script that reads the ledger and never writes it; downloading a finished batch costs nothing).
+All 4,960 records came back, every batch's recomputed cost matched its settled figure to the cent, and the
+regenerated `cells.csv`, `pool.csv`, `cstar.csv`, `tax_policies.csv` and `mode_pairs.csv` are byte-identical
+to the committed ones, which is a check on both the recovery and the pipeline's determinism.
+
+**Judge validation (frontier side 2026-09-18, human side 2026-09-21).** `scripts/judge_agreement.py`:
+
+- Local judge vs `gpt-5-mini`, 200 answers: agreement 70%, Cohen's kappa 0.40 [0.27, 0.52] on the success
+  decision, quadratic-weighted kappa 0.59 [0.48, 0.68] on the scores. Pass rates 67% and 51%.
+- Local judge vs first author, 100 answers scored blind: agreement 72%, **kappa 0.42 [0.23, 0.59]**,
+  weighted 0.67 [0.52, 0.77]. Pass rates 65% and 57%.
+- `gpt-5-mini` vs first author, same 100: agreement 87%, kappa 0.74 [0.60, 0.86], weighted 0.86
+  [0.77, 0.92]. Pass rates 50% and 57%.
+
+Under the rule fixed on 2026-09-12 (judge-human kappa 0.60 or above: primary; 0.40 to 0.60: caveat; below
+0.40: secondary), `open_family_status` is **caveat**. The local judge is more lenient than both the human
+and the frontier model, so open-ended success rates, and every `c*` built on them, lean towards cheaper
+cells. The first author's sheet was saved with renamed headers; `human_sheet_as_scored.csv` keeps it as
+saved, and `human_sheet.csv` restores the original headers with every value unchanged.
+
+The pairing (`pairing.csv`, `pairing_contingency.csv`, and `summary.json`) covers the 825 prompts, 765 of
+them servable on both ladders. Rank does not transfer: Spearman correlation 0.05 between the local and
+hosted rungs a prompt needs (p = 0.16). Mode does: the cheap mode is `c*`'s mode for 96.2% of locally
+servable prompts, minimal effort for 96.1% of hosted ones, and both for 92.8%. The hosted cells answer 39
+of the 55 prompts the local pool cannot, 24 at its two cheapest rungs.
 
 ## 14. Hosted-frontier arm, stage 6 (run 2026-09-12)
 

@@ -16,12 +16,17 @@ All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
 16\,GB of system memory and an NVIDIA GeForce RTX~4060 Laptop GPU with
 8\,GB of memory, driver 616.56 and an enforced board power limit of 115\,W.
 The driver was updated to 616.92 between the main labelling run and the
-later cap, noise and open-ended stages. The noise stage resamples prompts
-and cells the main run measured, so it doubles as a check on the energy
-comparison across that change. \tbd{result of the energy-per-token
-comparison on the noise subset}
+later cap, noise, open-ended and probe stages. The noise stage resamples
+prompts and cells the main run measured, so it doubles as a check on energy
+across that change. On those prompts and cells, energy per output token
+under 616.92 was a median 0.95 times that under 616.56 (interquartile range
+0.88 to 1.01). Every cell of the grid was measured under 616.56, so no
+comparison between cells crosses the change; the probes that price the R3
+routers and the cascade's checks were measured under 616.92.
 Models are served by Ollama 0.34.0~\cite{ollama} from GGUF weights
-quantised to Q4\_K\_M~\cite{gerganov2023llamacpp}.
+quantised to Q4\_K\_M~\cite{gerganov2023llamacpp}. The server updated
+itself to 0.34.1 before the probe stages, with the weight digests
+unchanged.
 Every model is addressed by an explicit quantisation tag, and the weight
 digest, parameter count, context length and chat template of each are
 recorded in a manifest before any generation, so that a silently updated
@@ -83,9 +88,9 @@ that motivates the problem and needs a judge.
 
 \begin{table}[!t]
 \centering
-\caption{Corpus composition. Each gradable family has 400 prompts, of which
-100 form a nested pilot; prompt counts per source are in parentheses. The
-open-ended family has not yet been sampled (Section~\ref{sec:judge}).}
+\caption{Corpus composition. Each family has 400 prompts, of which 100 form
+a nested pilot; prompt counts per source are in parentheses. Open-ended
+labels await the judge validation of Section~\ref{sec:judge}.}
 \label{tab:corpus}
 \renewcommand{\arraystretch}{1.1}
 \begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
@@ -95,7 +100,7 @@ Family & Sources & Grading \\
 Math & GSM8K~\cite{cobbe2021gsm8k} (200), MATH-500~\cite{hendrycks2021math,lightman2024verify} (200) & Normalised final answer \\
 Code & HumanEval~\cite{chen2021humaneval} (154), MBPP~\cite{austin2021mbpp} (246) & Unit tests in a sandbox \\
 Multiple choice & MMLU~\cite{hendrycks2021mmlu} (200), ARC-Challenge~\cite{clark2018arc} (200) & Option letter \\
-Open-ended & Dolly-15k~\cite{conover2023dolly} (pending) & Judge (Sec.~\ref{sec:judge}) \\
+Open-ended & Dolly-15k~\cite{conover2023dolly} (400) & Judge (Sec.~\ref{sec:judge}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -174,7 +179,14 @@ output existed and rests on the judge--human $\kappa$ for the success
 decision: at 0.60 or above, the open-ended family is reported with the
 others; from 0.40 to 0.60, it carries an explicit caveat; below 0.40, it
 moves to a secondary analysis. The cut-offs are the conventional boundaries
-of moderate and substantial agreement~\cite{landis1977measurement}.
+of moderate and substantial agreement~\cite{landis1977measurement}. The
+judge scored all 3{,}583 open-ended answers eligible for judging. Against the
+first author's 100 blind scores it reaches $\kappa = 0.42$ [0.23, 0.59] on the
+success decision and a weighted $\kappa$ of 0.67 [0.52, 0.77] on the scores,
+and against \texttt{gpt-5-mini} on its 200 answers $\kappa = 0.40$ [0.27,
+0.52]. \texttt{gpt-5-mini} and the first author agree at $\kappa = 0.74$
+[0.60, 0.86]. The open-ended family therefore carries the caveat, and it is
+reported separately (Section~\ref{sec:results-open}).
 
 \subsection{Baselines}
 \label{sec:baselines}
@@ -506,6 +518,6 @@ provider may change what a model, or an effort setting, does under an
 unchanged name. That is a limitation of any hosted measurement, and it is
 the reason the local grid rather than this arm carries the paper's primary
 claims.
-\decision{code and data availability statement and release timing, given
-the pending patent filing; a conservative draft is ``available from the
-corresponding author on reasonable request''}
+The code and data that support this study are available from the
+corresponding author on reasonable request. [Confirm this wording and any
+release timing against the patent filing.]

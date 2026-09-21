@@ -27,4 +27,4 @@ sources:
   mbpp: {family: code, hf_id: google-research-datasets/mbpp, hf_config: full, split: test, formatter: mbpp, licence: CC-BY-4.0, stratify_by: task_id, stratify_bin: 100, pilot: 62, main: 184, noise: 15}
   mmlu: {family: mcq, hf_id: cais/mmlu, hf_config: all, split: test, formatter: mmlu, licence: MIT, stratify_by: subject, pilot: 50, main: 150, noise: 12}
   arc_challenge: {family: mcq, hf_id: allenai/ai2_arc, hf_config: ARC-Challenge, split: test, formatter: arc, licence: CC-BY-SA-4.0, pilot: 50, main: 150, noise: 13}
-  dolly: {enabled: false, family: open, hf_id: databricks/databricks-dolly-15k, hf_config: null, split: train, formatter: dolly, licence: CC-BY-SA-3.0, stratify_by: category, pilot: 100, main: 300, noise: 25}
+  dolly: {enabled: true, family: open, hf_id: databricks/databricks-dolly-15k, hf_config: null, split: train, formatter: dolly, licence: CC-BY-SA-3.0, stratify_by: category, pilot: 100, main: 300, noise: 25}

@@ -1,0 +1,13 @@
+# Periods this laptop ran without mains power while labelling stages were running.
+#
+# Source: Windows System event log, Microsoft-Windows-Kernel-Power event 105
+# ("power source change"), AcOnline=false followed by AcOnline=true. Times are UTC.
+#
+# On battery the GPU's enforced power limit falls (about 98 W to about 51 W busy
+# power on 2026-09-14) and Windows may suspend the machine, so energy windows that
+# overlap a period are excluded by scripts/attribute_energy.py (protocol, section 13.7).
+# From that change on, the harness waits for mains power and records it per window.
+on_battery_utc:
+  - {from: "2026-09-13T08:36:25Z", to: "2026-09-13T08:37:15Z"}  # 14:06:25-14:07:15 IST, no stage running
+  - {from: "2026-09-13T13:34:48Z", to: "2026-09-13T13:34:55Z"}  # 19:04:48-19:04:55 IST, no stage running
+  - {from: "2026-09-14T11:41:19Z", to: "2026-09-14T12:25:48Z"}  # 17:11:19-17:55:48 IST, open-ended main, 8B
