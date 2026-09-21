@@ -43,7 +43,8 @@ contain, so for those the climb cannot stop at $\cstar(q)$, and P1 pays
 2.69 times.
 
 \emph{The costliest configuration is not the most accurate.} This holds in
-every pool we measured. Locally, $c_7$ answers more prompts than $c_8$. On
+every pool we measured on tasks with a checkable answer. On the gradable
+families $c_7$ answers more prompts than $c_8$. On
 the public pool, nine of the eleven models dearer than
 \texttt{qwen3-235b-a22b-2507} answer fewer queries than it does. On the
 hosted ladder, \texttt{gpt-5} at high effort answers fewer than
@@ -52,7 +53,10 @@ the generation budget. Between 16\% and 20\% of local thinking generations,
 and 18.9\% of \texttt{gpt-5-nano}'s at high effort, run out of tokens
 before they answer, and a truncated answer fails. A budget is part of any
 deployed configuration, so sticky use of the top rung pays twice: once in
-cost, and again in the answers it loses.
+cost, and again in the answers it loses. Open-ended requests are the
+exception: there the cap rarely binds and $c_8$ is the most accurate cell
+(Section~\ref{sec:results-open}), and sticky use of it still pays 5.39 times
+the minimum sufficient energy.
 
 \emph{Thinking is priced by length, and length varies by family.} Energy per
 output token barely moves with the mode (Section~\ref{sec:results-mode}),
@@ -172,10 +176,12 @@ normalisation, which can reject a correct answer written in an unusual form.
 An unparseable multiple-choice answer counts as a failure even when the
 intended option is clear to a reader. Code is judged by the datasets' own
 unit tests, which can pass an incorrect function. The open-ended family
-depends on a model judge whose agreement with a stronger model and with
-human labels bounds how far its labels can be trusted
-(Section~\ref{sec:judge}), and results cover the gradable families unless
-stated otherwise.
+depends on a model judge that agrees with a human only moderately, at
+$\kappa = 0.42$, and passes more answers than either the human or
+\texttt{gpt-5-mini} (Section~\ref{sec:judge}). Its results are reported
+separately and with that caveat, and every other result covers the gradable
+families. Re-grading the family with \texttt{gpt-5-mini}, which agrees with
+the human at $\kappa = 0.74$, would tighten it.
 
 \emph{The energy boundary is the GPU board.} NVML reports GPU board power,
 so our joules exclude the processor, system memory, storage and display,
@@ -240,9 +246,10 @@ smallest adequate model, with extended reasoning off and a one-step-up
 control in view, puts its users on the frugal climb. That climb spends 1.5
 times the oracle's energy per solved prompt on the local grid, against 5.7
 times for leaving the largest thinking cell selected. Turning reasoning on
-by default is the harder choice to defend. On the local grid thinking lost
-accuracy at 4B and 8B within the cap, and it was never the cheaper way to
-buy accuracy. At \texttt{gpt-5} on the hosted ladder, high effort answered
+by default is the harder choice to defend. On the gradable families
+thinking lost accuracy at 4B and 8B within the cap, and it was never the
+cheaper way to buy accuracy; on open-ended requests it was cheap, but still
+one step among several rather than a default. At \texttt{gpt-5} on the hosted ladder, high effort answered
 4.1\% of queries that minimal effort missed, at 7.26 times the price, and
 overall accuracy moved by a tenth of a point. Reasoning is worth paying for
 on a minority of prompts, which argues for choosing it per prompt, not

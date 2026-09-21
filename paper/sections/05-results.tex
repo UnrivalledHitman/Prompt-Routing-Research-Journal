@@ -17,7 +17,9 @@
 Unless stated otherwise, local results cover the 1{,}200 prompts of the
 three gradable families, costs are dynamic GPU energy in joules, and
 intervals are 95\% bootstrap intervals over prompts
-(Section~\ref{sec:stats}). Router results are on the test split alone.
+(Section~\ref{sec:stats}). Router results are on the test split alone. The
+open-ended family, which carries a caveat, is reported separately in
+Section~\ref{sec:results-open}.
 
 \subsection{Oracle Labels on the Local Grid}
 \label{sec:results-labels}
@@ -406,6 +408,46 @@ and latency, then, a router should demand more confidence before it routes
 a prompt down than before it routes it up, which a threshold $\tau$ above
 one half does and an argmax over $\cstar(q)$ does not. In tokens it should
 not.
+
+\subsection{Open-Ended Requests}
+\label{sec:results-open}
+
+The open-ended family is reported with the caveat fixed in advance
+(Section~\ref{sec:judge}). Against the first author's blind scores the
+local judge reaches $\kappa = 0.42$ [0.23, 0.59] on the success decision,
+inside the caveat band, and it is lenient: it passes 65\% of the human
+sample, against 57\% for the first author and 50\% for \texttt{gpt-5-mini},
+which agrees with the first author at $\kappa = 0.74$ [0.60, 0.86]. The
+success rates below are therefore those of a lenient grader. Leniency raises
+every cell's rate, and how it moves $\cstar(q)$ between cells is not known.
+Results are over the 400 open-ended prompts, in joules, under oracle
+detection.
+
+On these prompts the grid behaves differently from the gradable families.
+Accuracy rises with size and with thinking at every step, from 46.3\% at
+$c_1$ to 86.3\% at $c_8$, so here the costliest cell is also the most
+accurate, and the cap barely binds: no cell has more than 1.25\% of its
+generations reach it. Thinking costs 1.9 to 2.1 times the energy per solved
+prompt of the same size without it, against 6.4 to 8.3 on the gradable
+families, because a plain open-ended answer is already long and a
+generation's tokens only about double with thinking. At 0.6B thinking is
+cheaper than the next size up, at 0.62 times the energy per solved prompt of
+1.7B without thinking [0.56, 0.71], though it answers fewer prompts, 55.3\%
+against 62.8\%. At 1.7B the two cost the same within the interval, and at 4B
+the size step is cheaper again. A thinking cell is therefore the cheapest
+sufficient choice for 22.8\% of open-ended prompts, against 3.6\% of gradable
+ones, and 0.6B with thinking alone for 15.0\%.
+
+The ordering of the policies survives. P1 still pays the least, a tax of
+1.46 times the cost of $\cstar(q)$ [1.14, 1.86], and solves 93.8\% of
+prompts; P3 pays 5.39 times [4.29, 6.85] and solves 86.3\%. The spread is
+narrower than on the gradable families because $c_8$ costs 6.5 times the
+mean cost of $\cstar(q)$ here rather than 14 times, and is also the most
+accurate cell. P2 comes close to P1, at 1.79 times, because its second rung,
+0.6B with thinking, is a cheap and useful step on this family. Routing one
+tier too low costs 2.03 times as much as one tier too high [1.75, 2.38].
+Over all four families, 1{,}600 prompts, P3 pays 10.59 times the cost of
+$\cstar(q)$ and P1 1.07 times.
 
 \subsection{The Escalation Tax on a Public Benchmark}
 \label{sec:results-public}
