@@ -18,9 +18,11 @@ All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
 The driver was updated to 616.92 between the main labelling run and the
 later cap, noise, open-ended and probe stages. The noise stage resamples
 prompts and cells the main run measured, so it doubles as a check on energy
-across that change. On those prompts and cells, energy per output token
-under 616.92 was a median 0.95 times that under 616.56 (interquartile range
-0.88 to 1.01). Every cell of the grid was measured under 616.56, so no
+across that change. On those prompts, cell by cell, energy per output token
+under 616.92 was 0.89 to 1.01 times that under 616.56, with a median of
+0.94, and six of the eight cells' 95\% intervals lie below parity; board
+power at idle was also lower under the new driver. Every cell of the grid was
+measured under 616.56, so no
 comparison between cells crosses the change; the probes that price the R3
 routers and the cascade's checks were measured under 616.92.
 Models are served by Ollama 0.34.0~\cite{ollama} from GGUF weights
@@ -93,7 +95,7 @@ that motivates the problem and needs a judge.
 \centering
 \caption{Corpus composition. Each family has 400 prompts, of which 100 form
 a nested pilot; prompt counts per source are in parentheses. Open-ended
-labels await the judge validation of Section~\ref{sec:judge}.}
+results carry the caveat of Section~\ref{sec:judge}.}
 \label{tab:corpus}
 \renewcommand{\arraystretch}{1.1}
 \begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
