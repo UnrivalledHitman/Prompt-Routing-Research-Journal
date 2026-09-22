@@ -47,7 +47,7 @@ family.}
 \begin{figure}[!t]
 \centering
 \generated{figures/cstar_energy_j.pdf}
-{\includegraphics[width=\columnwidth]{figures/cstar_energy_j}}
+{\includegraphics[width=\figwidth]{figures/cstar_energy_j}}
 \caption{The minimum sufficient cell $\cstar(q)$, in joules, over all
 prompts and per family. ``None'' marks prompts that no cell answers.}
 \label{fig:cstar}
@@ -116,7 +116,7 @@ the illustrative point $p_{\mathrm{acc}} = 0.15$, $p_{\mathrm{rej}} =
 \begin{figure}[!t]
 \centering
 \generated{figures/tax_energy_j.pdf}
-{\includegraphics[width=\columnwidth]{figures/tax_energy_j}}
+{\includegraphics[width=\figwidth]{figures/tax_energy_j}}
 \caption{The escalation tax per prompt, in joules, split into escalation
 and stickiness, under oracle detection (solid) and imperfect detection
 (hatched). Error bars are 95\% bootstrap intervals on the total. P4 starts
@@ -127,7 +127,7 @@ uniformly over the cells.}
 \begin{figure}[!t]
 \centering
 \generated{figures/detection_energy_j.pdf}
-{\includegraphics[width=\columnwidth]{figures/detection_energy_j}}
+{\includegraphics[width=\figwidth]{figures/detection_energy_j}}
 \caption{Cost per solved prompt (top) and solved rate (bottom) of the
 manual policies as the probability of accepting a wrong answer grows, at
 three probabilities of rejecting a right one. P3 makes a single attempt
@@ -224,7 +224,7 @@ need several.}
 \begin{figure}[!t]
 \centering
 \generated{figures/frontier_energy_j.pdf}
-{\includegraphics[width=\columnwidth]{figures/frontier_energy_j}}
+{\includegraphics[width=\figwidth]{figures/frontier_energy_j}}
 \caption{Solved rate against net mean energy per prompt on the test split:
 each router as $\tau$ varies (dashed for cost-sensitive training), the
 cascade as its threshold varies, the eight cells used alone, the manual
@@ -318,7 +318,7 @@ a metered 2.7 to 2.9\,J.
 \begin{figure}[!t]
 \centering
 \generated{figures/mode_energy_j.pdf}
-{\includegraphics[width=\columnwidth]{figures/mode_energy_j}}
+{\includegraphics[width=\figwidth]{figures/mode_energy_j}}
 \caption{Energy per solved prompt with thinking, relative to the same
 size without thinking and to the next size up without thinking. Error
 bars are 95\% bootstrap intervals, and the dashed line marks parity. 8B
@@ -375,7 +375,7 @@ of a thinking one's.
 \begin{figure}[!t]
 \centering
 \generated{figures/asymmetry_energy_j.pdf}
-{\includegraphics[width=\columnwidth]{figures/asymmetry_energy_j}}
+{\includegraphics[width=\figwidth]{figures/asymmetry_energy_j}}
 \caption{Extra energy per prompt, over the cost of $\cstar(q)$, of routing
 one tier too low and one tier too high, with a failed answer recovered at
 $c_8$. Tiers are cells in order of mean energy. Error bars are 95\%
@@ -455,7 +455,7 @@ $\cstar(q)$ and P1 1.07 times.
 \begin{figure}[!t]
 \centering
 \generated{figures/public_frontier.pdf}
-{\includegraphics[width=\columnwidth]{figures/public_frontier}}
+{\includegraphics[width=\figwidth]{figures/public_frontier}}
 \caption{The thirteen models of the public pool, the cost--accuracy
 frontier they define and where the escalation policies land on it. Cost is
 logarithmic, in US dollars per 1{,}000 queries. P3 sits on the top rung it
@@ -553,7 +553,7 @@ sufficient cost and P1 2.64 times, against 7.96 and 2.69.
 \begin{figure}[!t]
 \centering
 \generated{figures/hosted_frontier.pdf}
-{\includegraphics[width=\columnwidth]{figures/hosted_frontier}}
+{\includegraphics[width=\figwidth]{figures/hosted_frontier}}
 \caption{The six hosted cells on the cost--accuracy plane, open for
 minimal reasoning effort and filled for high. Cost is logarithmic, in US
 dollars per 1{,}000 queries. The grey line is the frontier the escalation

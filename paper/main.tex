@@ -70,6 +70,26 @@
 \newif\ifextendedabstract
 \extendedabstracttrue
 
+% Single-column layout for drafts; false for the IEEE Access two-column
+% submission build. The template's \maketitle opens the title block with
+% \twocolumn[...], so in single-column mode it is redefined to set the same
+% title block, abstract and index terms without re-entering two columns.
+% Figures are sized by \figwidth, the column in two-column mode and a
+% readable share of the page in single-column mode.
+\newif\ifsinglecolumn
+\singlecolumntrue
+\newlength{\figwidth}
+\makeatletter
+\ifsinglecolumn
+  \AtBeginDocument{\onecolumn\setlength{\figwidth}{0.65\textwidth}}
+  \renewcommand\maketitle{{\thispagestyle{titlepage}\@maketitle
+    \vskip 0.3\baselineskip plus 0.1\baselineskip minus 0.1\baselineskip
+    \vspace*{-1pt}\vspace*{-24pt}\par}}
+\else
+  \AtBeginDocument{\setlength{\figwidth}{\columnwidth}}
+\fi
+\makeatother
+
 % Notation used throughout
 \newcommand{\cells}{\mathcal{C}}
 \newcommand{\cstar}{c^{\star}}
