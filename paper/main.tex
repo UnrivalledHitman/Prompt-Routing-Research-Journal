@@ -5,8 +5,16 @@
 %  DRAFT STATUS
 %  ------------
 %  Written by Claude as a first draft for Indrajeet and his mentor to
-%  rewrite. Sections I--IV, VI-B and VII are drafted. The routing parts of
-%  Sections V, VI, VII and VIII wait for the final routing analysis.
+%  rewrite. Every section is drafted from the final analyses; the author
+%  block, acknowledgment and biographies hold bracketed placeholders.
+%
+%  ABSTRACT
+%  --------
+%  IEEE Access limits the abstract to 250 words, and the title block that
+%  holds it cannot break across pages. The boxed abstract below is the
+%  submission abstract (247 words). \extendedabstracttrue adds an unnumbered
+%  Extended Abstract before Section I for internal review; set it to
+%  \extendedabstractfalse for the submission build.
 %
 %  TEMPLATE
 %  --------
@@ -57,6 +65,10 @@
 % written file, and a marker until they have, so the draft always compiles.
 \newcommand{\generated}[2]{\IfFileExists{#1}{#2}{\tbd{not yet generated:
 \url{#1}}}}
+
+% Extended Abstract for internal review; false for the submission build.
+\newif\ifextendedabstract
+\extendedabstracttrue
 
 % Notation used throughout
 \newcommand{\cells}{\mathcal{C}}
@@ -125,6 +137,7 @@ model routing, reasoning effort, test-time compute.
 
 \maketitle
 
+\ifextendedabstract\input{sections/00-extended-abstract}\fi
 \input{sections/01-introduction}
 \input{sections/02-literature-survey}
 \input{sections/03-methodology}
