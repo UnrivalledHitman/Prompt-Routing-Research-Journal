@@ -175,7 +175,11 @@ Upload to Editorial Manager as follows.
                             Editorial Manager builds its own from the .tex.
 
 Also required in the submission system, not as files:
-  - the corresponding author's ORCID, with visibility set to Everyone;
+  - the corresponding author's ORCID, 0009-0009-7966-2683
+    (https://orcid.org/0009-0009-7966-2683), linked to the Editorial
+    Manager profile. The record must be visible to Everyone and must hold
+    some information, such as the Narula education entry, or the
+    submission is rejected at the identity check;
   - the declarations (competing interests, generative AI, funding), which
     are already stated at the end of the manuscript.
 """

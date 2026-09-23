@@ -68,18 +68,23 @@ covers the model outputs and labels only. The generative-AI declaration
 still mentions code, because it discloses how AI was used and FGCS requires
 that disclosure.
 
-Outstanding:
+Also settled: CRediT roles confirmed by both authors; no present-address
+footnote, since the first author is still at Narula; resume dates confirmed.
 
-1. **ORCID for the corresponding author — required.** FGCS verifies author
-   identity through it: "the visibility of the corresponding author's ORCID
-   is a step in this process… the manuscript will be rejected until the
-   record owner updates their setting." Register free at
-   https://orcid.org/register, set visibility to Everyone, and link it in
-   Editorial Manager.
-2. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
-   and editing are proposed in `sections/08-back-matter.tex`; confirm or edit.
-3. Whether the first author needs a "present address" footnote, if he has
-   left the institute since the work was carried out.
+Corresponding author's ORCID: **0009-0009-7966-2683**
+(https://orcid.org/0009-0009-7966-2683). It is entered in Editorial Manager,
+not in the manuscript; elsarticle has no field for it. The iD is valid and
+the name is public, but on 2026-09-24 the record showed no education,
+employment or works. FGCS rejects submissions whose corresponding author
+"has not added information to their profile", so add at least the Narula
+education entry with visibility Everyone before submitting.
+
+Outstanding before upload:
+
+1. Populate the ORCID record as above.
+2. Suseta Datta's approval of the final manuscript. Elsevier requires every
+   author to approve the version submitted.
+3. The authors' own read of the manuscript and highlights.
 
 The affiliation is complete: both authors are in the Department of Computer
 Application, Narula Institute of Technology, 81 Nilgunj Road, Agarpara,
