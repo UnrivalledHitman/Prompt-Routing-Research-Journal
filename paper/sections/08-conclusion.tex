@@ -33,14 +33,17 @@ one tier too low cost 2.71 times as much energy as routing one tier too
 high. Counted in tokens, that asymmetry reverses, and sticking with the
 largest model looks cheaper than trying thinking first, the opposite of what
 the meter shows. Cost has to be measured in the unit that is actually paid.
-On held-out prompts no router beat the frugal climb. The best, logistic
-regression on TF-IDF features, spent 1.30 times its energy per solved prompt
-and answered 3.7 points fewer, while spending 64\% less than leaving the 8B
-thinking cell selected and 37\% less than a self-verifying cascade, both per
-solved prompt. Charging
+Whether a router beat the frugal climb turned on the recovery rule. When a
+failed route was resent to the 8B thinking cell, the best router, logistic
+regression on TF-IDF features, spent 1.30 times the climb's energy per
+solved prompt and answered 3.7 points fewer; when failures climbed from the
+routed cell instead, every router came within 6\% of it and four were 2.6\%
+to 3.4\% cheaper. Against the habits that start high the router spent 64\%
+less than leaving the 8B thinking cell selected and 37\% less than a
+self-verifying cascade, both per solved prompt, and where users accept 15\%
+of wrong answers it answered 7.1 points more than the climb. Charging
 routers for their own energy barely changed their ranking, since none cost
-more than 7.6\,J per decision. The loss to the climb came from recovering
-failed routes at the top of the grid.
+more than 7.6\,J per decision.
 
 For a user without a router, the evidence points to a short rule: start
 small with reasoning off, move up a size before turning reasoning on, and

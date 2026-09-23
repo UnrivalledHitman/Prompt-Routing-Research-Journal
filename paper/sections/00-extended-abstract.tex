@@ -11,13 +11,13 @@
 
 \emph{Problem.} Services that sell language models in tiers ask the user
 to choose a model size and, increasingly, whether the model should reason
-before it answers. Users choose badly in two opposite directions. Some start
-with a small configuration and move up after every wrong answer, paying in
-full for each discarded attempt and for resending the prompt. Others leave a
-large reasoning configuration selected from an earlier task and pay its
-premium on prompts that never needed it. Routing studies compare routers
-with fixed single-model policies, and none that we located measures what
-this trial and error costs.
+before it answers. Users choose badly in two opposite directions: some start
+small and move up after every wrong answer, paying in full for each
+discarded attempt and for resending the prompt, while others leave a large
+reasoning configuration selected from an earlier task and pay its premium on
+prompts that never needed it. Routing studies compare routers with fixed
+single-model policies, and none that we located measures what this trial and
+error costs.
 
 \emph{Construct.} We define the \emph{escalation tax} as the cost a policy
 pays beyond the cheapest configuration that would have answered the prompt,
@@ -33,15 +33,14 @@ latency and energy.
 8B, quantised to Q4\_K\_M) with thinking on and off, eight configurations
 served on one laptop RTX~4060 GPU whose board power is sampled every
 100\,ms. Every prompt runs in every configuration: 1{,}200 gradable prompts
-from mathematics, code and multiple choice, graded by answer checks and unit
-tests, and 400 open-ended requests graded by a model judge. The gradable
-grid alone is 9{,}600 generations and 31.6 hours of GPU time. We price four
-manual escalation policies, train classical, encoder and language-model
-routers under net-of-router accounting, and compare them with a
-self-verifying cascade in the style of AutoMix. Two further pools extend the
-result beyond the laptop: thirteen public models priced by their providers,
-and six hosted configurations that cross three GPT-5 sizes with two
-reasoning efforts.
+from mathematics, code and multiple choice, and 400 open-ended requests
+graded by a model judge. The gradable grid alone is 9{,}600 generations and
+31.6 hours of GPU time. We price four manual escalation policies, train
+classical, encoder and language-model routers under net-of-router
+accounting, and compare them with a self-verifying cascade in the style of
+AutoMix. Two further pools extend the result beyond the laptop: thirteen
+public models priced by their providers, and six hosted configurations that
+cross three GPT-5 sizes with two reasoning efforts.
 
 \emph{The tax is large, and most of it is stickiness.} Leaving the largest
 thinking configuration selected pays 12.96 times the minimum sufficient
@@ -50,12 +49,12 @@ most accurate: between 16\% and 20\% of thinking generations reach the
 4{,}096-token cap and fail, and 8B without thinking answers 3.8 points more
 for an eighth of the energy. The frugal climb, which moves up sizes with
 thinking off and turns thinking on only at the top, pays 0.89 times and
-solves 92.2\%, at 945.7\,J
-per solved prompt against the oracle's 634.8\,J. Its first four rungs are
-the four cheapest configurations, and together they are $\cstar(q)$ for
-89.2\% of prompts. Turning thinking on before moving up a size pays 8.66
-times. The same ordering holds on the public pool, at 7.96 against 2.69
-times, and on the hosted ladder, at 4.35 against 0.22.
+solves 92.2\%, at 945.7\,J per solved prompt against the oracle's 634.8\,J,
+because its first four rungs are the four cheapest configurations and
+together they are $\cstar(q)$ for 89.2\% of prompts. Turning thinking on
+before moving up a size pays 8.66 times. The same ordering holds on the
+public pool, at 7.96 against 2.69 times, and on the hosted ladder, at 4.35
+against 0.22.
 
 \emph{Reasoning has its own energy signature.} Thinking costs 6.4 to 8.3
 times the energy per solved prompt of the same size without it, and the
@@ -63,7 +62,7 @@ ratio depends more on the task family than on size. Below 8B it was never
 the cheaper way to buy accuracy: the next size up without thinking answered
 more prompts for 3.8 to 5.5 times less energy per solved prompt. Rerunning a
 sample of capped generations with an 8{,}192-token budget rescues 32.4\% of
-them, and the rescued answers are long.
+them.
 
 \emph{The unit changes the verdict.} Within a size, output tokens price the
 mode axis to within about 15\%, but an output token costs 6.6 times as much
@@ -73,18 +72,21 @@ and routing one tier too low looks cheaper than routing one too high. The
 meter reverses both: in energy, routing too low costs 2.71 times as much as
 routing too high.
 
-\emph{No router beats a disciplined user.} On 243 held-out prompts the best
-router, logistic regression on TF-IDF features, spends 1.30 times the frugal
-climb's energy per solved prompt and answers 3.7 points fewer; no router and
-not the cascade does better. The loss sits in recovery: a failed route is
-resent to the largest thinking configuration, which is expensive and not
-the most accurate, and recovering by climbing instead brings every router
-within 6\% of the climb. Against habits the picture reverses. Per prompt, the
-same router spends 61\% less than leaving the largest configuration selected,
-29\% less than starting at a random configuration, and 34\% less than the
-cascade, whose self-check accepts a wrong answer on a third of answerable
-prompts. When users accept 15\% of wrong answers as correct, the router
-answers 7.1 points more than the climb. Router overhead stays under 1\% of the energy it routes, so
+\emph{Whether a router beats a disciplined user depends on the recovery
+rule.} On 243 held-out prompts, with a failed route resent to the largest
+thinking configuration, the best router, logistic regression on TF-IDF
+features, spends 1.30 times the frugal climb's energy per solved prompt and
+answers 3.7 points fewer. That configuration is expensive and not the most
+accurate; when failures climb from the routed configuration instead, every
+router comes within 6\% of the climb and four are 2.6\% to 3.4\% cheaper
+than it at the same solved rate. Detection matters as much: when users accept
+15\% of wrong answers as correct, the router answers 7.1 points more than the
+climb, because it makes fewer attempts at which to be fooled. Against habits
+the picture reverses outright: per prompt, the same router spends 61\% less
+than leaving the largest configuration selected, 29\% less than starting at a
+random configuration, and 34\% less than the cascade, whose self-check
+accepts a wrong answer on a third of answerable prompts. Router overhead
+stays under 1\% of the energy it routes, so
 charging for it barely changes the ranking in energy; in tokens, the
 language-model routers pay for their own prompts and fall behind.
 
@@ -107,9 +109,9 @@ transfers between pools while the choice of size does not.
 
 \emph{Implications and limits.} Defaults decide most of the tax: a service
 that opens on a small configuration with reasoning off puts its users on the
-frugal climb without any router. For a user the evidence gives a short rule:
-start small with reasoning off, move up a size before turning reasoning on,
-and choose reasoning per prompt. A one-shot router earns its place against
+frugal climb without any router, and for a user the evidence gives a short
+rule: start small with reasoning off, move up a size before turning reasoning
+on, and choose reasoning per prompt. A one-shot router earns its place against
 costly defaults and for users who cannot check an answer; against a careful
 user it needs a better recovery rule. The manual policies are modelled rather
 than observed, the pool is one quantised family up to 8B on one machine, the

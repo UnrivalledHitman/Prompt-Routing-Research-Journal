@@ -63,23 +63,25 @@ Table~\ref{tab:cells} gives the cells. Without thinking, accuracy rises at
 every size step, from 40.2\% at 0.6B to 83.6\% at 8B, and energy per
 generation from 54\,J to 362\,J. Thinking multiplies the output by 7.4 to
 8.4 times and the energy by seven to nine. What that buys
-depends on size. Thinking adds 12.8 points at 0.6B and 5.5 at 1.7B, but
+depends on size: it adds 12.8 points at 0.6B and 5.5 at 1.7B, but
 loses 2.2 points at 4B and 3.8 at 8B. The loss sits in math
-(Table~\ref{tab:family-accuracy}), where 4B and 8B answer 85.5\% and
-88.2\% without thinking and 73.0\% and 75.2\% with it. It tracks the cap.
+(Table~\ref{tab:family-accuracy}) and tracks the cap.
 Between 16\% and 20\% of thinking generations reach 4{,}096 tokens at
 every size, against under 2\% of non-thinking ones, and a truncated answer
 fails. On multiple choice thinking helps at every size; on code it helps
-up to 4B and is level at 8B. As a result, the costliest cell is not the
-most accurate one: $c_7$ answers 3.8 points more than $c_8$ for an eighth
-of its energy.
+up to 4B and is level at 8B. As a result, under a 4{,}096-token thinking
+budget the costliest cell is not the most accurate one: $c_7$ answers 3.8
+points more than $c_8$ for an eighth of its energy. That ordering is a
+property of the configuration, budget included, rather than of the model
+alone: Section~\ref{sec:results-mode} reruns a sample of capped generations
+at 8{,}192 tokens and rescues a third of them.
 
 Fig.~\ref{fig:cstar} shows where the minimum sufficient cell falls. The
 smallest model without thinking is $\cstar(q)$ for 37.5\% of prompts, and
 the four non-thinking cells together for 89.2\%. A thinking cell is the
 cheapest sufficient choice for 3.6\%, and $c_8$ for 0.75\%. No cell answers
 7.25\% of prompts: 12.5\% of code, 6.25\% of math and 3.0\% of multiple
-choice. The families differ in where the rest of the mass lies. On math
+choice. The families differ in where the rest of the mass lies: on math
 the smallest cell suffices for 52.8\% of prompts, while on code the modal
 $\cstar(q)$ is 4B without thinking, at 32.8\%.
 
@@ -89,13 +91,10 @@ token cost of \eqref{eq:tokcost} has no term for model size, so size is
 nearly free and $\cstar(q)$ is $c_7$ for 31.3\% of prompts and $c_5$ for
 26.9\%. In energy an output token costs 0.24\,J at 0.6B and 1.6\,J at 8B.
 A token count cannot see that factor of 6.6, and it drives several of the
-results below.
-
-The attribution of energy within a window does not drive them.
-Apportioning each window's dynamic energy by token share instead of
-generation time leaves $\cstar(q)$ unchanged for 97.3\% of prompts, and
-per-generation energies under the two rules have a rank correlation of
-0.997.
+results below. The attribution of energy within a window does not: apportioning
+each window's dynamic energy by token share instead of generation time
+leaves $\cstar(q)$ unchanged for 97.3\% of prompts, and per-generation
+energies under the two rules have a rank correlation of 0.997.
 
 \subsection{The Escalation Tax on the Local Grid}
 \label{sec:results-tax}
@@ -149,19 +148,15 @@ prompt it pays 3{,}611.7\,J, 5.7 times what the oracle pays.
 The frugal climb comes close to the oracle. P1 solves 92.2\% of prompts,
 0.6 points fewer than the oracle, at 945.7\,J per solved prompt [803.2,
 1{,}094.5], 1.5 times the oracle's figure. Its tax, 169.4\,J [139.8, 202.2]
-or 0.89 times the cost of $\cstar(q)$, is 71\% escalation. The reason is
-the cost order of the grid. The first four rungs of P1 are the four
-non-thinking cells in order of mean energy; they are also the four
-cheapest cells, and between them they are $\cstar(q)$ for 89.2\% of
-prompts. A user who climbs with thinking off meets the minimum sufficient
-cell in roughly the order an oracle would rank the cells, and pays mainly
-for the cheaper attempts that failed on the way.
+or 0.89 times the cost of $\cstar(q)$, is 71\% escalation. Its first four
+rungs are the four cheapest cells, and between them they are $\cstar(q)$
+for 89.2\% of prompts, so the climb meets the minimum sufficient cell in
+roughly the order an oracle would rank the cells
+(Section~\ref{sec:why}).
 
 Turning thinking on before moving up a size undoes this. P2 pays a tax of
 8.66 times the cost of $\cstar(q)$, 57\% of it escalation, and solves
-87.1\% of prompts. Its second rung, 0.6B with thinking, costs more energy
-than any of the three non-thinking cells above it and answers fewer
-prompts than any of them. The population policies fall between the
+87.1\% of prompts. The population policies fall between the
 extremes. P4 with a uniform start pays 4.80 times the cost of
 $\cstar(q)$, three-quarters of it stickiness from starting above
 $\cstar(q)$. With half of all queries starting at $c_8$ it pays 8.30
@@ -172,15 +167,14 @@ prompts, and P1's is smallest there, at 0.77 times.
 
 Detection errors lower the tax and take answers with it. At the
 illustrative point, P1's cost per solved prompt falls to 711.5\,J, because
-a wrong answer accepted early ends the climb before the expensive rungs.
-Its solved rate falls to 79.9\%, below both variants of P4. Every rung is
-another chance to accept a wrong answer, so the policies that make the
+a wrong answer accepted early ends the climb before the expensive rungs,
+and its solved rate falls to 79.9\%, below both variants of P4. Every rung
+is another chance to accept a wrong answer, so the policies that make the
 most attempts lose the most: P1 loses 12.3 points and P2 12.2, while P4
 with a uniform start loses 5.0. Fig.~\ref{fig:detection} traces the
 trade. With no right answers rejected, P1's solved rate falls to P3's once
-one wrong answer in five is accepted, 80.2\% against 79.8\%, and below it
-beyond that; at that point P1 still spends 680\,J per solved prompt against
-P3's 3{,}612\,J. Oracle
+one wrong answer in five is accepted, 80.2\% against 79.8\%, though it
+still spends 680\,J per solved prompt against P3's 3{,}612\,J. Oracle
 detection is therefore the regime in which the manual policies answer the
 most prompts, not the one in which they spend the least.
 
@@ -239,7 +233,8 @@ failure detected, and Fig.~\ref{fig:frontier} the cost--quality frontiers.
 On these prompts P1 solves 92.2\% at 831.5\,J per prompt [578.2, 1{,}122.1]
 and the oracle 93.0\% at 565.5\,J.
 
-No router beats the frugal climb, and neither does the cascade. The best
+Under this recovery rule no router beats the frugal climb, and neither does
+the cascade; the rule matters, and we return to it below. The best
 router, logistic regression on TF-IDF $n$-grams, solves 88.5\% at
 1{,}041.0\,J [801.0, 1{,}304.7], which is 209.5\,J more than P1 [67.7,
 363.6] and 3.7 points fewer [1.6, 6.2]. Its net energy per solved prompt is
@@ -282,7 +277,8 @@ answer accepts a wrong one on 33.6\% of the prompts some cell can answer,
 and each of those answers goes to $c_8$ as a misrouted one does. The cascade
 makes 2.39 attempts per prompt, more than any router.
 
-Charging each router for its own energy changes little. No router costs more
+Charging each router for its own energy changes little
+(Table~\ref{tab:overhead}). No router costs more
 than 7.6\,J per decision, 0.6\% of the energy of the queries it routes, and
 only three routers change rank between gross and net cost, all within 7\,J
 of one another. In tokens the charge matters. The R3 routers pay for their
@@ -294,23 +290,19 @@ because in tokens a failed small attempt costs about as much as an answer
 from $c_7$, so P1's climb is dear, while in energy it is nearly free.
 
 Ranked by their best member, the router families keep their order gross and
-net. Logistic regression on
-TF-IDF $n$-grams and on frozen MiniLM embeddings rank first and second. The
-fine-tuned encoders approach them only with cost-sensitive training, which
-lowered DistilBERT's net cost from 1{,}649.7\,J to 1{,}130.6\,J and
-DeBERTa-v3-small's from 1{,}491.7\,J to 1{,}216.2\,J; it did not help the
-TF-IDF router. Qwen3-0.6B with trained LoRA adapters reaches 1{,}262.9\,J.
-The prompted R3 routers finish last, beside the cascade: asked for the
-cheapest sufficient configuration, the 0.6B model routes low, and the
-few-shot prompt sends 52.7\% of answerable prompts to a cell that fails.
-Predicting success per cell also beats classifying $\cstar(q)$ directly, by
-480.3\,J per prompt with the same TF-IDF features [241.6, 723.8]. The linear
-routers give the same result with every training seed, while the
-gradient-boosted and fine-tuned ones vary with standard deviations of up to
-128.5\,J. Table~\ref{tab:overhead} gives the overhead. The TF-IDF router
-decides in 1.7\,ms at a bound of 0.10\,J, the MiniLM router in 24\,ms, the
-encoders in 74 to 135\,ms, and the R3 routers in 43 to 56\,ms on the GPU at
-a metered 2.7 to 2.9\,J.
+net. Logistic regression on TF-IDF $n$-grams and on frozen MiniLM embeddings
+rank first and second. The fine-tuned encoders approach them only with
+cost-sensitive training, which lowered DistilBERT's net cost from
+1{,}649.7\,J to 1{,}130.6\,J and DeBERTa-v3-small's from 1{,}491.7\,J to
+1{,}216.2\,J; it did not help the TF-IDF router. Qwen3-0.6B with trained
+LoRA adapters reaches 1{,}262.9\,J. The prompted R3 routers finish last,
+beside the cascade: asked for the cheapest sufficient configuration, the
+0.6B model routes low, and the few-shot prompt sends 52.7\% of answerable
+prompts to a cell that fails. Predicting success per cell also beats
+classifying $\cstar(q)$ directly, by 480.3\,J per prompt with the same
+TF-IDF features [241.6, 723.8]. The linear routers give the same result with
+every training seed, while the gradient-boosted and fine-tuned ones vary
+with standard deviations of up to 128.5\,J.
 
 \subsection{Energy of the Reasoning-Mode Axis}
 \label{sec:results-mode}
@@ -335,7 +327,8 @@ stays between 4.9 and 6.1. On code it reaches 12.9 at 4B and 15.8 at 8B.
 On multiple choice it peaks at 0.6B, at 15.2, where a non-thinking answer
 costs 10\,J.
 
-Thinking is also never the cheaper way to buy accuracy on this grid. Below
+Under these budgets thinking is also never the cheaper way to buy accuracy
+on this grid. Below
 8B, the next size up without thinking answers more prompts than thinking
 does---59.5\% against 53.0\% at 0.6B, 79.0\% against 65.0\% at 1.7B and
 83.6\% against 76.8\% at 4B---and spends 3.8, 4.7 and 5.5 times less
@@ -351,7 +344,7 @@ cut off. Thinking would then answer 71.9\%, 84.9\% and 93.0\% of prompts
 at 0.6B, 1.7B and 4B, more than the next size up at every step, and would
 still spend 2.8, 3.6 and 4.6 times as much energy per solved prompt. The
 bound favours thinking twice over, since an answer that needs a longer
-budget also needs more energy. The cap reruns confirm it. Of 219 capped
+budget also needs more energy. The reruns confirm it: of 219 capped
 generations rerun with an 8{,}192-token budget, 32.4\% succeed and 27.9\%
 reach the longer cap as well. The share rescued rises with size for
 thinking, from 15.0\% at 0.6B to 52.5\% at 8B, and the answers it buys are
@@ -364,10 +357,8 @@ Within a size, the premium is one of length. A thinking generation spends
 between 0.94 and 1.15 times the energy per output token of a non-thinking
 generation at the same size, so output tokens price the mode axis to
 within about 15\%, while they miss the factor of 6.6 between sizes. A count
-that includes the prompt does understate the mode premium: 4.2 to 6.1
-times per solved prompt against 6.4 to 8.3 in energy, because a prompt of
-about 115 tokens is a third of a short answer's count and a small fraction
-of a thinking one's.
+that includes the prompt does understate the mode premium, at 4.2 to 6.1
+times per solved prompt against 6.4 to 8.3 in energy.
 
 \subsection{Asymmetry of Misallocation}
 \label{sec:results-asymmetry}
@@ -406,22 +397,19 @@ tokens then succeeds on 62\% of prompts, while a step up is often to a
 thinking cell whose output is several times as long. In energy
 and latency, then, a router should demand more confidence before it routes
 a prompt down than before it routes it up, which a threshold $\tau$ above
-one half does and an argmax over $\cstar(q)$ does not. In tokens it should
-not.
+one half does and an argmax over $\cstar(q)$ does not.
 
 \subsection{Open-Ended Requests}
 \label{sec:results-open}
 
 The open-ended family is reported with the caveat fixed in advance
-(Section~\ref{sec:judge}). Against the first author's blind scores the
-local judge reaches $\kappa = 0.42$ [0.23, 0.59] on the success decision,
-inside the caveat band, and it is lenient: it passes 65\% of the human
-sample, against 57\% for the first author and 50\% for \texttt{gpt-5-mini},
-which agrees with the first author at $\kappa = 0.74$ [0.60, 0.86]. The
-success rates below are therefore those of a lenient grader. Leniency raises
-every cell's rate, and how it moves $\cstar(q)$ between cells is not known.
-Results are over the 400 open-ended prompts, in joules, under oracle
-detection.
+(Section~\ref{sec:judge}). The local judge reaches $\kappa = 0.42$ [0.23,
+0.59] against the first author's blind scores, inside the caveat band, and
+it is lenient: it passes 65\% of the human sample, against 57\% for the
+first author and 50\% for \texttt{gpt-5-mini}. The success rates below are
+therefore those of a lenient grader; leniency raises every cell's rate, and
+how it moves $\cstar(q)$ between cells is not known. Results are over the
+400 open-ended prompts, in joules, under oracle detection.
 
 On these prompts the grid behaves differently from the gradable families.
 Accuracy rises with size and with thinking at every step, from 46.3\% at
@@ -503,12 +491,11 @@ only loosely related: of the eleven models dearer than
 \texttt{qwen3-235b-a22b-2507}, nine answer fewer queries than it does. Only
 four of the thirteen lie on the cost--accuracy frontier, and those four
 are the ladder a rational escalator would climb. Between them the thirteen
-answer 82.0\% of the queries; the remaining 18.0\% are beyond the pool.
-The distribution of the minimum sufficient model repeats what the local
-grid shows: the two cheapest models are the cheapest sufficient choice for
-46.5\% of all queries, and the costliest model is that choice for 2.4\%.
-Another 29.8\% are answered most cheaply by a model off the frontier,
-which matters for what follows.
+answer 82.0\% of the queries. The distribution of the minimum sufficient
+model repeats what the local grid shows: the two cheapest models are the
+cheapest sufficient choice for 46.5\% of all queries, and the costliest
+model for 2.4\%. Another 29.8\% are answered most cheaply by a model off
+the frontier, which matters for what follows.
 
 Table~\ref{tab:public-tax} gives the policies. Sticky use of the top of
 the ladder (P3) pays a tax of 7.96 times the minimum sufficient cost and
@@ -525,21 +512,19 @@ the frontier is a subset: a policy climbing it fails on queries only an
 off-frontier model answers, and then pays four cheap attempts instead of
 one expensive sufficient model. This is why the two cheapest static
 policies show a negative tax, and why on SimpleQA even P1 does; they
-underpay by failing, answering 41.3\% and 53.3\% of queries. Tax is
-meaningful only beside the success rate, which is why cost per solved
-query carries the comparison. Second, the dollar tax is larger than the
-token tax --- 7.96 against 2.04 for P3 --- because the price per token
-spans two orders of magnitude across providers while the answers
-themselves do not differ in length nearly as much. Escalation on a mixed
-pool is expensive in a way that token counts hide.
+underpay by failing. Tax is meaningful only beside the success rate, which
+is why cost per solved query carries the comparison. Second, the dollar tax
+is larger than the token tax --- 7.96 against 2.04 for P3 --- because the
+price per token spans two orders of magnitude across providers while the
+answers themselves do not differ in length nearly as much. Escalation on a
+mixed pool is expensive in a way that token counts hide.
 
 The thinking and non-thinking releases of Qwen3-235B-A22B give the public
 counterpart of the mode axis. Thinking costs 9.11 times more per solved
 query [8.78, 9.47] and, over all nine datasets, answers slightly fewer
-queries (52.1\% against 53.3\%). The plain release already answers 53.3\%
-of queries on its own and only 9.3\% need thinking, so the mode is worth
-paying for on a small minority of queries and is picked per query or not
-at all. Where reasoning is the point the picture reverses --- on GPQA
+queries (52.1\% against 53.3\%). Only 9.3\% of queries need it, so the mode
+is worth paying for on a small minority and is picked per query or not at
+all. Where reasoning is the point the picture reverses --- on GPQA
 thinking answers 80.3\% against 58.6\% --- which is the same
 family-dependence the local grid shows.
 
@@ -595,11 +580,11 @@ cost--accuracy frontier and form the ladder $h_1 \rightarrow h_3
 \texttt{gpt-5-mini} at minimal effort, then \texttt{gpt-5} at minimal
 effort, then \texttt{gpt-5-mini} at high effort. Both cells left off the
 ladder are high-effort ones. \texttt{gpt-5-nano} at high effort costs
-twice \texttt{gpt-5-mini} at minimal and answers twelve points fewer.
-\texttt{gpt-5} at high effort is the costliest cell in the pool at \$5.77
-per thousand, 5.6 times the price of \texttt{gpt-5-mini} at high effort,
-and answers slightly fewer queries than it, 91.9\% against 92.8\%. The
-most expensive thing a user can buy here is not the most accurate one.
+twice \texttt{gpt-5-mini} at minimal and answers twelve points fewer, and
+\texttt{gpt-5} at high effort, the costliest cell in the pool at 5.6 times
+the price of \texttt{gpt-5-mini} at high effort, answers slightly fewer
+queries than it, 91.9\% against 92.8\%. The most expensive thing a user can
+buy here is not the most accurate one.
 
 The cheapest cell is the minimum sufficient choice for 74.2\% of queries
 and the second rung for another 16.0\%; 2.5\% are answered by no cell.
@@ -678,12 +663,12 @@ measurements of a named region.}
 
 Table~\ref{tab:carbon} converts the local tax to carbon. Carbon is energy
 multiplied by a grid intensity, so a grid rescales every policy by the same
-factor and cannot reorder them. What the bracket shows is how the choice of
+factor and cannot reorder them; what the bracket shows is how the choice of
 policy compares with the choice of grid. Per 1{,}000 queries, P3's tax is
 34\,g of CO$_2$e on a grid at 50\,gCO$_2$e/kWh and 480\,g at 700; P1's is
-2.4\,g and 33\,g. The two ranges barely meet. Leaving the largest model
-selected on a low-carbon grid emits about as much excess carbon as the
-frugal climb on a coal-heavy one, because the tax differs by a factor of
-14.6 between the two policies and the bracket spans a factor of 14. These
-are board-level figures for one laptop GPU, and they share the energy
-boundary of Section~\ref{sec:limitations}.
+2.4\,g and 33\,g. Leaving the largest model selected on a low-carbon grid
+therefore emits about as much excess carbon as the frugal climb on a
+coal-heavy one, because the tax differs by a factor of 14.6 between the two
+policies and the bracket spans a factor of 14. These are board-level figures
+for one laptop GPU, and they share the energy boundary of
+Section~\ref{sec:limitations}.

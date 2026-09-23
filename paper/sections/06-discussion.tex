@@ -13,66 +13,53 @@
 \label{sec:why}
 
 \emph{Stickiness is set by the cost distribution.} A policy that never moves
-pays the cost of its cell less the cost of $\cstar(q)$, so P3's relative
-tax is the ratio of the two costs less one. On the local grid $c_8$ costs
-14 times the mean minimum sufficient cost. Two things make that ratio
-large: the top cell combines the largest model with thinking, and the mass
-of $\cstar(q)$ sits at the other end, where one of the two smallest
-non-thinking cells is $\cstar(q)$ for 60\% of prompts. The other two pools
-share the shape. On the public pool one of the two cheapest models is the
-cheapest sufficient choice for 46.5\% of queries, and P3's rung costs nine
-times the mean minimum sufficient cost. On the hosted ladder the cheapest
-cell is that choice for 74.2\%, and the top rung costs five times as
-much. The tax is large in all
-three pools for the same reason, and its size follows how far the top
-rung's price sits above the cells that answer most prompts.
+pays the cost of its cell less the cost of $\cstar(q)$, so its relative tax
+is the ratio of the two costs less one. All three pools share a shape that
+makes that ratio large: the top rung combines the largest model with its
+costliest setting, while the mass of $\cstar(q)$ sits at the other end,
+among the cheapest one or two options. The tax therefore follows how far
+the top rung's price sits above the options that answer most prompts,
+which is 14 times locally, nine on the public pool and five on the hosted
+ladder.
 
 \emph{Escalation is small when the ladder's cost order matches the order
 of sufficiency.} Each failed rung is paid in full, so a climb is cheap only
 if its early rungs are both cheap and likely to succeed. The local P1
-ladder has that property. Its first four rungs are the four cheapest cells,
+ladder has that property: its first four rungs are the four cheapest cells,
 and they are $\cstar(q)$ for 89.2\% of prompts, so the climb meets the
 minimum sufficient cell in almost the order an oracle would try the cells.
-P2 breaks the property at its second rung. Thinking at 0.6B costs more
-than any of the three larger non-thinking cells and answers fewer prompts
-than any of them. The same property explains the other two pools. On the
-hosted ladder the cheapest cell suffices for three queries in four, and P1
-pays 0.22 times the minimum sufficient cost. On the public pool 29.8\% of
-queries are answered most cheaply by a model the frontier ladder does not
-contain, so for those the climb cannot stop at $\cstar(q)$, and P1 pays
-2.69 times.
+P2 breaks it at its second rung, where thinking at 0.6B costs more than any
+larger non-thinking cell and answers fewer prompts than any of them. The
+same property explains the other pools: the hosted ladder's cheapest cell
+suffices for three queries in four, while on the public pool 29.8\% of
+queries are answered most cheaply by a model the frontier ladder omits, so
+the climb cannot stop at $\cstar(q)$.
 
 \emph{The costliest configuration is not the most accurate.} This holds in
-every pool we measured on tasks with a checkable answer. On the gradable
-families $c_7$ answers more prompts than $c_8$. On
-the public pool, nine of the eleven models dearer than
-\texttt{qwen3-235b-a22b-2507} answer fewer queries than it does. On the
-hosted ladder, \texttt{gpt-5} at high effort answers fewer than
-\texttt{gpt-5-mini} at high effort. Where we can see a mechanism, it is
-the generation budget. Between 16\% and 20\% of local thinking generations,
-and 18.9\% of \texttt{gpt-5-nano}'s at high effort, run out of tokens
-before they answer, and a truncated answer fails. A budget is part of any
-deployed configuration, so sticky use of the top rung pays twice: once in
-cost, and again in the answers it loses. Open-ended requests are the
-exception: there the cap rarely binds and $c_8$ is the most accurate cell
-(Section~\ref{sec:results-open}), and sticky use of it still pays 5.39 times
+every pool we measured on tasks with a checkable answer
+(Sections~\ref{sec:results-labels}, \ref{sec:results-public}
+and~\ref{sec:results-hosted}). Where we can see a mechanism, it is the
+generation budget: between 16\% and 20\% of local thinking generations, and
+18.9\% of \texttt{gpt-5-nano}'s at high effort, run out of tokens before
+they answer, and a truncated answer fails. A budget is part of any deployed
+configuration, so sticky use of the top rung pays twice, once in cost and
+again in the answers it loses. Open-ended requests are the exception: there
+the cap rarely binds and $c_8$ is the most accurate cell
+(Section~\ref{sec:results-open}), yet sticky use of it still pays 5.39 times
 the minimum sufficient energy.
 
 \emph{Thinking is priced by length, and length varies by family.} Energy per
-output token barely moves with the mode (Section~\ref{sec:results-mode}),
-so the mode premium is the ratio of output lengths, scaled by the change in
-accuracy. Plain math answers already write out their working, about 430
-output tokens at both 0.6B and 8B. Thinking lengthens them about five
-times, and on math the energy ratio stays between 4.9 and 6.1. Plain code
-and multiple-choice answers are shorter, 100 to 240 tokens and as few as 30
-for multiple choice at 0.6B, and thinking lengthens them 7 to 25 times.
-Their ratios reach 15.8 on code and 15.2 on multiple choice, and they fall
-only where thinking also adds many answers. On code at 1.7B it lifts
-accuracy from 31.0\% to 47.3\%, and the ratio drops to 6.4. The same
-accounting shows why a larger model beats thinking below 8B. A size step
-keeps the output about as long and raises energy per generation by 1.4 to
-2.7 times; a mode step keeps the model and makes the output seven or eight
-times longer.
+output token barely moves with the mode (Section~\ref{sec:results-mode}), so
+the mode premium is the ratio of output lengths, scaled by the change in
+accuracy. Plain math answers already write out their working, so thinking
+lengthens them about five times and the energy ratio stays between 4.9 and
+6.1. Plain code and multiple-choice answers are shorter, as few as 30 tokens
+for multiple choice at 0.6B, thinking lengthens them 7 to 25 times, and
+their ratios reach 15.8 and 15.2; they fall only where thinking also adds
+many answers, as on code at 1.7B. The same accounting shows why a larger
+model beats thinking below 8B: a size step keeps the output about as long
+and raises energy per generation by 1.4 to 2.7 times, while a mode step
+keeps the model and makes the output seven or eight times longer.
 
 \emph{Routing too high is mostly a failure too.} Of the 968.6\,J premium
 for routing one tier too high, only 167.5\,J is the higher tier's own excess
@@ -136,25 +123,28 @@ in which the manual policies answer the most prompts, and by sweeping the
 detection probabilities instead of fixing them. The tax we report is therefore the
 tax these policies would pay. It is not a measurement of what real users
 pay, and it is the part of the study that most needs evidence from outside
-it.
+it. Two of these choices favour the frugal climb, the policy the routers
+fail to beat. Oracle detection assumes a user who recognises every wrong
+answer, which is generous on mathematics and code and implausible on
+open-ended work, and the climb makes the most attempts at which such a user
+could be fooled: at the illustrative detection point it answers 12.3 points
+fewer prompts. Model loading is also uncharged, and the climb changes model
+more often than any router.
 
-\emph{Attempts are independent single-turn requests.} Each rung of a ladder
-is costed by \eqref{eq:policycost} as a fresh request carrying only the
-prompt, and it succeeds or fails as that cell did during labelling. A user
-who escalates within one conversation also resends the earlier answers,
-which lengthens every retry, and the stronger configuration may be helped
-or misled by seeing a failed attempt. Neither effect is modelled. The first
-would make escalation more expensive than we report; the direction of the
-second is unknown.
-
-\emph{Model loading is not charged.} Labelling is model-major, and a window
-in which any generation reloaded the model is rerun
-(Section~\ref{sec:energy}), so every cost is that of a model already in
-memory. On an 8\,GB GPU that holds one model at a time, a user who escalates
-across sizes, or a router that sends consecutive queries to different sizes,
-also pays the time and energy of loading a model. Our costs understate both,
-and they understate most for whichever policy or router changes size most
-often.
+\emph{Attempts are independent single-turn requests, and loading is not
+charged.} Each rung of a ladder is costed by \eqref{eq:policycost} as a
+fresh request carrying only the prompt, and it succeeds or fails as that
+cell did during labelling. A user who escalates within one conversation also
+resends the earlier answers, which lengthens every retry, and the stronger
+configuration may be helped or misled by seeing a failed attempt; neither
+effect is modelled, and the first would make escalation more expensive than
+we report. Labelling is also model-major, and a window in which any
+generation reloaded the model is rerun (Section~\ref{sec:energy}), so every
+cost is that of a model already in memory. On an 8\,GB GPU that holds one
+model at a time, a user who escalates across sizes, or a router that sends
+consecutive queries to different sizes, also pays the time and energy of
+loading one. Our costs understate both, and they understate most for
+whichever policy or router changes size most often.
 
 \emph{Labels come from one sample under fixed caps.} With $k = 1$, each
 $s(q, c)$ is a single draw of a stochastic outcome, and $\cstar(q)$ inherits
@@ -166,10 +156,17 @@ prompts with their labels held fixed, so its intervals do not include that
 uncertainty. The labels also depend on the generation caps. A thinking
 answer cut off at 4{,}096 tokens counts as a failure, which is the right
 rule for deployment but makes thinking cells look worse than they would with
-a longer budget. A longer cap moved $\cstar(q)$ for 6.4\% of the 219 capped
-generations rerun (Section~\ref{sec:results-mode}), a sample rather than
-all of them. Finally, the labels are tied to the recommended sampling settings of
-each mode, and other settings could change them.
+a longer budget. That budget is below what Qwen3's own guidance suggests for
+thinking mode, and it truncates 16 to 20\% of thinking generations, so it
+shapes three results that would otherwise read as properties of the models:
+that $c_8$ answers fewer prompts than $c_7$, that thinking is never the
+cheaper way to buy accuracy, and part of P3's tax. The rerun bounds the
+effect rather than removing it: a longer cap moved $\cstar(q)$ for 6.4\% of
+the 219 capped generations rerun, and 27.9\% of them reached the
+8{,}192-token cap too (Section~\ref{sec:results-mode}). What the grid shows
+is how configurations behave under a deployment budget, not how the models
+behave without one. Finally, the labels are tied to the recommended sampling
+settings of each mode, and other settings could change them.
 
 \emph{Grading is imperfect.} Math answers are compared after extraction and
 normalisation, which can reject a correct answer written in an unusual form.
@@ -233,7 +230,12 @@ next-token probabilities without training, and the LoRA variant was trained
 on 716 prompts. Both simplifications may understate what a stronger cascade
 or a language-model router trained on more data could achieve. All routers are trained and evaluated on one split, and $\tau$ is
 fixed on its validation part, so the reported intervals exclude the
-uncertainty of that choice (Section~\ref{sec:stats}).
+uncertainty of that choice (Section~\ref{sec:stats}). The data are also thin
+for the comparison between router families: 716 training prompts, 243 test
+prompts and labels from one sample per cell. A linear model on $n$-grams
+needs little of either, while fine-tuned encoders and LoRA adapters are the
+methods most likely to improve with more; their ranking here should be read
+as what these families achieve at this scale, not as a general ordering.
 
 \subsection{Implications}
 \label{sec:implications}
@@ -246,12 +248,11 @@ smallest adequate model, with extended reasoning off and a one-step-up
 control in view, puts its users on the frugal climb. That climb spends 1.5
 times the oracle's energy per solved prompt on the local grid, against 5.7
 times for leaving the largest thinking cell selected. Turning reasoning on
-by default is the harder choice to defend. On the gradable families
-thinking lost accuracy at 4B and 8B within the cap, and it was never the
-cheaper way to buy accuracy; on open-ended requests it was cheap, but still
-one step among several rather than a default. At \texttt{gpt-5} on the hosted ladder, high effort answered
-4.1\% of queries that minimal effort missed, at 7.26 times the price, and
-overall accuracy moved by a tenth of a point. Reasoning is worth paying for
+by default is the harder choice to defend. Within the cap it lost accuracy
+at 4B and 8B and was never the cheaper way to buy accuracy on the gradable
+families; at \texttt{gpt-5} on the hosted ladder, high effort answered 4.1\%
+of queries that minimal effort missed, at 7.26 times the price, and moved
+overall accuracy by a tenth of a point. Reasoning is worth paying for
 on a minority of prompts, which argues for choosing it per prompt, not
 leaving it selected. The default moves carbon as well as cost. Replacing
 P3's habit with P1's shifts the excess emissions about as far as moving
@@ -271,24 +272,23 @@ not depend on the user's judgment of the output.
 
 \emph{Cost should be reported in the unit that is paid, per solved prompt.}
 Output tokens price the mode axis to within about 15\% but miss the factor
-of 6.6 in energy per token between 0.6B and 8B. Measured in tokens, P3
-looks cheaper than P2 and routing too low looks cheaper than routing too
-high, and energy reverses both. A study that prices a mixed pool in tokens
+of 6.6 in energy per token between 0.6B and 8B, so in tokens P3 looks
+cheaper than P2 and routing too low looks cheaper than routing too high,
+and energy reverses both. A study that prices a mixed pool in tokens
 can therefore favour exactly the misallocations that cost most. The public
 and hosted pools also show negative taxes for static policies that underpay
 by failing, so a tax, like a cost, means little without the solved rate
 beside it.
 
 \emph{Deploy a one-shot router against habits, not against a disciplined
-climb.} Charged for its own energy, the best router spends 61\% less than
-leaving the 8B thinking cell selected, and answers more prompts. It spends
-29\% less than users who start at a uniformly random cell, and answers about
-as many. It does not beat a user who climbs sizes with thinking off and
-recognises every failure: that user spends a fifth less energy per prompt
-and answers 3.7 points more. Two conditions favour the router. When failures
-are not always recognised, it answers 7.1 points more than the climb, because
-it makes fewer attempts at which to accept a wrong answer. And when its
-failures are recovered by climbing rather than by jumping to the largest
-cell, it comes within 6\% of the climb's energy. A service that routes should
-therefore recover by climbing, and it gains most for users who cannot check
-answers.
+climb.} Charged for its own energy, the best router spends 61\% less per
+prompt than leaving the 8B thinking cell selected and 29\% less than users
+who start at a uniformly random cell, answering more prompts than the first
+and about as many as the second. It does not beat a user who climbs sizes
+with thinking off and recognises every failure. Two conditions favour it:
+when failures are not always recognised it answers 7.1 points more than the
+climb, because it makes fewer attempts at which to accept a wrong answer,
+and when its failures are recovered by climbing rather than by jumping to
+the largest cell it comes within 6\% of the climb's energy. A service that
+routes should therefore recover by climbing, and it gains most for users who
+cannot check answers.
