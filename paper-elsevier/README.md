@@ -54,10 +54,15 @@ sections/*.tex` finds them:
    once a release is deposited somewhere that issues a DOI. Until then the
    entry carries a bracketed note instead of a DOI.
 
-The affiliation is complete: both authors are in the Department of Master of
-Computer Applications, Narula Institute of Technology, 81 Nilgunj Road,
-Agarpara, Kolkata 700109, West Bengal, India. Indrajeet Mondal is the first
-and corresponding author.
+The affiliation is complete: both authors are in the Department of Computer
+Application, Narula Institute of Technology, 81 Nilgunj Road, Agarpara,
+Kolkata 700109, West Bengal, India.
+
+Author order is Suseta Datta, then Indrajeet Mondal. Correspondence still
+comes to Indrajeet Mondal; a comment in `manuscript.tex` marks where to move
+`\corref` if it should go to the first author instead. Because the order
+changed, the passages describing the blind human labelling now say "the
+second author", which is who produced those labels.
 
 ## Notes
 
