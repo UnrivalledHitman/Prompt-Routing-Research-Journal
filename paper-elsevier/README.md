@@ -42,10 +42,14 @@ the generative-AI declaration, and the data availability statement.
 Outstanding, all written in square brackets so `grep -rn "\[" *.tex
 sections/*.tex` finds them:
 
-1. Department name, street address and postcode for Narula Institute of
-   Technology (`manuscript.tex`, the `\affiliation` block).
-2. Whether the first author shares that affiliation. If not, split the block
-   in two and label the authors `[inst1]` and `[inst2]`.
+1. Street address and postcode of the institute (`manuscript.tex`, the
+   `\affiliation` block). The department, city, state and country are set:
+   both authors are in the Department of Master of Computer Applications,
+   Narula Institute of Technology, Kolkata, West Bengal, India.
+2. Whether the first author needs a "present address" footnote, if he has
+   left the institute since the work was carried out. Elsevier keeps the
+   address where the work was done as the main affiliation and adds the
+   current one as a numbered footnote.
 3. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
    and editing are proposed in `sections/08-back-matter.tex`; confirm or edit.
 4. Author biographies (≤ 100 words each) in `author-biographies.tex`, and
