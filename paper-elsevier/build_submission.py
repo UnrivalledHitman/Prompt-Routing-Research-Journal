@@ -29,7 +29,10 @@ ZIP = HERE / "FGCS_submission.zip"
 PAGE_LIMIT = 18
 ABSTRACT_LIMIT = 250
 HIGHLIGHT_CHARS = 85
+VITAE_WORDS = 100
 FIGURES = [f"Figure_{n}.pdf" for n in range(1, 5)]
+# Author photographs are kept out of version control in photos/.
+PHOTOS = ["Photo_1.jpg", "Photo_2.jpg"]
 BUILD_JUNK = (".aux", ".log", ".out", ".spl", ".blg", ".bbl")
 
 
@@ -122,6 +125,21 @@ def check_highlights():
     return max(len(i) for i in items)
 
 
+def check_vitae():
+    text = (HERE / "author-biographies.tex").read_text(encoding="utf-8")
+    counts = {}
+    for name, bio in re.findall(r"\\textbf\{([^}]+)\}(.*?)(?=\\bigskip|\\end\{document\})",
+                                text, re.S):
+        if "[" in bio:
+            fail(f"biography of {name} still has a placeholder")
+        words = re.sub(r"\\[a-zA-Z]+|[{}\\]", " ", name + bio).split()
+        counts[name] = len(words)
+    over = {n: c for n, c in counts.items() if c > VITAE_WORDS}
+    if over:
+        fail(f"biographies over {VITAE_WORDS} words: {over}")
+    return counts
+
+
 def find_pandoc():
     candidates = [os.environ.get("PANDOC"), shutil.which("pandoc")]
     local = os.environ.get("LOCALAPPDATA", "")
@@ -150,10 +168,9 @@ Upload to Editorial Manager as follows.
   highlights.docx           Highlights (5 bullets, each <= 85 characters).
   Supplementary_material.pdf  Supplementary material (Tables S1-S8,
                             Figures S1-S6), cited from the manuscript.
-  Author_biographies.docx   Vitae, <= 100 words per author. Add a
-                            passport-type photograph per author as
-                            Photo_1 (Indrajeet Mondal) and Photo_2
-                            (Suseta Datta).
+  Author_biographies.docx   Vitae, <= 100 words per author.
+  Photo_1.jpg, Photo_2.jpg  Passport-type photographs: Photo_1 is
+                            Indrajeet Mondal, Photo_2 is Suseta Datta.
   manuscript.pdf            For checking only: the PDF this source builds.
                             Editorial Manager builds its own from the .tex.
 
@@ -191,9 +208,15 @@ def main():
     shutil.copy2(HERE / "supplementary-material.pdf", OUT / "Supplementary_material.pdf")
 
     longest = check_highlights()
+    vitae = check_vitae()
     pandoc = find_pandoc()
     to_docx(pandoc, HERE / "highlights.tex", OUT / "highlights.docx")
     to_docx(pandoc, HERE / "author-biographies.tex", OUT / "Author_biographies.docx")
+
+    missing = [p for p in PHOTOS if not (HERE / "photos" / p).exists()]
+    for p in PHOTOS:
+        if p not in missing:
+            shutil.copy2(HERE / "photos" / p, OUT / p)
 
     (OUT / "README.txt").write_text(README, encoding="utf-8")
 
@@ -208,6 +231,10 @@ def main():
     print(f"abstract: {words} words (limit {ABSTRACT_LIMIT}); "
           f"highlights: longest {longest} characters (limit {HIGHLIGHT_CHARS})")
     print(f"supplementary: {supp_pages} pages")
+    print("vitae: " + ", ".join(f"{n} {c} words" for n, c in vitae.items())
+          + f" (limit {VITAE_WORDS})")
+    if missing:
+        print(f"WARNING: photographs missing from photos/: {missing}")
     print(f"wrote {OUT.name}/ ({len(list(OUT.iterdir()))} files) and {ZIP.name}")
 
 

@@ -56,29 +56,26 @@ Target journal: **Future Generation Computer Systems** (Elsevier), set in
 Settled: both authors and their emails, no competing interests, no funding,
 the generative-AI declaration, and the data availability statement.
 
-Outstanding, all written in square brackets so `grep -rn "\[" *.tex
-sections/*.tex` finds them:
+Settled since: the biographies (96 and 85 words) and the photographs. The
+photographs live in `photos/`, which git ignores so personal images stay out
+of the repository's history; `build_submission.py` copies them into the
+package and warns if they are missing. Highlights and biographies are
+packaged as `.docx`.
 
-1. Whether the first author needs a "present address" footnote, if he has
-   left the institute since the work was carried out. Elsevier keeps the
-   address where the work was done as the main affiliation and adds the
-   current one as a numbered footnote.
+Outstanding:
+
+1. **Reference [61], the software citation**, prints a bracketed note in
+   place of a persistent identifier. Replace it with a DOI once a release is
+   deposited, or reword it; do not submit with the note in place.
 2. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
    and editing are proposed in `sections/08-back-matter.tex`; confirm or edit.
-3. Author biographies (≤ 100 words each) in `author-biographies.tex`, and
-   passport-type photographs as `Photo_1` and `Photo_2`.
-4. A persistent identifier for the software reference `mondal2026arbiter`,
-   once a release is deposited somewhere that issues a DOI. Until then the
-   entry carries a bracketed note instead of a DOI.
-5. **ORCID for the corresponding author.** FGCS verifies author identity
+3. **ORCID for the corresponding author.** FGCS verifies author identity
    through it: "the visibility of the corresponding author's ORCID is a step
    in this process… the manuscript will be rejected until the record owner
    updates their setting." Register at orcid.org if needed, and set the
    record's visibility to Everyone, not Trusted parties or Only me.
-6. The vitae and highlights are wanted in an editable format, with Word
-   given as the example. The `.tex` files here are editable, but supplying
-   `.docx` versions of `highlights` and `author-biographies` avoids an
-   argument with the submission system.
+4. Whether the first author needs a "present address" footnote, if he has
+   left the institute since the work was carried out.
 
 The affiliation is complete: both authors are in the Department of Computer
 Application, Narula Institute of Technology, 81 Nilgunj Road, Agarpara,
