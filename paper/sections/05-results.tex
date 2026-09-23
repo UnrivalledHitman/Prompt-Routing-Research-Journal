@@ -200,9 +200,9 @@ per solved prompt against 2{,}970.7\,J.
 answer recovered at $c_8$ and every failure detected. Net cost is the mean
 energy per prompt with the router's own energy included; its interval is for
 the first training seed, and the standard deviation across three seeds
-follows in parentheses. Saving and $\Delta$ solved are paired differences
-against P1, positive when the router is cheaper or solves more, with
-Holm-corrected $p$-values. Area is the normalised area under the router's
+follows in parentheses. Saving and the change in solved rate are paired
+differences against P1, positive when the router is cheaper or solves more,
+with Holm-corrected $p$-values. Area is the normalised area under the router's
 cost--quality frontier as $\tau$ varies. For the cascade, $\tau$ is its
 verification threshold.}
 \label{tab:routers}
@@ -663,9 +663,10 @@ decision more readily than its size decision.
 
 \begin{table}[!t]
 \caption{Carbon of the escalation tax under oracle detection, in grams of
-CO$_2$e per 1{,}000 queries. The kWh column is the policy's own energy for
-those queries; every carbon figure follows from it by multiplication. The
-four columns are grid carbon intensities in gCO$_2$e/kWh: 50 for a grid
+CO$_2$e per 1{,}000 queries. Total kWh is the policy's own energy for those
+queries and Tax kWh the energy of its tax alone; each carbon figure is Tax
+kWh multiplied by the grid intensity beside it. The
+four intensity columns are in gCO$_2$e/kWh: 50 for a grid
 carried by nuclear or hydro, 250 for a large renewable share, 475 for the
 figure usually quoted as the global average, and 700 for a grid carried by
 coal. They are round values spanning the range grids occupy, not

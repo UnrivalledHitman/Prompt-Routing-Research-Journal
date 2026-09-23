@@ -218,8 +218,10 @@ def table_carbon(frame: pd.DataFrame) -> str | None:
     """Carbon of the escalation tax per 1,000 queries, across the grid-intensity bracket.
 
     Rows are policies under oracle detection; columns are grid intensities, headed by the
-    intensity itself and named in the caption. The conversion from energy is a
-    multiplication, so this table adds no statistics to the energy tax table.
+    intensity itself and named in the caption. Two energy columns precede them: the
+    policy's own energy for the queries, and the energy of its tax, which is what the
+    carbon columns multiply. The conversion is a multiplication, so this table adds no
+    statistics to the energy tax table.
     """
     rows = frame[(frame["scope"] == "all") & (frame["detection"] == "oracle")]
     if rows.empty:
@@ -231,13 +233,16 @@ def table_carbon(frame: pd.DataFrame) -> str | None:
         block = rows[rows["policy"] == policy].set_index("grid")
         if block.empty:
             continue
-        line = [POLICIES[policy], num(block["kwh"].iloc[0], 3)]
+        first = block.iloc[0]
+        tax_kwh = first["carbon_tax"] / first["intensity_g_per_kwh"]
+        line = [POLICIES[policy], num(first["kwh"], 3), num(tax_kwh, 3)]
         line += [num(block.loc[g, "carbon_tax"], 2) for g in grids["grid"]]
         body.append(line)
     if not body:
         return None
-    header = ["Policy", "kWh"] + [f"{i:.0f}" for i in grids["intensity_g_per_kwh"]]
-    return tabular("@{}lr" + "r" * len(grids) + "@{}", header, body)
+    header = ["Policy", "Total kWh", "Tax kWh"]
+    header += [f"{i:.0f}" for i in grids["intensity_g_per_kwh"]]
+    return tabular("@{}lrr" + "r" * len(grids) + "@{}", header, body)
 
 
 def table_routers(

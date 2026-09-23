@@ -105,7 +105,11 @@
 \begin{document}
 \history{Draft for internal review, not for circulation. Date of publication
 xxxx 00, 0000, date of current version xxxx 00, 0000.}
-\doi{10.1109/ACCESS.2024.0429000}
+\doi{10.1109/ACCESS.2026.0000000}
+% Page footers read "VOLUME \thevol, \theyear"; the class defaults to the
+% template's 11 and 2023. IEEE sets both on acceptance.
+\vol{XX}
+\year{2026}
 
 \title{The Escalation Tax: One-Shot Selection of the Minimum Sufficient
 Model Size and Reasoning Mode, with Router Cost Charged}
@@ -128,11 +132,11 @@ Model Size and Reasoning Mode, with Router Cost Charged}
 Tiered language-model services leave users to choose a model size and,
 increasingly, whether the model should reason before answering. Users
 misallocate in two directions: they start small and escalate after each
-failure, paying for every discarded attempt, or they leave a heavyweight
+failure, paying for every discarded attempt, or leave a heavyweight
 configuration selected and overpay on prompts that never needed it. We call
 the excess over the cheapest configuration that would have succeeded the
 \emph{escalation tax}, formalise it, and split it into escalation and
-stickiness. We then ask whether a small router in front of eight Qwen3
+stickiness. We ask whether a small router in front of eight Qwen3
 configurations (0.6 to 8 billion parameters, thinking on and off) can pick
 that minimum sufficient configuration before generation once charged for
 its own tokens, latency and energy. Every prompt of a stratified corpus of
@@ -146,8 +150,9 @@ largest thinking configuration selected pays 12.96 times the minimum
 sufficient energy and a frugal climb 0.89 times, at 3{,}612 and 946\,J per
 solved prompt against the oracle's 635\,J. No router beats the frugal climb
 on held-out prompts: the best, a TF-IDF classifier, spends 1.30 times its
-energy per solved prompt, but 61\% less than the sticky default and 34\%
-less than the cascade. Router overhead stays under 1\% of routed energy.
+energy per solved prompt, but 64\% and 37\% less than the sticky default and
+the cascade, per solved prompt. Router overhead stays under 1\% of routed
+energy.
 \end{abstract}
 
 \begin{keywords}

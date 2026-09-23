@@ -505,7 +505,7 @@ def fig_public(pool: pd.DataFrame, taxes: pd.DataFrame, out: Path) -> None:
         )
     ax.set_xscale("log")
     ax.set_xlabel("Cost (US\\$ per 1000 queries)")
-    ax.set_ylabel("Queries answered (\\%)")
+    ax.set_ylabel("Queries answered (%)")
     ax.legend(frameon=False, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 1.0),
               handletextpad=0.3, columnspacing=0.8)  # fmt: skip
     save(fig, out, "public_frontier")
@@ -555,7 +555,7 @@ def fig_hosted(cells: pd.DataFrame, pool: pd.DataFrame, taxes: pd.DataFrame, out
     ax.set_xscale("log")
     ax.set_xlim(cost.min() / 1.9, cost.max() * 1.9)  # room for the end labels
     ax.set_xlabel("Cost (US\\$ per 1000 queries)")
-    ax.set_ylabel("Queries answered (\\%)")
+    ax.set_ylabel("Queries answered (%)")
     ax.legend(frameon=False, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 1.0),
               handletextpad=0.3, columnspacing=0.8)  # fmt: skip
     label_points(
