@@ -33,25 +33,33 @@ the 18-page target.
 
 ## What the authors still need to fill in
 
-Every placeholder is written in square brackets, so `grep -rn "\[" *.tex
-sections/*.tex` finds them all.
+Target journal: **Future Generation Computer Systems** (Elsevier), set in
+`\journal{}`.
 
-1. Co-author name, and the full affiliation with postal address and country.
-2. Corresponding author's email address.
-3. CRediT roles for the co-author.
-4. Declaration of competing interest, including the pending patent application.
-5. Declaration on generative AI in the writing process.
-6. Acknowledgements and funding.
-7. Author biographies (≤ 100 words each) and passport-type photographs.
-8. A persistent identifier for the software reference `mondal2026arbiter`,
-   once a release is deposited somewhere that issues a DOI.
+Settled: both authors and their emails, no competing interests, no funding,
+the generative-AI declaration, and the data availability statement.
+
+Outstanding, all written in square brackets so `grep -rn "\[" *.tex
+sections/*.tex` finds them:
+
+1. Department name, street address and postcode for Narula Institute of
+   Technology (`manuscript.tex`, the `\affiliation` block).
+2. Whether the first author shares that affiliation. If not, split the block
+   in two and label the authors `[inst1]` and `[inst2]`.
+3. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
+   and editing are proposed in `sections/08-back-matter.tex`; confirm or edit.
+4. Author biographies (≤ 100 words each) in `author-biographies.tex`, and
+   passport-type photographs as `Photo_1` and `Photo_2`.
+5. A persistent identifier for the software reference `mondal2026arbiter`,
+   once a release is deposited somewhere that issues a DOI. Until then the
+   entry carries a bracketed note instead of a DOI.
 
 ## Notes
 
 - The abstract is exactly 250 words, the guide's limit.
-- The data availability statement explains why the generated outputs and
-  analysis code are not deposited publicly (pending patent application) and
-  points to the corresponding author, which is the guide's Option C fallback.
+- The data availability statement points to the corresponding author for the
+  generated outputs, labels and analysis code, which is the guide's Option C
+  fallback when data is not deposited.
 - BibTeX reports 16 `empty pages` warnings for conference papers and preprints
   that have no page range; they do not affect the output.
 - Material that did not fit the 18 pages was moved to the supplementary file
