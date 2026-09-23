@@ -26,10 +26,17 @@ pdflatex supplementary-material && pdflatex supplementary-material
 pdflatex author-biographies
 ```
 
-The class is `elsarticle` with `final,5p,times,twocolumn`: the journal's own
-two-column final format, which the guide permits for LaTeX submissions. The
-single-column `preprint` option produces the same content in 28 pages, over
-the 18-page target.
+The class is `elsarticle` with `final,5p,times,twocolumn`, which is what FGCS
+requires: a Full Length Article "should be strictly double column, single
+spaced and limited to 18 pages; including all figures, tables, references. A
+manuscript longer than 18 pages will not be considered for review and
+returned to author to be revised to the correct format."
+
+The manuscript is at exactly 18 pages, so there is no slack. Anything added
+has to be paid for by cutting something else, or moved to the supplementary
+file, which is separate and does not count.
+
+FGCS does not use graphical abstracts; the term does not appear in its guide.
 
 ## What the authors still need to fill in
 
@@ -53,6 +60,15 @@ sections/*.tex` finds them:
 4. A persistent identifier for the software reference `mondal2026arbiter`,
    once a release is deposited somewhere that issues a DOI. Until then the
    entry carries a bracketed note instead of a DOI.
+5. **ORCID for the corresponding author.** FGCS verifies author identity
+   through it: "the visibility of the corresponding author's ORCID is a step
+   in this process… the manuscript will be rejected until the record owner
+   updates their setting." Register at orcid.org if needed, and set the
+   record's visibility to Everyone, not Trusted parties or Only me.
+6. The vitae and highlights are wanted in an editable format, with Word
+   given as the example. The `.tex` files here are editable, but supplying
+   `.docx` versions of `highlights` and `author-biographies` avoids an
+   argument with the submission system.
 
 The affiliation is complete: both authors are in the Department of Computer
 Application, Narula Institute of Technology, 81 Nilgunj Road, Agarpara,
