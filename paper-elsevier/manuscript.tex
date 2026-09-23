@@ -37,13 +37,11 @@
 \title{The escalation tax: measuring what manual model and reasoning-mode
 selection costs, and whether a one-shot router recovers it}
 
-\author[inst1]{Suseta Datta}
-\ead{suseta.datta@gmail.com}
-
-% CONFIRM: correspondence still comes to the second author. Move \corref
-% and \cortext to the first author if it should go to her instead.
 \author[inst1]{Indrajeet Mondal\corref{cor1}}
 \ead{indrajeetmondal120703@gmail.com}
+
+\author[inst1]{Suseta Datta}
+\ead{suseta.datta@gmail.com}
 
 \affiliation[inst1]{organization={Department of Computer Application,
               Narula Institute of Technology},
@@ -58,14 +56,14 @@ selection costs, and whether a one-shot router recovers it}
 \begin{abstract}
 Tiered language-model services leave users to choose a model size and,
 increasingly, whether the model should reason before answering. Users
-misallocate in two directions: escalating after each failure and paying for
+misallocate in two directions: escalating after each failure, paying for
 every discarded attempt, or leaving a heavyweight configuration selected and
 overpaying on prompts that never needed it. We call the excess over the
 cheapest configuration that would have succeeded the escalation tax and
 split it into escalation and stickiness. We ask whether a small router in
 front of eight Qwen3 configurations (0.6 to 8 billion parameters, thinking
 on and off) can pick that minimum sufficient configuration before generation
-once charged for its own tokens, latency and energy. Every prompt of a
+net of its own tokens, latency and energy. Every prompt of a
 stratified corpus runs through all eight on a laptop GPU with metered board
 power. We compare classical, encoder and language-model routers against
 manual escalation policies and a self-verifying cascade, and measure the tax
@@ -73,7 +71,7 @@ on two further pools: thirteen public models and six hosted configurations
 with paid reasoning effort. Leaving the largest thinking configuration
 selected pays 12.96 times the minimum sufficient energy and a frugal climb
 0.89 times, at 3{,}612 and 946\,J per solved prompt against the oracle's
-635\,J. How routers compare with that climb depends on how a failed route is
+635\,J. Whether routers beat that climb depends on how a failed route is
 recovered. Recovering at the largest configuration, the best router spends
 1.30 times the climb's energy per solved prompt, though 64\% less than the
 sticky default; recovering by climbing instead, routers match it and four

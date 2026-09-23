@@ -17,14 +17,24 @@ tables. Both versions are kept: this directory does not replace `../paper/`.
 Figures are separate files named `Figure_1` … `Figure_4` (manuscript) and
 `Figure_S1` … `Figure_S6` (supplementary), all vector PDF.
 
-## Build
+## Build the submission package
 
 ```
-pdflatex manuscript && bibtex manuscript && pdflatex manuscript && pdflatex manuscript
-pdflatex highlights
-pdflatex supplementary-material && pdflatex supplementary-material
-pdflatex author-biographies
+python build_submission.py
 ```
+
+This writes `submission/` and `FGCS_submission.zip`: the files to upload,
+with a `README.txt` saying which Editorial Manager item each one is. The
+script stops with an error instead of producing a package if the manuscript
+exceeds 18 pages, the abstract exceeds 250 words, or a highlight exceeds 85
+characters. It needs pdflatex, bibtex and pandoc (set `PANDOC` if pandoc is
+not on PATH), and passes `--disable-installer` to MiKTeX so a build never
+downloads packages.
+
+Editorial Manager compiles LaTeX with every uploaded file in one directory,
+so the packaged `manuscript.tex` is a single file with the sections, tables
+and bibliography inlined; the script checks it renders identically to the
+multi-file source. Edit the files here, not the packaged copy.
 
 The class is `elsarticle` with `final,5p,times,twocolumn`, which is what FGCS
 requires: a Full Length Article "should be strictly double column, single
@@ -74,15 +84,15 @@ The affiliation is complete: both authors are in the Department of Computer
 Application, Narula Institute of Technology, 81 Nilgunj Road, Agarpara,
 Kolkata 700109, West Bengal, India.
 
-Author order is Suseta Datta, then Indrajeet Mondal. Correspondence still
-comes to Indrajeet Mondal; a comment in `manuscript.tex` marks where to move
-`\corref` if it should go to the first author instead. Because the order
-changed, the passages describing the blind human labelling now say "the
-second author", which is who produced those labels.
+Author order is Indrajeet Mondal (first and corresponding author), then
+Suseta Datta. The passages describing the blind human labelling say "the
+first author", who produced those labels; if the order ever changes, those
+five passages in `sections/04-experimental-setup.tex` and
+`sections/05-results.tex` must change with it.
 
 ## Notes
 
-- The abstract is exactly 250 words, the guide's limit.
+- The abstract is 249 words against the guide's 250.
 - The data availability statement points to the corresponding author for the
   generated outputs, labels and analysis code, which is the guide's Option C
   fallback when data is not deposited.

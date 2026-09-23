@@ -59,3 +59,5 @@ paper-elsevier/*.log
 paper-elsevier/*.out
 paper-elsevier/*.spl
 paper-elsevier/*.pdf
+paper-elsevier/submission/
+paper-elsevier/FGCS_submission.zip
