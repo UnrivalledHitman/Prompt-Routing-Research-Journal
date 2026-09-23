@@ -76,6 +76,8 @@ def check_log(log, name):
         fail(f"{name}: undefined references: {sorted(set(undefined))}")
     if not pages:
         fail(f"{name}: no PDF was written")
+    if overfull:
+        fail(f"{name}: {overfull} overfull box(es); something runs into the margin")
     return int(pages.group(1)), overfull
 
 
