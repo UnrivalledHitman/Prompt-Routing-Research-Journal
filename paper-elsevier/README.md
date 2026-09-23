@@ -42,21 +42,22 @@ the generative-AI declaration, and the data availability statement.
 Outstanding, all written in square brackets so `grep -rn "\[" *.tex
 sections/*.tex` finds them:
 
-1. Street address and postcode of the institute (`manuscript.tex`, the
-   `\affiliation` block). The department, city, state and country are set:
-   both authors are in the Department of Master of Computer Applications,
-   Narula Institute of Technology, Kolkata, West Bengal, India.
-2. Whether the first author needs a "present address" footnote, if he has
+1. Whether the first author needs a "present address" footnote, if he has
    left the institute since the work was carried out. Elsevier keeps the
    address where the work was done as the main affiliation and adds the
    current one as a numbered footnote.
-3. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
+2. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
    and editing are proposed in `sections/08-back-matter.tex`; confirm or edit.
-4. Author biographies (≤ 100 words each) in `author-biographies.tex`, and
+3. Author biographies (≤ 100 words each) in `author-biographies.tex`, and
    passport-type photographs as `Photo_1` and `Photo_2`.
-5. A persistent identifier for the software reference `mondal2026arbiter`,
+4. A persistent identifier for the software reference `mondal2026arbiter`,
    once a release is deposited somewhere that issues a DOI. Until then the
    entry carries a bracketed note instead of a DOI.
+
+The affiliation is complete: both authors are in the Department of Master of
+Computer Applications, Narula Institute of Technology, 81 Nilgunj Road,
+Agarpara, Kolkata 700109, West Bengal, India. Indrajeet Mondal is the first
+and corresponding author.
 
 ## Notes
 
