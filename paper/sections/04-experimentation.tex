@@ -18,13 +18,11 @@ All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
 The driver was updated to 616.92 between the main labelling run and the
 later cap, noise, open-ended and probe stages. The noise stage resamples
 prompts and cells the main run measured, so it doubles as a check on energy
-across that change. On those prompts, cell by cell, energy per output token
-under 616.92 was 0.89 to 1.01 times that under 616.56, with a median of
-0.94, and six of the eight cells' 95\% intervals lie below parity; board
-power at idle was also lower under the new driver. Every cell of the grid was
-measured under 616.56, so no
-comparison between cells crosses the change; the probes that price the R3
-routers and the cascade's checks were measured under 616.92.
+across that change: cell by cell, energy per output token under 616.92 was
+0.89 to 1.01 times that under 616.56, with a median of 0.94. Every cell of
+the grid was measured under 616.56, so no comparison between cells crosses
+the change; the probes that price the R3 routers and the cascade's checks
+were measured under 616.92.
 Models are served by Ollama 0.34.0~\cite{ollama} from GGUF weights
 quantised to Q4\_K\_M~\cite{gerganov2023llamacpp}. The server updated
 itself to 0.34.1 before the probe stages, with the weight digests
@@ -73,12 +71,10 @@ truncation causes most thinking-mode failures at 4{,}096 tokens
 exactly the prompts where thinking struggles. The oracle label therefore
 depends on the caps, and we measure by how much. A sample of capped
 generations, up to 40 per size and mode and spread evenly over families, is
-rerun with an 8{,}192-token cap and a 10{,}240-token context, and we report
+rerun with an 8{,}192-token cap and a 10{,}240-token context (9{,}216 at 8B,
+where the larger context no longer fits in GPU memory), and we report
 how often the longer cap turns a failure into a success and how often that
-success would move $\cstar(q)$ to a cheaper cell. At that context the 8B
-model no longer fits entirely in GPU memory, so its reruns use a
-9{,}216-token context, which still holds the longest 8B prompt in the
-sample, 371 tokens, together with the full cap. Before measurement, each
+success would move $\cstar(q)$ to a cheaper cell. Before measurement, each
 Ollama server session
 runs one thinking and one non-thinking warm-up generation, which are
 discarded; the gate showed a one-off prefill stall of about 6\,s at the
@@ -173,25 +169,24 @@ fails without being judged.
 The judge is validated from two sides before its labels are used. About 200
 judged answers, stratified by Dolly category and verdict, are re-scored with
 the same rubric by \texttt{gpt-5-mini} through the OpenAI API, a hosted
-reference well above the local judge in capability and outside its family,
-under a spend ceiling of \$0.36 that stops the run rather than passing it;
-and the first author scores about 100 of them blind to model, mode and judge
-score.
+reference above the local judge in capability and outside its family, under
+a spend ceiling of \$0.36; and the first author scores about 100 of them
+blind to model, mode and judge score.
 Agreement is reported as Cohen's $\kappa$~\cite{cohen1960kappa} on the
 success decision and as quadratic-weighted $\kappa$~\cite{cohen1968weighted}
 on the scores. The rule for using the labels was fixed before any judge
 output existed and rests on the judge--human $\kappa$ for the success
 decision: at 0.60 or above, the open-ended family is reported with the
 others; from 0.40 to 0.60, it carries an explicit caveat; below 0.40, it
-moves to a secondary analysis. The cut-offs are the conventional boundaries
+moves to a secondary analysis. These are the conventional boundaries
 of moderate and substantial agreement~\cite{landis1977measurement}. The
-judge scored all 3{,}583 open-ended answers eligible for judging. Against the
-first author's 100 blind scores it reaches $\kappa = 0.42$ [0.23, 0.59] on the
-success decision and a weighted $\kappa$ of 0.67 [0.52, 0.77] on the scores,
-and against \texttt{gpt-5-mini} on its 200 answers $\kappa = 0.40$ [0.27,
-0.52]. \texttt{gpt-5-mini} and the first author agree at $\kappa = 0.74$
-[0.60, 0.86]. The open-ended family therefore carries the caveat, and it is
-reported separately (Section~\ref{sec:results-open}).
+judge scored all 3{,}583 eligible answers. Against the first author's 100
+blind scores it reaches $\kappa = 0.42$ [0.23, 0.59] on the success decision
+and a weighted $\kappa$ of 0.67 [0.52, 0.77] on the scores, and against
+\texttt{gpt-5-mini} on its 200 answers $\kappa = 0.40$ [0.27, 0.52];
+\texttt{gpt-5-mini} and the first author agree at $\kappa = 0.74$ [0.60,
+0.86]. The open-ended family therefore carries the caveat and is reported
+separately (Section~\ref{sec:results-open}).
 
 \subsection{Baselines}
 \label{sec:baselines}
@@ -282,16 +277,14 @@ under load was 88.4\,W. The cumulative energy counter is the more
 instructive result. It is reported as supported and it increases
 monotonically, so a routine check accepts it, and our own first-pass check
 did. Yet the power it implies is 88\,W with the GPU idle, 128\,W under load,
-which is above the enforced limit, and 257\,W during cool-down, which is
-higher than under load. A units error would scale the three windows by one
-factor and keep their order; these values do not follow real power draw at
-all. Only the comparison with sampled power exposed the fault, with a 41\%
-disagreement under load and a factor of 36 at idle. We therefore integrate
-sampled power only, and the batch-level method of Section~\ref{sec:energy}
-follows from the 0.5\,s refresh period measured in the same test. For other
-studies on laptop GPUs, the practical lesson is that a supported, monotonic
-counter should still be cross-checked against sampled power and against the
-enforced limit before its readings are trusted.
+above the enforced limit, and 257\,W during cool-down, higher than under
+load. A units error would scale the three windows by one factor and keep
+their order; these values do not follow real power draw at all. We therefore
+integrate sampled power only, and the batch-level method of
+Section~\ref{sec:energy} follows from the 0.5\,s refresh period measured in
+the same test. For other studies on laptop GPUs, the lesson is that a
+supported, monotonic counter should still be cross-checked against sampled
+power and against the enforced limit before its readings are trusted.
 
 \subsection{Validation Gate 2: Separation of Thinking Modes}
 \label{sec:gate-mode}
@@ -346,23 +339,19 @@ rather than a semantic judgement, and 60 prompts per size cannot rule out
 leakage on task types we did not sample.
 
 The run also exposed two properties of the grid that shape the labelling
-design. First, thinking dominates the compute budget. Across the eight
-cells, one sample per prompt took 112\,s on average, and the four thinking
-cells accounted for 88\% of that time. Second, the cap turns long thinking
-into failure. Between 21\% and 32\% of thinking responses hit the
-4{,}096-token cap, depending on size, and every capped response on the
-graded families was wrong. On
-the math and multiple-choice prompts, capped responses made up most
-thinking-mode errors from 1.7B upward, and thinking-mode accuracy fell below
-non-thinking accuracy at 1.7B, 4B and 8B; with capped responses excluded,
-thinking was within a point of non-thinking at 8B and ahead at 1.7B. These
-figures come from 40 graded responses per mode and size and approximate
-grading, so they motivate a design check rather than support a claim: the
-oracle label depends on the cap, and the labelling runs therefore include
-the cap-sensitivity reruns described in Section~\ref{sec:decoding}. The
-thinking cap stays at 4{,}096 tokens. The non-thinking cap is set at
-2{,}048, more than ten times the median non-thinking answer length in
-Table~\ref{tab:gate2}.
+design. First, thinking dominates the compute budget: one sample per prompt
+took 112\,s on average across the eight cells, and the four thinking cells
+accounted for 88\% of that time. Second, the cap turns long thinking into
+failure. Between 21\% and 32\% of thinking responses hit the 4{,}096-token
+cap, depending on size, every capped response on the graded families was
+wrong, and excluding them brought thinking within a point of non-thinking at
+8B and ahead at 1.7B. These figures come from 40 graded responses per mode
+and size and approximate grading, so they motivate a design check rather
+than support a claim: the oracle label depends on the cap, and the labelling
+runs therefore include the cap-sensitivity reruns described in
+Section~\ref{sec:decoding}. The thinking cap stays at 4{,}096 tokens. The
+non-thinking cap is set at 2{,}048, more than ten times the median
+non-thinking answer length in Table~\ref{tab:gate2}.
 % Accuracy detail (gate 2, math+MCQ, think / think-uncapped / no-think):
 % 0.6B 0.42/0.52/0.33; 1.7B 0.57/0.79/0.70; 4B 0.68/0.84/0.90;
 % 8B 0.78/0.94/0.95. At 4B, uncapped think (0.84) is still below no-think.
@@ -433,22 +422,21 @@ Each request carries exactly the prompt text the local pool saw, as a single
 user message with no system message. The output caps mirror the local
 protocol, 4{,}096 tokens at high effort and 2{,}048 at minimal; on a
 reasoning model the cap counts reasoning tokens, so it bounds the same thing
-the local cap bounds, the trace included, and a truncated response is a
-failure exactly as a local cap hit is. That rule falls hardest on the
-high-effort cells, which spend most of their budget on reasoning tokens
-where the cheap mode emits none, so each cell is reported twice: the
-headline accuracy, in which a truncated generation is wrong, and the
-accuracy over the generations that stopped on their own. The first is what
-a user of that cell receives; the second separates a cell that reasons
-badly from one whose reasoning does not fit. Answers are graded by the same
-graders, and the pool summary, the $c^*$ distribution, the policy table and
-the mode comparison are computed by the same code as
-Section~\ref{sec:public-arm}. Because the two ladders differ by orders of
-magnitude in absolute price, the paired comparison is made by rank rather
-than by cell: which size step a prompt needs on its own ladder, and whether
-it needs the costly mode. It also counts what the hosted ladder rescues ---
-the prompts no local cell answers, and the hosted rung that answers them ---
-which is the one thing the local grid cannot report about itself.
+the local cap bounds, and a truncated response is a failure exactly as a
+local cap hit is. That rule falls hardest on the high-effort cells, so each
+cell is reported twice: the headline accuracy, in which a truncated
+generation is wrong, and the accuracy over the generations that stopped on
+their own. The first is what a user of that cell receives; the second
+separates a cell that reasons badly from one whose reasoning does not fit.
+Answers are graded by the same graders, and the pool summary, the $c^*$
+distribution, the policy table and the mode comparison are computed by the
+same code as Section~\ref{sec:public-arm}. Because the two ladders differ by
+orders of magnitude in absolute price, the paired comparison is made by rank
+rather than by cell: which size step a prompt needs on its own ladder, and
+whether it needs the costly mode. It also counts what the hosted ladder
+rescues --- the prompts no local cell answers, and the hosted rung that
+answers them --- which is the one thing the local grid cannot report about
+itself.
 The escalation policies are those of Section~\ref{sec:public-arm}, built
 from the pool's own cost frontier, with one addition: that frontier contains
 no high-effort cell, so $P_2$ --- start cheap, then take the costly mode at
@@ -465,8 +453,8 @@ on one model's chat template, while the hosted knob has four settings and
 belongs to the provider. Measured, the two ends behave alike --- across all
 120 pilot responses at \texttt{minimal}, each of the three models reported
 exactly zero reasoning tokens --- so the cheap mode really is reasoning off
-rather than reasoning reduced. We report that as a measurement rather than
-assume it, since a provider may change what a setting name means. Third,
+rather than reasoning reduced, which we report as a measurement because a
+provider may change what a setting name means. Third,
 the provider returns the number of reasoning tokens but not the trace, so
 the leak and marker checks of Section~\ref{sec:gate-mode} have no counterpart,
 and no energy is measurable for a hosted model: this arm reports dollars and
@@ -481,25 +469,20 @@ answer. Two of the 827 prompts collected were lost this way, one to a
 \texttt{gpt-5-mini} refusal and one to a \texttt{gpt-5} refusal, leaving
 825 for the analysis.
 
-Requests run through the provider's batch interface at half list price. A
-budget meter prices every batch at its worst case, every request emitting
-its full cap, and refuses to submit one that would carry cumulative spend
-past a fixed limit; actual cost is then computed from the token counts the
-provider itself reports. A pilot of 40 prompts first measures what high
-effort actually spends. Because real generations fall well short of their
-caps, the main stage then runs in waves: each wave is sized to the worst
-case the remaining budget allows, and settling it at its measured cost frees
-the difference for the next. The guard is never loosened --- committed spend
-is at every moment the worst case of everything unsettled --- yet the waves
-reach far more of the pool than one batch could. Ten waves collected 827 of
-the 860 eligible prompts for \$6.81, bringing the arm's total to \$7.07
-against a \$8.00 limit, where the first wave alone, priced at its worst
-case, took almost the whole limit for 195 prompts. The campaign stops once
-the budget left would fund a wave of fewer than twenty prompts, which is why
-33 prompts of the pool go unpriced; the analysis is over the 827 collected
-rather than the whole labelled set. Every cost reported here is summed from
-the usage each batch returns, and the total agrees to the cent with the
-provider's own billed figure for the key.
+Requests run through the provider's batch interface at half list price,
+under a budget meter that prices every batch at its worst case, every
+request emitting its full cap, and refuses one that would carry cumulative
+spend past a fixed limit; actual cost is then computed from the token counts
+the provider reports. Because real generations fall well short of their
+caps, the main stage runs in waves after a 40-prompt pilot: each wave is
+sized to the worst case the remaining budget allows, and settling it at its
+measured cost frees the difference for the next, so committed spend is at
+every moment the worst case of everything unsettled. Ten waves collected 827
+of the 860 eligible prompts for \$6.81, bringing the arm's total to \$7.07
+against a \$8.00 limit; the campaign stops once the budget left would fund a
+wave of fewer than twenty prompts, which is why 33 prompts go unpriced.
+Every cost reported here is summed from the usage each batch returns, and
+the total agrees to the cent with the provider's own billed figure.
 
 \subsection{Reproducibility}
 \label{sec:repro}
@@ -515,13 +498,12 @@ the public source datasets with the recorded seed and fingerprints.
 
 The hosted arm adds a spend ledger. Every batch is recorded with its
 identifier, the worst case it was approved against and the cost finally
-settled from the provider's own token counts, so each dollar figure in this
-paper can be audited line by line rather than taken on trust. The prices
-themselves are recorded with the date they were read. The hosted models are
-not reproducible artefacts in the way a pinned local checkpoint is: a
-provider may change what a model, or an effort setting, does under an
-unchanged name. That is a limitation of any hosted measurement, and it is
-the reason the local grid rather than this arm carries the paper's primary
-claims.
+settled from the provider's own token counts, and the prices are recorded
+with the date they were read, so each dollar figure can be audited line by
+line. The hosted models are still not reproducible artefacts in the way a
+pinned local checkpoint is, since a provider may change what a model, or an
+effort setting, does under an unchanged name. That is a limitation of any
+hosted measurement, and it is the reason the local grid rather than this arm
+carries the paper's primary claims.
 The code and data that support this study are available from the
 corresponding author on reasonable request.

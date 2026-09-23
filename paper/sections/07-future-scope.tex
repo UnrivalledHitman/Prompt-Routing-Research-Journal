@@ -38,14 +38,6 @@ routing studies could then report energy without metering. What such a
 table needs first is evidence of how stable the per-token figure is across
 prompt lengths, batch sizes and machines.
 
-\emph{Choosing the first cell and the recovery together.} The penalty for
-routing too low depends on where a failure is recovered
-(Section~\ref{sec:why}). Recovering at the costliest cell makes a low guess
-expensive, and a cheaper recovery path changes the threshold a router
-should use. A router that chooses its first cell and its recovery path
-jointly extends the one-shot setting without giving up its main property:
-it still decides before generating.
-
 \emph{Conversations and switching costs.} A cost model in which a retry
 carries the conversation so far, and in which moving to another size pays
 for loading it, would bring the tax closer to what users of memory-limited
@@ -74,14 +66,16 @@ router current without relabelling every prompt in every cell. That is a
 partial-feedback problem, because only the routed cell's outcome is ever
 observed.
 
-\emph{Routers that recover well.} The routing results place the loss in
-recovery rather than in prediction alone (Section~\ref{sec:results-routing}).
-A router could be trained against the recovery rule it will face, since the
-threshold that minimises cost when failures jump to $c_8$ is not the one
-that minimises it when they climb. The choice between jumping and climbing
-after a failure could itself be learned per prompt. A router could also
-propose a starting rung for the frugal climb instead of a final cell,
-keeping the climb's cheap failures while skipping rungs a prompt clearly
-needs. The same results qualify routing the wider pools: a trained router
-there is worth building only with a recovery rule that does not undo its
-saving.
+\emph{Choosing the first cell and the recovery together.} The routing
+results place the loss in recovery rather than in prediction alone
+(Section~\ref{sec:results-routing}), and the penalty for routing too low
+depends on where a failure is recovered. A router could therefore be trained
+against the recovery rule it will face, since the threshold that minimises
+cost when failures jump to $c_8$ is not the one that minimises it when they
+climb, and the choice between jumping and climbing could itself be learned
+per prompt. A router could also propose a starting rung for the frugal climb
+instead of a final cell, keeping the climb's cheap failures while skipping
+rungs a prompt clearly needs. Either extends the one-shot setting without
+giving up its main property: it still decides before generating. The same
+results qualify routing the wider pools, where a trained router is worth
+building only with a recovery rule that does not undo its saving.

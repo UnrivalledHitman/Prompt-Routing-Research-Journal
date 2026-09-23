@@ -44,22 +44,20 @@ discarded answer.
 \emph{Predictive routers.} Hybrid LLM trains a router that estimates, from
 the query alone, whether a small model's answer will be close in quality to
 a large model's, and exposes a threshold that trades quality for cost at
-test time; the authors report 40\% fewer calls to the large model with no
-loss in response quality~\cite{ding2024hybridllm}. RouteLLM learns a
-strong-versus-weak routing decision from human preference data and reports
-more than a twofold cost reduction~\cite{ong2024routellm}. RouterDC trains a
-query encoder with dual contrastive losses so that queries sit near the
-models that answer them well, and reports gains of 2.76\% in distribution
-and 1.90\% out of distribution~\cite{chen2024routerdc}. UniRoute addresses
-the practical problem that the model pool changes, routing to models unseen
+test time, reporting 40\% fewer calls to the large model with no loss in
+response quality~\cite{ding2024hybridllm}. RouteLLM learns a
+strong-versus-weak decision from human preference data and reports more than
+a twofold cost reduction~\cite{ong2024routellm}. RouterDC trains a query
+encoder with dual contrastive losses so that queries sit near the models
+that answer them well~\cite{chen2024routerdc}. UniRoute addresses the
+practical problem that the model pool changes, routing to models unseen
 during training and giving an excess-risk bound for the
-procedure~\cite{jitkrittum2025universal}. Arch-Router takes a different
-view of the objective, aligning a 1.5B-parameter router with user-defined
-domain and action preferences so that models can be added without
-retraining~\cite{tran2025archrouter}. Router-R1 moves to multi-round
-routing, training a model with reinforcement learning to interleave its own
-deliberation with calls to other models and to aggregate their outputs
-across rounds~\cite{zhang2025routerr1}.
+procedure~\cite{jitkrittum2025universal}. Arch-Router instead aligns a
+1.5B-parameter router with user-defined domain and action preferences so
+that models can be added without retraining~\cite{tran2025archrouter}, and
+Router-R1 moves to multi-round routing, training a model with reinforcement
+learning to interleave its own deliberation with calls to other models and
+to aggregate their outputs across rounds~\cite{zhang2025routerr1}.
 
 \emph{Benchmarks.} Three benchmarks make routers comparable. RouterBench
 provides a 36{,}497-prompt zero-shot split with outputs and per-inference
@@ -104,22 +102,19 @@ reasoning mode per prompt is an instance of the second tier.
 A recent group of papers routes over whether and how much to think, usually
 within a single model. SynapseRoute trains a logistic-regression classifier
 on query embeddings to send medical questions to thinking or non-thinking
-mode of one dual-state model; it reports 36.8\% lower inference time and
-39.66\% fewer tokens, finds that about 58\% of the medical questions need no
-reasoning mode, and proposes an Accuracy--Inference--Token index for the
-trade-off~\cite{zhang2025synapseroute}. Think When Needed attaches a
+mode of one dual-state model, reporting 36.8\% lower inference time, 39.66\%
+fewer tokens and that about 58\% of the questions need no reasoning
+mode~\cite{zhang2025synapseroute}. Think When Needed attaches a
 lightweight router head that chooses Think or Non-Think before generation
-for ranking tasks, using ranking-aware and model-aware difficulty
-features~\cite{guo2026thinkwhenneeded}. DART is training-free: it generates
-two cheap non-thinking drafts, reads problem difficulty from their
+for ranking tasks~\cite{guo2026thinkwhenneeded}. DART is training-free: it
+generates two cheap non-thinking drafts, reads problem difficulty from their
 agreement, and sets a per-query thinking budget accordingly, cutting
 thinking tokens by 32--73\%~\cite{lee2026dart}. Learning When to Think moves
 the decision inside the model, which emits NoThink, Short or Long as its
-first token after training with GRPO, reducing mean response length by
-41\%~\cite{kassenaar2026learningwhentothink}. HRBench compares the families
-of switching strategy---prompt-based, external routing and speculative---
-across four training regimes, six models and five benchmarks, and concludes
-that the preferred strategy depends on model scale and task
+first token after training with GRPO~\cite{kassenaar2026learningwhentothink}.
+HRBench compares prompt-based, external-routing and speculative switching
+strategies across four training regimes, six models and five benchmarks, and
+concludes that the preferred strategy depends on model scale and task
 domain~\cite{ning2026hrbench}.
 
 Route to Reason is the closest prior work to the grid studied here. It
@@ -151,17 +146,17 @@ provided a calculator for converting compute into emissions using regional
 grid intensity~\cite{lacoste2019quantifying}, and Patterson \emph{et al.}
 showed how strongly the emissions of large training runs depend on
 hardware, data-centre efficiency and location~\cite{patterson2021carbon}.
-Inference has received attention more recently. Luccioni \emph{et al.}
-measured energy and carbon per 1{,}000 inference queries across task types
-and found wide variation between them~\cite{luccioni2024powerhungry}.
+For inference, Luccioni \emph{et al.} measured energy and carbon per
+1{,}000 queries across task types and found wide variation between
+them~\cite{luccioni2024powerhungry}.
 
 Work on constrained hardware is closer to our setting. Camel reduces energy
 on an NVIDIA Jetson AGX Orin by tuning GPU frequency and batch size for a
-single model~\cite{xu2025camel}; it is a measurement and control study rather
-than a routing one. Serving systems such as vLLM raise throughput by managing
-key--value cache memory more efficiently~\cite{kwon2023vllm}. Those gains are
-orthogonal to routing: they make each configuration cheaper to run but do
-not decide which configuration to run.
+single model~\cite{xu2025camel}, and serving systems such as vLLM raise
+throughput by managing key--value cache memory more
+efficiently~\cite{kwon2023vllm}. Both are orthogonal to routing: they make
+each configuration cheaper to run but do not decide which configuration to
+run.
 
 \subsection{Energy-Aware and Latency-Aware Routers}
 \label{sec:lit-energy-routing}
@@ -174,15 +169,14 @@ a 31\% cumulative energy reduction with 22\% higher accuracy than random
 routing~\cite{ziller2026greenserv}. It characterises its router's overhead
 at about 7.77\,ms per query but does not subtract the router's energy from
 the saving. EcoThink sends each query either to a retrieval path or to a
-reasoning path using a distilled DistilBERT classifier, reports a 40.4\%
-average energy reduction across nine benchmarks, and reports carbon of
+reasoning path using a distilled DistilBERT classifier, and reports a 40.4\%
+average energy reduction across nine benchmarks and carbon of
 1.32\,gCO$_2$e per query against 4.52 for GPT-4o~\cite{li2026ecothink}. Its
-energy comes from CodeCarbon sampling at 100\,ms combined with an average
-utilisation of thermal design power, so it is partly estimated, and the
-router's own cost is not charged. Yang \emph{et al.} route queries among
-edge experts on RTX~4090 GPUs using two DistilBERT-based predictors and an
-actor--critic policy, 134M parameters in total, and report decisions in
-about 5\,ms; they optimise quality of service and latency and do not measure
+energy comes from CodeCarbon sampling combined with an average utilisation
+of thermal design power, so it is partly estimated, and the router's own
+cost is not charged. Yang \emph{et al.} route queries among edge experts on
+RTX~4090 GPUs using two DistilBERT-based predictors and an actor--critic
+policy, and optimise quality of service and latency without measuring
 energy~\cite{yang2025qosrouting}.
 
 Two observations follow. First, energy-aware routing is established, and so
