@@ -62,19 +62,23 @@ of the repository's history; `build_submission.py` copies them into the
 package and warns if they are missing. Highlights and biographies are
 packaged as `.docx`.
 
+The software citation has been removed, along with the statements about
+the code's archiving and availability; the data availability statement now
+covers the model outputs and labels only. The generative-AI declaration
+still mentions code, because it discloses how AI was used and FGCS requires
+that disclosure.
+
 Outstanding:
 
-1. **Reference [61], the software citation**, prints a bracketed note in
-   place of a persistent identifier. Replace it with a DOI once a release is
-   deposited, or reword it; do not submit with the note in place.
+1. **ORCID for the corresponding author — required.** FGCS verifies author
+   identity through it: "the visibility of the corresponding author's ORCID
+   is a step in this process… the manuscript will be rejected until the
+   record owner updates their setting." Register free at
+   https://orcid.org/register, set visibility to Everyone, and link it in
+   Editorial Manager.
 2. CRediT roles for Suseta Datta — Supervision, Validation, Writing – review
    and editing are proposed in `sections/08-back-matter.tex`; confirm or edit.
-3. **ORCID for the corresponding author.** FGCS verifies author identity
-   through it: "the visibility of the corresponding author's ORCID is a step
-   in this process… the manuscript will be rejected until the record owner
-   updates their setting." Register at orcid.org if needed, and set the
-   record's visibility to Everyone, not Trusted parties or Only me.
-4. Whether the first author needs a "present address" footnote, if he has
+3. Whether the first author needs a "present address" footnote, if he has
    left the institute since the work was carried out.
 
 The affiliation is complete: both authors are in the Department of Computer

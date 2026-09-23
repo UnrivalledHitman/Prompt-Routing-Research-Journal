@@ -223,15 +223,14 @@ failed through content-filter refusals, leaving 825.
 \subsection{Reproducibility}
 \label{sec:setup-repro}
 
-Each experiment is driven by a configuration file, and no experimental
-constant lives in code. Seeds are set and stored for every generation and
-training run, and each run writes a manifest with the code commit,
-configuration, package versions, driver version, GPU model and model digests.
+Each experiment is driven by a configuration file. Seeds are set and stored
+for every generation and training run, and each run writes a manifest with
+the configuration, package versions, driver version, GPU model and model
+digests.
 Raw generations are stored with their token counts, timings, seeds and
 energy. The hosted arm adds a spend ledger recording every batch with the
 worst case it was approved against and the cost finally settled from the
 provider's own token counts, so each dollar figure can be audited line by
 line; the total agrees to the cent with the provider's billed figure. Hosted
 models are still not reproducible artefacts in the way a pinned local
-checkpoint is, which is why the local grid carries the primary claims. The
-analysis code is archived as \cite{mondal2026arbiter}.
+checkpoint is, which is why the local grid carries the primary claims.
