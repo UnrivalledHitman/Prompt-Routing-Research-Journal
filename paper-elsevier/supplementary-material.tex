@@ -1,0 +1,230 @@
+% =====================================================================
+%  SUPPLEMENTARY MATERIAL -- submitted as a separate file
+%  Every item here is cited from the manuscript.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{tabularx}
+
+\graphicspath{{figures/}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\newcommand{\cstar}{c^{*}}
+
+\title{Supplementary material for\\
+``The escalation tax: measuring what manual model and reasoning-mode
+selection costs, and whether a one-shot router recovers it''}
+\author{Indrajeet Mondal \and Suseta Datta}
+\date{}
+
+\begin{document}
+\maketitle
+
+This file collects the material referred to from the manuscript: the
+comparison of prior systems (Table~\ref{tab:prior-work}), the two validation
+gates (Tables~\ref{tab:gate1} and \ref{tab:gate2}), router overhead
+(Table~\ref{tab:overhead}), the carbon bracket (Table~\ref{tab:carbon}),
+per-family accuracy (Table~\ref{tab:family-accuracy}), the two wider pools in
+cost order (Tables~\ref{tab:public-pool} and \ref{tab:hosted-cells}), and six
+figures (Figures~\ref{fig:detection} to \ref{fig:hosted-frontier}). Every
+number repeats the analysis described in the manuscript and is computed by
+the same code.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Systems closest to this study. \emph{Axis} is what the router
+selects; \emph{decision point} is when it commits; \emph{efficiency
+reported} is the cost measure used in the headline result. Citation numbers
+are those of the manuscript's reference list.}
+\label{tab:prior-work}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}l l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+System & Axis & Decision point & Efficiency reported \\
+\midrule
+FrugalGPT & Model & Cascade, scorer after each answer & API cost \\
+AutoMix & Model & Cascade, self-verification & Cost \\
+Hybrid LLM & Model (small/large) & Before generation & Large-model calls \\
+RouteLLM & Model (strong/weak) & Before generation & Cost \\
+Router-R1 & Model & Multi-round & Parameter-weighted output tokens \\
+SynapseRoute & Reasoning mode & Before generation & Tokens, time \\
+DART & Thinking budget & After two short drafts & Tokens, latency \\
+Learning When to Think & Thinking level & In-model, first token & Response length \\
+Route to Reason & Model and strategy & Before generation & Tokens \\
+GreenServ & Model & Before generation & Measured energy (gross) \\
+EcoThink & Retrieval or reasoning path & Before generation & Partly estimated energy, carbon (gross) \\
+QoS edge routing & Edge expert & Before generation & QoS score under a latency bound \\
+\midrule
+This study & Model size and reasoning mode & Before generation & Tokens, latency, measured energy (net of router) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Validation gate 1: the two NVML energy sources on the RTX~4060
+Laptop GPU (enforced limit 115\,W). Counter values are the mean power implied
+by the counter's increase over each window.}
+\label{tab:gate1}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+Source & Idle & Load & Cool-down & Verdict \\
+\midrule
+Sampled power & 2.4\,W & 75.1\,W & 10.5\,W & Usable \\
+Energy counter & 88.3\,W & 127.6\,W & 256.9\,W & Rejected \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Validation gate 2: mode separation by model size (60 prompts per
+size). Ratio is the median of per-prompt think/no-think token ratios with a
+95\% bootstrap interval. Marker ratio is no-think marker density divided by
+think-trace marker density.}
+\label{tab:gate2}
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Size & AUC & Tokens (think / no) & Ratio (95\% CI) & Leak & Marker \\
+\midrule
+0.6B & 0.964 & 1444 / 195 & 13.9 (9.4--19.7) & 0 & 0.040 \\
+1.7B & 0.954 & 2053 / 184 & 9.1 (7.6--11.9)  & 0 & 0.034 \\
+4B   & 0.928 & 1429 / 149 & 7.0 (5.3--11.5)  & 0 & 0.042 \\
+8B   & 0.953 & 1814 / 180 & 9.7 (7.7--17.0)  & 0 & 0.045 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Router overhead per decision, averaged over seeds and both training
+objectives. CPU energy is an upper bound, decision time multiplied by
+54\,W; GPU energy is metered. The LoRA router is charged the zero-shot
+probe's cost. Cascade figures are per verification check, and a query may
+need several.}
+\label{tab:overhead}
+\input{tables/overhead}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Carbon of the escalation tax under oracle detection, in grams of
+CO$_2$e per 1{,}000 queries. Total kWh is the policy's own energy for those
+queries and Tax kWh the energy of its tax alone; each carbon figure is Tax
+kWh multiplied by the grid intensity beside it. The four intensity columns
+are in gCO$_2$e/kWh: 50 for a grid carried by nuclear or hydro, 250 for a
+large renewable share, 475 for the figure usually quoted as the global
+average, and 700 for a grid carried by coal. They are round values spanning
+the range grids occupy, not measurements of a named region.}
+\label{tab:carbon}
+\input{tables/carbon}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Accuracy of each cell by family, in percent, over 400 prompts per
+family.}
+\label{tab:family-accuracy}
+\input{tables/family_accuracy}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\caption{The public pool in cost order, over the 12{,}168 queries of nine
+datasets that all thirteen models answered. Cost is the provider's own
+charge, in US dollars per 1{,}000 queries. The $\cstar$ share is the fraction
+of queries for which that model is the cheapest one that answers correctly,
+and the last row the queries no model answers. A bullet marks the four models
+on the cost--accuracy frontier, which are the rungs of the escalation ladder.}
+\label{tab:public-pool}
+\input{tables/public_pool}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\caption{The six hosted cells: three model sizes crossed with two reasoning
+efforts, on the prompts of the local main subset. Output tokens include
+reasoning tokens, which the provider reports separately but bills as output.
+A cap hit is a truncated generation, counted as a failure exactly as a local
+cap hit is.}
+\label{tab:hosted-cells}
+\input{tables/hosted_cells}
+\end{table}
+
+\clearpage
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{Figure_S1}
+\caption{Cost per solved prompt (top) and solved rate (bottom) of the manual
+policies as the probability of accepting a wrong answer grows, at three
+probabilities of rejecting a right one. P3 makes a single attempt and keeps
+its answer, so detection errors do not move it.}
+\label{fig:detection}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{Figure_S2}
+\caption{Extra energy per prompt, over the cost of $\cstar(q)$, of routing
+one tier too low and one tier too high, with a failed answer recovered at
+$c_8$. Tiers are cells in order of mean energy. Error bars are 95\% bootstrap
+intervals.}
+\label{fig:asymmetry}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{Figure_S3}
+\caption{The escalation tax per prompt counted in tokens, split into
+escalation and stickiness, under oracle detection (solid) and imperfect
+detection (hatched). Compare Figure~2 of the manuscript, which counts the
+same policies in joules and reverses the ranking of P2 and P3.}
+\label{fig:tax-tokens}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{Figure_S4}
+\caption{Solved rate against net mean cost per prompt in tokens on the test
+split. Compare Figure~3 of the manuscript, which counts the same routers in
+joules; the language-model routers, which pay for their own prompts, fall
+behind here.}
+\label{fig:frontier-tokens}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{Figure_S5}
+\caption{The thirteen models of the public pool, the cost--accuracy frontier
+they define and where the escalation policies land on it. Cost is
+logarithmic, in US dollars per 1{,}000 queries. P3 sits on the top rung it
+always uses. P1 climbs the frontier and answers more queries than any single
+model in the pool, at a price between the two costliest rungs. The oracle
+answers still more for a third of what P3 costs.}
+\label{fig:public-frontier}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{Figure_S6}
+\caption{The six hosted cells on the cost--accuracy plane, open for minimal
+reasoning effort and filled for high. Cost is logarithmic, in US dollars per
+1{,}000 queries. The grey line is the frontier the escalation policies climb.
+The mode axis reads as the horizontal step from an open marker to the filled
+marker of the same model.}
+\label{fig:hosted-frontier}
+\end{figure}
+
+\end{document}

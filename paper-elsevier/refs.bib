@@ -1,0 +1,695 @@
+% =====================================================================
+%  refs.bib  --  ARBITER / escalation-tax routing
+%
+%  VERIFICATION POLICY
+%  -------------------
+%  An entry appears here only after its title and full author list were
+%  read off a live arXiv abstract page, the ACL Anthology, the ACM Digital
+%  Library, JMLR, or a NeurIPS/ICLR proceedings record during this project.
+%  Nothing in this file was written from recall alone. Where a field could
+%  not be confirmed, the entry carries an explicit TODO in its annote.
+%
+%  NOTE VS ANNOTE
+%  --------------
+%  IEEEtran.bst prints `note' but ignores `annote'. Keep `note' to what a
+%  reader of the reference list should see (the arXiv identifier, an
+%  acceptance status). Provenance, version dates, record ids, summaries
+%  and TODOs go in `annote'. IEEEtran.bst does not print `eprint', so
+%  arXiv preprints repeat the identifier in `note'.
+%
+%  Verification passes: 2026-09-10
+%  Entries: 47
+% =====================================================================
+
+
+% =====================================================================
+%  1. LLM ROUTING AND CASCADING
+% =====================================================================
+
+@misc{chen2023frugalgpt,
+  title         = {{FrugalGPT}: How to Use Large Language Models While Reducing
+                   Cost and Improving Performance},
+  author        = {Chen, Lingjiao and Zaharia, Matei and Zou, James},
+  year          = {2023},
+  eprint        = {2305.05176},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  doi           = {10.48550/arXiv.2305.05176},
+  note          = {arXiv:2305.05176}
+}
+
+@inproceedings{aggarwal2024automix,
+  title     = {{AutoMix}: Automatically Mixing Language Models},
+  author    = {Aggarwal, Pranjal and Madaan, Aman and Anand, Ankit and
+               Potharaju, Srividya Pranavi and Mishra, Swaroop and Zhou, Pei and
+               Gupta, Aditya and Rajagopal, Dheeraj and Kappaganthu, Karthik and
+               Yang, Yiming and Upadhyay, Shyam and Faruqui, Manaal and Mausam},
+  booktitle = {Advances in Neural Information Processing Systems 37
+               (NeurIPS 2024)},
+  year      = {2024},
+  note      = {arXiv:2310.12963},
+  annote    = {v1 2023-10-19, v5 2025-01-19}
+}
+
+@misc{hu2024routerbench,
+  title         = {{RouterBench}: A Benchmark for Multi-{LLM} Routing System},
+  author        = {Hu, Qitian Jason and Bieker, Jacob and Li, Xiuyu and
+                   Jiang, Nan and Keigwin, Benjamin and Ranganath, Gaurav and
+                   Keutzer, Kurt and Upadhyay, Shriyash Kaustubh},
+  year          = {2024},
+  eprint        = {2403.12031},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2403.12031},
+  annote        = {36,497-prompt zero-shot split, 11 candidate LLMs,
+                   per-inference costs and oracle optimal-model labels}
+}
+
+@inproceedings{ding2024hybridllm,
+  title     = {Hybrid {LLM}: Cost-Efficient and Quality-Aware Query Routing},
+  author    = {Ding, Dujian and Mallick, Ankur and Wang, Chi and Sim, Robert and
+               Mukherjee, Subhabrata and R{\"u}hle, Victor and
+               Lakshmanan, Laks V. S. and Awadallah, Ahmed Hassan},
+  booktitle = {Proceedings of the Twelfth International Conference on Learning
+               Representations (ICLR)},
+  year      = {2024},
+  note      = {arXiv:2404.14618},
+  annote    = {OpenReview id 02f3mUtqnM}
+}
+
+@misc{ong2024routellm,
+  title         = {{RouteLLM}: Learning to Route {LLMs} with Preference Data},
+  author        = {Ong, Isaac and Almahairi, Amjad and Wu, Vincent and
+                   Chiang, Wei-Lin and Wu, Tianhao and Gonzalez, Joseph E. and
+                   Kadous, M. Waleed and Stoica, Ion},
+  year          = {2024},
+  eprint        = {2406.18665},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2406.18665},
+  annote        = {Submitted 2024-06-26}
+}
+
+@inproceedings{chen2024routerdc,
+  title     = {{RouterDC}: Query-Based Router by Dual Contrastive Learning for
+               Assembling Large Language Models},
+  author    = {Chen, Shuhao and Jiang, Weisen and Lin, Baijiong and
+               Kwok, James T. and Zhang, Yu},
+  booktitle = {Advances in Neural Information Processing Systems 37
+               (NeurIPS 2024)},
+  year      = {2024},
+  note      = {arXiv:2409.19886},
+  annote    = {submitted 2024-09-30}
+}
+
+@misc{jitkrittum2025universal,
+  title         = {Universal Model Routing for Efficient {LLM} Inference},
+  author        = {Jitkrittum, Wittawat and Narasimhan, Harikrishna and
+                   Rawat, Ankit Singh and Juneja, Jeevesh and Wang, Congchao and
+                   Wang, Zifeng and Go, Alec and Lee, Chen-Yu and
+                   Shenoy, Pradeep and Panigrahy, Rina and
+                   Menon, Aditya Krishna and Kumar, Sanjiv},
+  year          = {2025},
+  eprint        = {2502.08773},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:2502.08773},
+  annote        = {v1 2025-02-12, v2 2025-07-22. UniRoute; routing to
+                   previously unseen LLMs with an excess-risk bound}
+}
+
+@misc{huang2025routereval,
+  title         = {{RouterEval}: A Comprehensive Benchmark for Routing {LLMs} to
+                   Explore Model-level Scaling Up in {LLMs}},
+  author        = {Huang, Zhongzhan and Ling, Guoming and Lin, Yupei and
+                   Chen, Yandong and Zhong, Shanshan and Wu, Hefeng and
+                   Lin, Liang},
+  year          = {2025},
+  eprint        = {2503.10657},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:2503.10657},
+  annote        = {v1 2025-03-08, v2 2025-05-20. Over 8,500 candidate models
+                   and 200M+ performance records across 12 evaluations}
+}
+
+@misc{tran2025archrouter,
+  title         = {{Arch-Router}: Aligning {LLM} Routing with Human Preferences},
+  author        = {Tran, Co and Paracha, Salman and Hafeez, Adil and Chen, Shuguang},
+  year          = {2025},
+  eprint        = {2506.16655},
+  archivePrefix = {arXiv},
+  note          = {arXiv:2506.16655},
+  annote        = {Submitted 2025-06-19. 1.5B preference-aligned router mapping
+                   queries to domain and action preferences}
+}
+
+@inproceedings{zhang2025routerr1,
+  title     = {{Router-R1}: Teaching {LLMs} Multi-Round Routing and Aggregation
+               via Reinforcement Learning},
+  author    = {Zhang, Haozhen and Feng, Tao and You, Jiaxuan},
+  booktitle = {Advances in Neural Information Processing Systems 38
+               (NeurIPS 2025)},
+  year      = {2025},
+  note      = {arXiv:2506.09033},
+  annote    = {submitted 2025-06-10. Stateful multi-round routing: interleaves
+               internal deliberation with model invocation and accumulates
+               context across rounds. Cost reward is proportional to the
+               output-token count times a function of the routed model's
+               parameter count; checked against the full text 2026-09-12}
+}
+
+@article{yang2025qosrouting,
+  title   = {Quality-of-Service Aware {LLM} Routing for Edge Computing with
+             Multiple Experts},
+  author  = {Yang, Jin and Wu, Qiong and Feng, Zhiying and Zhou, Zhi and
+             Guo, Deke and Chen, Xu},
+  journal = {IEEE Transactions on Mobile Computing},
+  year    = {2025},
+  note    = {arXiv:2508.00234; accepted to IEEE TMC},
+  annote  = {submitted 2025-08-01. Headline metric is a composite QoS score,
+             generation quality multiplied by an indicator that average
+             latency per token met its bound, with latency reported
+             separately; checked against the full text 2026-09-12. TODO --
+             obtain volume, issue and page numbers from IEEE Xplore document
+             11086391}
+}
+
+@misc{ziller2026greenserv,
+  title         = {{GreenServ}: Energy-Efficient Context-Aware Dynamic Routing
+                   for Multi-Model {LLM} Inference},
+  author        = {Ziller, Thomas and Ilager, Shashikant and Tundo, Alessandro and
+                   Bartocci, Ezio and Mariani, Leonardo and Brandic, Ivona},
+  year          = {2026},
+  eprint        = {2601.17551},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.PF},
+  note          = {arXiv:2601.17551},
+  annote        = {v1 2026-01-24, v2 2026-02-27. Routes 16 open-access LLMs on
+                   observed accuracy and energy usage}
+}
+
+@misc{li2026llmrouterbench,
+  title         = {{LLMRouterBench}: A Massive Benchmark and Unified Framework
+                   for {LLM} Routing},
+  author        = {Li, Hao and Zhang, Yiqun and Guo, Zhaoyan and Wang, Chenxu and
+                   Tang, Shengji and Zhang, Qiaosheng and Chen, Yang and
+                   Qi, Biqing and Ye, Peng and Bai, Lei and Wang, Zhen and
+                   Hu, Shuyue},
+  year          = {2026},
+  eprint        = {2601.07206},
+  archivePrefix = {arXiv},
+  note          = {arXiv:2601.07206},
+  annote        = {Submitted 2026-01-12. 400K+ instances, 21 datasets, 33
+                   models; code and data released publicly}
+}
+
+@article{moslem2026routingsurvey,
+  title   = {Dynamic Model Routing and Cascading for Efficient {LLM}
+             Inference: A Survey},
+  author  = {Moslem, Yasmin and Kelleher, John D.},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2026},
+  note    = {arXiv:2603.04445; accepted by TMLR 2026},
+  annote  = {v1 2026-02-23, v2 2026-04-21. Trinity College Dublin. Acceptance
+             confirmed on the arXiv record 2026-09-23}
+}
+
+
+% =====================================================================
+%  2. REASONING EFFORT, THINKING-MODE CONTROL, TEST-TIME COMPUTE
+% =====================================================================
+
+@inproceedings{wei2022cot,
+  title     = {Chain-of-Thought Prompting Elicits Reasoning in Large Language
+               Models},
+  author    = {Wei, Jason and Wang, Xuezhi and Schuurmans, Dale and
+               Bosma, Maarten and Ichter, Brian and Xia, Fei and Chi, Ed and
+               Le, Quoc V. and Zhou, Denny},
+  booktitle = {Advances in Neural Information Processing Systems 35
+               (NeurIPS 2022)},
+  year      = {2022},
+  note      = {arXiv:2201.11903},
+  annote    = {DBLP conf/nips/Wei0SBIXCLZ22}
+}
+
+@inproceedings{wang2023selfconsistency,
+  title     = {Self-Consistency Improves Chain of Thought Reasoning in Language
+               Models},
+  author    = {Wang, Xuezhi and Wei, Jason and Schuurmans, Dale and Le, Quoc V.
+               and Chi, Ed H. and Narang, Sharan and Chowdhery, Aakanksha and
+               Zhou, Denny},
+  booktitle = {Proceedings of the Eleventh International Conference on Learning
+               Representations (ICLR)},
+  year      = {2023},
+  note      = {arXiv:2203.11171}
+}
+
+@misc{muennighoff2025s1,
+  title         = {s1: Simple Test-Time Scaling},
+  author        = {Muennighoff, Niklas and Yang, Zitong and Shi, Weijia and
+                   Li, Xiang Lisa and Fei-Fei, Li and Hajishirzi, Hannaneh and
+                   Zettlemoyer, Luke and Liang, Percy and Cand{\`e}s, Emmanuel and
+                   Hashimoto, Tatsunori},
+  year          = {2025},
+  eprint        = {2501.19393},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:2501.19393},
+  annote        = {Submitted 2025-01-31. Introduces budget forcing: terminating
+                   or extending the thinking process to control test-time
+                   compute}
+}
+
+@article{deepseek2025r1,
+  title   = {{DeepSeek-R1} Incentivizes Reasoning in {LLMs} Through Reinforcement
+             Learning},
+  author  = {{DeepSeek-AI}},
+  journal = {Nature},
+  volume  = {645},
+  number  = {8081},
+  pages   = {633--638},
+  year    = {2025},
+  doi     = {10.1038/s41586-025-09422-z},
+  annote  = {ADS bibcode 2025Natur.645..633G (first author surname begins Guo).
+             TODO -- transcribe the full author list from the Nature record
+             before submission}
+}
+
+@article{sui2025stopoverthinking,
+  title   = {Stop Overthinking: A Survey on Efficient Reasoning for Large
+             Language Models},
+  author  = {Sui, Yang and Chuang, Yu-Neng and Wang, Guanchu and Zhang, Jiamu and
+             Zhang, Tianyi and Yuan, Jiayi and Liu, Hongyi and Wen, Andrew and
+             Zhong, Shaochen and Zou, Na and Chen, Hanjie and Hu, Xia},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2025},
+  note    = {arXiv:2503.16419; accepted by TMLR 2025},
+  annote  = {v1 2025-03-20}
+}
+
+@misc{alomrani2025reasoningbudget,
+  title         = {Reasoning on a Budget: A Survey of Adaptive and Controllable
+                   Test-Time Compute in {LLMs}},
+  author        = {Alomrani, Mohammad Ali and Zhang, Yingxue and Li, Derek and
+                   Sun, Qianyi and Pal, Soumyasundar and Zhang, Zhanguang and
+                   Hu, Yaochen and Ajwani, Rohan Deepak and Valkanas, Antonios and
+                   Karimi, Raika and Cheng, Peng and Wang, Yunzhou and
+                   Liao, Pengyi and Huang, Hanrui and Wang, Bin and Hao, Jianye and
+                   Coates, Mark},
+  year          = {2025},
+  eprint        = {2507.02076},
+  archivePrefix = {arXiv},
+  note          = {arXiv:2507.02076},
+  annote        = {Submitted 2025-07-02. Two-tier taxonomy: L1 controllability
+                   under fixed budgets, L2 adaptiveness to input difficulty}
+}
+
+@misc{zhang2025synapseroute,
+  title         = {{SynapseRoute}: An Auto-Route Switching Framework on
+                   Dual-State Large Language Model},
+  author        = {Zhang, Wencheng and Qiao, Shiqin and Luo, Lingjie and
+                   Li, Yinfeng and Zheng, Chuanyang and Xu, Qian and Li, Meng and
+                   Gui, Yong and He, Yijun and Qiu, Jianing and Hong, Jindong and
+                   Sun, Jiankai},
+  year          = {2025},
+  eprint        = {2507.02822},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:2507.02822},
+  annote        = {Submitted 2025-07-03. Routes medical queries to thinking or
+                   non-thinking mode; introduces the Accuracy-Inference-Token
+                   (AIT) index. Reports 36.8\% inference-time and 39.66\% token
+                   reduction, and that ~58\% of medical questions need no
+                   reasoning mode}
+}
+
+@misc{wang2025demystifying,
+  title         = {Demystifying Hybrid Thinking: Can {LLMs} Truly Switch Between
+                   Think and No-Think?},
+  author        = {Wang, Shouren and Yang, Wang and Long, Xianxuan and
+                   Wang, Qifan and Chaudhary, Vipin and Han, Xiaotian},
+  year          = {2025},
+  eprint        = {2510.12680},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2510.12680},
+  annote        = {Submitted 2025-10-14. Finds only PARTIAL mode separation in
+                   hybrid-thinking LLMs: reasoning behaviour leaks into
+                   no-think mode. Directly relevant to the internal validity of
+                   any think/no-think routing experiment}
+}
+
+@inproceedings{guo2026thinkwhenneeded,
+  title     = {Think When Needed: Model-Aware Reasoning Routing for {LLM}-based
+               Ranking},
+  author    = {Guo, Huizhong and Wei, Tianjun and Wang, Dongxia and Du, Yingpeng
+               and Wang, Ziyan and Zhang, Jie and Sun, Zhu},
+  booktitle = {Proceedings of the 49th International ACM SIGIR Conference on
+               Research and Development in Information Retrieval (SIGIR '26)},
+  year      = {2026},
+  doi       = {10.1145/3805712.3809709},
+  note      = {arXiv:2601.18146},
+  annote    = {submitted 2026-01-26}
+}
+
+@inproceedings{lee2026dart,
+  title     = {{DART}: Draft-Agreement Routing for Training-Free Adaptive
+               Thinking Budgets in Hybrid Reasoning Models},
+  author    = {Lee, Jungseob and Hong, Seongtae and Lee, Seungjun and
+               Seo, Jaehyung and Son, Junyoung and Eo, Sugyeong and
+               Park, Chanjun and Park, Hyeongju and Moon, Hyeonseok and
+               Lim, Heuiseok},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP
+               2026},
+  year      = {2026},
+  note      = {arXiv:2606.23181},
+  annote    = {submitted 2026-06-22. Training-free; two no-think drafts probe
+               difficulty, draft entropy sets the thinking budget. Reports
+               32--73\% thinking-token reduction. Reports tokens and latency
+               only -- NOT energy}
+}
+
+@inproceedings{pan2026routetoreason,
+  title     = {Route to Reason: Adaptive Routing for {LLM} and Reasoning Strategy
+               Selection},
+  author    = {Pan, Zhihong and Zhang, Kai and Zhao, Yuze and Han, Yupeng},
+  booktitle = {Proceedings of the ACM Web Conference 2026 (WWW '26)},
+  pages     = {5568--5578},
+  year      = {2026},
+  note      = {arXiv:2505.19435},
+  annote    = {submitted 2025-05-26. Joint routing over seven open-source
+               models and four reasoning strategies; >60\% token reduction.
+               Closest prior art to joint tier-and-effort routing}
+}
+
+@inproceedings{li2026ecothink,
+  title     = {{EcoThink}: A Green Adaptive Inference Framework for Sustainable
+               and Accessible Agents},
+  author    = {Li, Linxiao and Lu, Zhixiang},
+  booktitle = {Proceedings of the ACM Web Conference 2026 (WWW '26)},
+  year      = {2026},
+  note      = {arXiv:2603.25498},
+  annote    = {submitted 2026-03-26. Distillation-based router choosing between
+               chain-of-thought and direct retrieval; reports 40.4\% average
+               energy reduction across 9 benchmarks. TODO -- confirm from the
+               PDF whether energy is hardware-measured}
+}
+
+@misc{ning2026hrbench,
+  title         = {{HRBench}: Benchmarking and Understanding Thinking-Mode Switch
+                   Strategies in Hybrid-Reasoning {LLMs}},
+  author        = {Ning, Yansong and Liu, Mianpeng and Ye, Jingwen and
+                   Zhang, Weidong and Liu, Hao},
+  year          = {2026},
+  eprint        = {2605.28398},
+  archivePrefix = {arXiv},
+  note          = {arXiv:2605.28398},
+  annote        = {Submitted 2026-05-27. Benchmarks prompt-based,
+                   external-routing and speculative switch strategies across
+                   four training regimes and six models on five reasoning
+                   benchmarks}
+}
+
+@misc{kassenaar2026learningwhentothink,
+  title         = {Learning When to Think: Adaptive Reasoning for Test-Time
+                   Compute Allocation},
+  author        = {Kassenaar, Gijs and Yang, Zhao and Fran{\c{c}}ois-Lavet, Vincent},
+  year          = {2026},
+  eprint        = {2608.20256},
+  archivePrefix = {arXiv},
+  note          = {arXiv:2608.20256},
+  annote        = {v1 2026-08-20, v2 2026-08-21. Selects NoThink / Short / Long
+                   as the first response token, trained with GRPO and per-mode
+                   token caps; 41\% mean response-length reduction}
+}
+
+
+% =====================================================================
+%  3. EVALUATION CORPORA AND JUDGING
+% =====================================================================
+
+@misc{clark2018arc,
+  title         = {Think You Have Solved Question Answering? Try {ARC}, the
+                   {AI2} Reasoning Challenge},
+  author        = {Clark, Peter and Cowhey, Isaac and Etzioni, Oren and
+                   Khot, Tushar and Sabharwal, Ashish and Schoenick, Carissa and
+                   Tafjord, Oyvind},
+  year          = {2018},
+  eprint        = {1803.05457},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  note          = {arXiv:1803.05457},
+  annote        = {Submitted 2018-03-14}
+}
+
+@misc{chen2021humaneval,
+  title         = {Evaluating Large Language Models Trained on Code},
+  author        = {Chen, Mark and others},
+  year          = {2021},
+  eprint        = {2107.03374},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2107.03374},
+  annote        = {Introduces HumanEval. 58 authors in total; the full list is
+                   given on the arXiv record and should be reproduced or
+                   truncated according to the venue's style}
+}
+
+@misc{austin2021mbpp,
+  title         = {Program Synthesis with Large Language Models},
+  author        = {Austin, Jacob and Odena, Augustus and Nye, Maxwell and
+                   Bosma, Maarten and Michalewski, Henryk and Dohan, David and
+                   Jiang, Ellen and Cai, Carrie and Terry, Michael and Le, Quoc and
+                   Sutton, Charles},
+  year          = {2021},
+  eprint        = {2108.07732},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.PL},
+  note          = {arXiv:2108.07732},
+  annote        = {Introduces MBPP. Submitted 2021-08-16}
+}
+
+@misc{cobbe2021gsm8k,
+  title         = {Training Verifiers to Solve Math Word Problems},
+  author        = {Cobbe, Karl and Kosaraju, Vineet and Bavarian, Mohammad and
+                   Chen, Mark and Jun, Heewoo and Kaiser, Lukasz and
+                   Plappert, Matthias and Tworek, Jerry and Hilton, Jacob and
+                   Nakano, Reiichiro and Hesse, Christopher and Schulman, John},
+  year          = {2021},
+  eprint        = {2110.14168},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2110.14168},
+  annote        = {Introduces GSM8K, 8.5K grade-school math word problems.
+                   Submitted 2021-10-27}
+}
+
+@inproceedings{hendrycks2021mmlu,
+  title     = {Measuring Massive Multitask Language Understanding},
+  author    = {Hendrycks, Dan and Burns, Collin and Basart, Steven and Zou, Andy
+               and Mazeika, Mantas and Song, Dawn and Steinhardt, Jacob},
+  booktitle = {Proceedings of the Ninth International Conference on Learning
+               Representations (ICLR)},
+  year      = {2021},
+  note      = {arXiv:2009.03300},
+  annote    = {57 tasks; 15,908 multiple-choice questions}
+}
+
+@inproceedings{hendrycks2021math,
+  title     = {Measuring Mathematical Problem Solving With the {MATH} Dataset},
+  author    = {Hendrycks, Dan and Burns, Collin and Kadavath, Saurav and
+               Arora, Akul and Basart, Steven and Tang, Eric and Song, Dawn and
+               Steinhardt, Jacob},
+  booktitle = {Advances in Neural Information Processing Systems 34 (NeurIPS
+               2021) Datasets and Benchmarks Track},
+  year      = {2021},
+  note      = {arXiv:2103.03874},
+  annote    = {v1 2021-03-05, v2 2021-11-08. 12,500 competition problems with
+               step-by-step solutions}
+}
+
+@inproceedings{zheng2023judging,
+  title     = {Judging {LLM}-as-a-Judge with {MT-Bench} and {Chatbot Arena}},
+  author    = {Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and
+               Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and
+               Li, Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and
+               Gonzalez, Joseph E. and Stoica, Ion},
+  booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS
+               2023) Datasets and Benchmarks Track},
+  year      = {2023},
+  note      = {arXiv:2306.05685},
+  annote    = {GPT-4 judge reaches ~85\% agreement with human preference
+               against 81\% human--human agreement}
+}
+
+
+% =====================================================================
+%  4. MODELS, ENCODERS AND SERVING SYSTEMS
+% =====================================================================
+
+@misc{qwen3,
+  title         = {{Qwen3} Technical Report},
+  author        = {{Qwen Team}},
+  year          = {2025},
+  eprint        = {2505.09388},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:2505.09388},
+  annote        = {2025-05-15. Dense models at 0.6B, 1.7B, 4B, 8B and 14B plus
+                   Qwen3-30B-A3B MoE; unified thinking and non-thinking modes
+                   with a controllable thinking token budget}
+}
+
+@misc{sanh2019distilbert,
+  title         = {{DistilBERT}, a Distilled Version of {BERT}: Smaller, Faster,
+                   Cheaper and Lighter},
+  author        = {Sanh, Victor and Debut, Lysandre and Chaumond, Julien and
+                   Wolf, Thomas},
+  year          = {2019},
+  eprint        = {1910.01108},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:1910.01108},
+  annote        = {40\% smaller than BERT, 60\% faster, retaining 97\% of
+                   language understanding performance}
+}
+
+@misc{he2021deberta,
+  title         = {{DeBERTa}: Decoding-Enhanced {BERT} with Disentangled
+                   Attention},
+  author        = {He, Pengcheng and Liu, Xiaodong and Gao, Jianfeng and
+                   Chen, Weizhu},
+  year          = {2020},
+  eprint        = {2006.03654},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note          = {arXiv:2006.03654},
+  annote        = {Submitted 2020-06-05. Later presented at ICLR 2021 -- TODO,
+                   confirm the proceedings record if citing the conference
+                   version}
+}
+
+@inproceedings{reimers2019sbert,
+  title     = {{Sentence-BERT}: Sentence Embeddings Using Siamese
+               {BERT}-Networks},
+  author    = {Reimers, Nils and Gurevych, Iryna},
+  booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural
+               Language Processing and the 9th International Joint Conference on
+               Natural Language Processing (EMNLP-IJCNLP)},
+  year      = {2019},
+  address   = {Hong Kong, China},
+  publisher = {Association for Computational Linguistics}
+}
+
+@article{fedus2022switch,
+  title   = {Switch Transformers: Scaling to Trillion Parameter Models with
+             Simple and Efficient Sparsity},
+  author  = {Fedus, William and Zoph, Barret and Shazeer, Noam},
+  journal = {Journal of Machine Learning Research},
+  volume  = {23},
+  number  = {120},
+  pages   = {1--39},
+  year    = {2022},
+  note    = {arXiv:2101.03961},
+  annote  = {Intra-model expert routing, contrasted here with inter-model
+             routing}
+}
+
+@inproceedings{kwon2023vllm,
+  title     = {Efficient Memory Management for Large Language Model Serving with
+               {PagedAttention}},
+  author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and
+               Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and
+               Zhang, Hao and Stoica, Ion},
+  booktitle = {Proceedings of the 29th ACM Symposium on Operating Systems
+               Principles (SOSP '23)},
+  year      = {2023},
+  note      = {arXiv:2309.06180},
+  annote    = {submitted 2023-09-12. 2--4x throughput over FasterTransformer
+               and Orca}
+}
+
+
+% =====================================================================
+%  5. ENERGY, CARBON AND SUSTAINABLE COMPUTING
+% =====================================================================
+
+@misc{lacoste2019quantifying,
+  title         = {Quantifying the Carbon Emissions of Machine Learning},
+  author        = {Lacoste, Alexandre and Luccioni, Alexandra and Schmidt, Victor
+                   and Dandres, Thomas},
+  year          = {2019},
+  eprint        = {1910.09700},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CY},
+  note          = {arXiv:1910.09700},
+  annote        = {v1 2019-10-21, v2 2019-11-04. Introduces the Machine
+                   Learning Emissions Calculator}
+}
+
+@inproceedings{strubell2019energy,
+  title     = {Energy and Policy Considerations for Deep Learning in {NLP}},
+  author    = {Strubell, Emma and Ganesh, Ananya and McCallum, Andrew},
+  booktitle = {Proceedings of the 57th Annual Meeting of the Association for
+               Computational Linguistics},
+  pages     = {3645--3650},
+  year      = {2019},
+  address   = {Florence, Italy},
+  publisher = {Association for Computational Linguistics},
+  url       = {https://aclanthology.org/P19-1355/}
+}
+
+@article{schwartz2020greenai,
+  title   = {Green {AI}},
+  author  = {Schwartz, Roy and Dodge, Jesse and Smith, Noah A. and Etzioni, Oren},
+  journal = {Communications of the ACM},
+  volume  = {63},
+  number  = {12},
+  pages   = {54--63},
+  year    = {2020},
+  note    = {arXiv:1907.10597},
+  annote  = {v1 2019-07-22, v3 2019-08-13}
+}
+
+@misc{patterson2021carbon,
+  title         = {Carbon Emissions and Large Neural Network Training},
+  author        = {Patterson, David and Gonzalez, Joseph and Le, Quoc and
+                   Liang, Chen and Munguia, Lluis-Miquel and Rothchild, Daniel and
+                   So, David and Texier, Maud and Dean, Jeff},
+  year          = {2021},
+  eprint        = {2104.10350},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2104.10350},
+  annote        = {Submitted 2021-04-21}
+}
+
+@inproceedings{luccioni2024powerhungry,
+  title     = {Power Hungry Processing: Watts Driving the Cost of {AI}
+               Deployment?},
+  author    = {Luccioni, Sasha and Jernite, Yacine and Strubell, Emma},
+  booktitle = {Proceedings of the 2024 ACM Conference on Fairness,
+               Accountability, and Transparency (FAccT '24)},
+  pages     = {85--99},
+  year      = {2024},
+  address   = {Rio de Janeiro, Brazil},
+  doi       = {10.1145/3630106.3658542},
+  annote    = {DBLP record LuccioniJS24. Measures inference-stage energy and
+               carbon per 1,000 queries by task type}
+}
+
+@misc{xu2025camel,
+  title         = {{Camel}: Energy-Aware {LLM} Inference on Resource-Constrained
+                   Devices},
+  author        = {Xu, Hao and Peng, Long and Song, Shezheng and Liu, Xiaodong and
+                   Jun, Ma and Li, Shasha and Yu, Jie and Mao, Xiaoguang},
+  year          = {2025},
+  eprint        = {2508.09173},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.NI},
+  note          = {arXiv:2508.09173},
+  annote        = {Submitted 2025-08-07. Optimises GPU frequency and batch size
+                   on an NVIDIA Jetson AGX Orin. Single-model optimisation, NOT
+                   multi-model routing}
+}
