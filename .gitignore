@@ -50,3 +50,12 @@ paper/*.pdf
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Elsevier submission package build outputs (figures/*.pdf stay tracked)
+paper-elsevier/*.aux
+paper-elsevier/*.bbl
+paper-elsevier/*.blg
+paper-elsevier/*.log
+paper-elsevier/*.out
+paper-elsevier/*.spl
+paper-elsevier/*.pdf

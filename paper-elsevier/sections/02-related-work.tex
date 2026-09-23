@@ -1,0 +1,137 @@
+\section{Related work}
+\label{sec:related}
+
+The problem sits where three bodies of work meet: routing and cascading
+across models, control of reasoning effort at inference time, and
+measurement of the energy inference consumes. Table~S1 of the supplementary
+material places the closest systems side by side.
+
+\subsection{Routing and cascading across models}
+\label{sec:related-routing}
+
+This paper is concerned with routing that sends whole queries to separate
+models, each of which could answer alone, rather than with routing tokens
+between expert sub-networks inside one model. Moslem and Kelleher survey that
+literature and divide it into routing, which commits before generation, and
+cascading, which tries models in sequence \cite{moslem2026routingsurvey}.
+
+\emph{Cascades.} FrugalGPT sends a query through models of increasing price
+and stops when a learned scorer accepts the answer, reporting up to 98\%
+lower cost than the best individual model \cite{chen2023frugalgpt}. AutoMix
+replaces the external scorer with few-shot self-verification by the small
+model and decides whether to escalate with a partially observable Markov
+decision process, reporting cost reductions above 50\%
+\cite{aggarwal2024automix}. AutoMix is the closest published idea to the
+question asked here, because it treats escalation as a sequential decision;
+its decision state, however, is the model's confidence in its own answer
+rather than the cost already spent, and it is an automated policy rather than
+a model of what a user does. Both cascades share a structural cost: the cheap
+model must generate before the system can decide, so every escalated query
+pays for at least one discarded answer.
+
+\emph{Predictive routers.} Hybrid LLM estimates from the query alone whether
+a small model's answer will match a large model's, and exposes a threshold
+that trades quality for cost, reporting 40\% fewer large-model calls at no
+loss in quality \cite{ding2024hybridllm}. RouteLLM learns a strong-versus-weak
+decision from human preference data and reports more than a twofold cost
+reduction \cite{ong2024routellm}. Later work trains a query encoder
+with dual contrastive losses \cite{chen2024routerdc}, routes to models unseen
+during training with an excess-risk bound \cite{jitkrittum2025universal},
+aligns a router with user-defined preferences so models can be added without
+retraining \cite{tran2025archrouter}, and interleaves a router's own
+deliberation with calls to other models over several rounds
+\cite{zhang2025routerr1}. Published benchmarks make routers comparable, among
+them LLMRouterBench, whose released outcomes and prices this study reuses
+\cite{li2026llmrouterbench}. Across this work, cost is denominated in API
+price, model calls or tokens, and the comparison points are static, random,
+oracle or automated policies.
+
+\subsection{Reasoning effort and test-time compute}
+\label{sec:related-reasoning}
+
+Chain-of-thought prompting improves multi-step reasoning by spending
+generated tokens on intermediate steps \cite{wei2022cot}, reinforcement
+learning now trains models that produce long traces unprompted
+\cite{deepseek2025r1}, and Qwen3 builds the control into the model, serving
+thinking and non-thinking behaviour from one set of weights \cite{qwen3}.
+Long traces are not always useful: Sui
+et al.\ document reasoning models spending many tokens on easy questions
+\cite{sui2025stopoverthinking}, and Alomrani et al.\ organise adaptive
+test-time compute into controllability under a fixed budget and adaptiveness,
+where the budget depends on the input \cite{alomrani2025reasoningbudget}.
+Selecting a reasoning mode per prompt is an instance of the second tier.
+
+A recent group of papers routes over whether and how much to think, usually
+within one model. SynapseRoute sends medical questions to the thinking or
+non-thinking mode of a dual-state model, reporting 36.8\% lower inference
+time and that about 58\% of its questions need no reasoning
+\cite{zhang2025synapseroute}. A lightweight router head can make the same
+choice for ranking tasks \cite{guo2026thinkwhenneeded}, while DART is
+training-free, reading difficulty from the agreement of two cheap drafts and
+cutting thinking tokens by 32--73\% \cite{lee2026dart}. Learning
+When to Think moves the decision inside the model, which emits NoThink, Short
+or Long as its first token \cite{kassenaar2026learningwhentothink}, and
+HRBench finds that the preferred switching strategy depends on model scale
+and task domain \cite{ning2026hrbench}. Route to Reason is the closest prior
+work to the grid studied here, selecting jointly among seven models and four
+reasoning strategies under a budget constraint \cite{pan2026routetoreason};
+joint selection of model and reasoning effort is therefore not, by itself, a
+new idea, and we do not claim it as one.
+
+All of this work depends on an assumption that is rarely tested: that a
+model's thinking and non-thinking modes are genuinely different operating
+points. Wang et al.\ found only partial separation in hybrid-thinking models,
+with reasoning behaviour leaking into non-thinking outputs
+\cite{wang2025demystifying}, which is why we test separation on our own
+checkpoints before labelling (Section~\ref{sec:setup-gates}).
+
+\subsection{Energy, carbon and energy-aware routing}
+\label{sec:related-energy}
+
+Strubell et al.\ brought the cost of training to the field's attention
+\cite{strubell2019energy} and Schwartz et al.\ argued for efficiency as a
+first-class result \cite{schwartz2020greenai}. Lacoste et al.\ convert
+compute into emissions with regional grid intensity
+\cite{lacoste2019quantifying}, and Patterson et al.\ show how strongly
+training emissions depend on hardware and location \cite{patterson2021carbon}.
+For inference, Luccioni et al.\ measured energy and carbon per 1{,}000
+queries across task types and found wide variation
+\cite{luccioni2024powerhungry}. Tuning GPU frequency and batch size
+\cite{xu2025camel} or managing key--value cache memory \cite{kwon2023vllm}
+makes each configuration cheaper to run without deciding which to run, and is
+therefore orthogonal to routing.
+
+Three routers treat energy or latency as part of the objective. GreenServ
+routes among 16 open models, measures GPU energy on an A100 and reports a
+31\% energy reduction with 22\% higher accuracy than random routing, but does
+not subtract the router's own energy \cite{ziller2026greenserv}. EcoThink
+sends each query to a retrieval or a reasoning path with a distilled
+classifier and reports a 40.4\% energy reduction and 1.32\,gCO$_2$e per query
+against 4.52 for GPT-4o, with energy partly estimated from thermal design
+power and the router uncharged \cite{li2026ecothink}. Yang et al.\ route
+among edge experts on RTX~4090 GPUs, optimising quality of service and
+latency without measuring energy \cite{yang2025qosrouting}. Energy-aware
+routing and carbon reporting are therefore established, and neither is a
+contribution of this paper; what is missing is a router over reasoning mode
+whose own measured energy is netted out.
+
+Open-ended prompts cannot be graded by string match, so studies that include
+them rely on model judges. Zheng et al.\ found a strong judge agreeing with
+human preferences about as often as humans agree with each other, while
+documenting position, verbosity and self-enhancement biases
+\cite{zheng2023judging}. Those biases motivate the out-of-family judge and
+two-sided validation of Section~\ref{sec:setup-judge}.
+
+\subsection{Positioning}
+\label{sec:related-gap}
+
+Four questions remain open in the literature we located. First, the
+escalation tax is unmeasured: no study formalises manual escalation, in which
+each failed attempt is billed in full and the prompt is resent. Second,
+router energy is not netted out; we found no study that subtracts the
+selector's own measured energy, or asks when a language-model router stops
+paying for itself against a linear classifier. Third, the reasoning-mode axis
+has no measured energy cost: routers over reasoning mode report tokens and
+latency, and routers that measure energy do not route over mode. Fourth,
+energy is not normalised by success; energy per \emph{solved} query, which
+charges a cheap failure for the retry it causes, was not found.

@@ -1,0 +1,237 @@
+\section{Experimental setup}
+\label{sec:setup}
+
+\subsection{Hardware, software and decoding}
+\label{sec:setup-hardware}
+
+All local experiments run on one laptop: an AMD Ryzen~7 8845HS CPU with
+16\,GB of system memory and an NVIDIA GeForce RTX~4060 Laptop GPU with 8\,GB
+of memory, driver 616.56 and an enforced board power limit of 115\,W. The
+driver was updated to 616.92 between the main labelling run and the later
+stages; the noise stage, which resamples prompts and cells the main run
+measured, shows energy per output token under 616.92 at 0.89 to 1.01 times
+that under 616.56. Every cell of the grid was measured under 616.56, so no
+comparison between cells crosses the change. Models are served by Ollama \cite{ollama} from GGUF
+weights quantised to Q4\_K\_M \cite{gerganov2023llamacpp}. Each model is
+addressed by an explicit quantisation tag, and its weight digest, parameter
+count, context length and chat template are recorded in a manifest before any
+generation, so a silently updated tag cannot change the models between runs.
+
+The 8\,GB memory limit means one model is loaded at a time, so runs are
+organised \emph{model-major}: each model is loaded once, all prompts run in
+both modes, and the model is unloaded before the next. Within a model,
+prompts are processed in batches of 20, each batch running its two modes as
+separate measurement windows with the leading mode alternating, so that slow
+drift in temperature or background load cannot line up with one mode. The
+harness waits for 30\,s of continuous GPU idleness before loading a model or
+repeating a window, and checks that the whole model is placed on the GPU.
+
+Greedy decoding is discouraged for Qwen3's thinking mode, so each mode uses
+its recommended sampling settings \cite{qwen2025modelcard}: temperature 0.6,
+top-$p$ 0.95 and top-$k$ 20 for thinking, and 0.7, 0.8 and 20 for
+non-thinking. Every generation receives its own seed, derived
+deterministically from the prompt, cell, sample index and run variant, and
+stored with the output. The labelling runs draw one sample per prompt and
+cell ($k = 1$), so a noise subset of 25 prompts per family receives two
+further samples in every cell to measure how often a label would change on
+resampling; three samples throughout were the original plan, but one sample
+across the eight cells takes about 112\,s per prompt, and tripling that would
+have tripled a run that already takes days.
+
+Generation length is capped, and an answer that hits the cap counts as a
+failure, because a truncated answer is of no use in deployment: 4{,}096 new
+tokens in thinking mode, trace included, and 2{,}048 without. The caps matter
+more than we expected, so their effect is measured rather than assumed. A
+sample of capped generations, up to 40 per size and mode and spread evenly
+over families, is rerun with an 8{,}192-token cap and a 10{,}240-token
+context (9{,}216 at 8B, where the larger context no longer fits in GPU
+memory), and we report how often the longer cap turns a failure into a
+success and how often that moves $\cstar(q)$. Each server session runs one
+thinking and one non-thinking warm-up generation, which are discarded.
+
+\subsection{Corpus, labelling and grading}
+\label{sec:setup-labels}
+
+The corpus covers four task families of 400 prompts each. Three are graded
+programmatically: mathematics, from GSM8K \cite{cobbe2021gsm8k} (200) and
+MATH-500 \cite{hendrycks2021math,lightman2024verify} (200); code, from
+HumanEval \cite{chen2021humaneval} (154) and MBPP \cite{austin2021mbpp} (246);
+and multiple choice, from MMLU \cite{hendrycks2021mmlu} (200) and
+ARC-Challenge \cite{clark2018arc} (200). The fourth, open-ended requests from
+Dolly-15k \cite{conover2023dolly} (400), is the traffic that motivates the
+problem and needs a judge (Section~\ref{sec:setup-judge}).
+
+Prompts are drawn with a fixed, recorded seed. Each source is walked in
+round-robin order over strata of an a-priori difficulty proxy where one
+exists---MATH level, MMLU subject and MBPP task band---so that any prefix of
+the order is balanced across strata; a 100-prompt pilot per family is
+therefore nested in the full corpus, and its first 25 prompts form the noise
+subset. Near-duplicates are removed by hashing normalised prompt text across
+sources as well as within them, and prompts longer than 2{,}048 tokens are
+excluded so that context length does not vary with the size axis.
+
+Every prompt is run through all eight cells, recording the full success
+vector $s(q, c_1), \dots, s(q, c_8)$ with the token counts, latency and
+energy of every cell. Routers are trained on that vector, which carries more
+information than $\cstar(q)$ and is what allows $\tau$ to be swept at test
+time. Success is decided per family: for mathematics the final answer is
+extracted and normalised before comparison with the reference; for code the
+generated function is executed against the dataset's unit tests in a
+subprocess with a timeout and no network access, and succeeds only if every
+test passes; for multiple choice the chosen option is parsed, and an
+unparseable answer is a failure rather than a reason to resample. After
+labelling, the corpus is split 60/20/20 into training, validation and test
+sets by prompt, stratified by family and by $\cstar(q)$ computed in tokens,
+so that every cost unit is evaluated on the same split; the test split is
+used once, at the end.
+
+\subsection{Judging open-ended answers}
+\label{sec:setup-judge}
+
+A judge drawn from the routed pool would grade its own family, so the judge
+is Llama~3.1 8B Instruct \cite{grattafiori2024llama3} at Q4\_K\_M, run only
+after labelling has finished. It sees the request, the human-written Dolly
+response as a reference and the visible answer, and scores the answer from 1
+to 5 on a fixed rubric, with 4 or more a success; for open requests such as
+brainstorming the rubric treats the reference as one acceptable answer among
+many. Answers are scored one at a time in a seeded random order, to limit the
+position and verbosity biases documented for model judges
+\cite{zheng2023judging}, with greedy decoding constrained to a JSON reply.
+
+The judge is validated from two sides before its labels are used. About 200
+judged answers, stratified by category and verdict, are re-scored with the
+same rubric by \texttt{gpt-5-mini} through a hosted API, a reference above
+the local judge in capability and outside its family; and the first author
+scores about 100 of them blind to model, mode and judge score. Agreement is
+Cohen's $\kappa$ \cite{cohen1960kappa} on the success decision and
+quadratic-weighted $\kappa$ \cite{cohen1968weighted} on the scores. The rule
+for using the labels was fixed before any judge output existed: at
+$\kappa \geq 0.60$ the open-ended family is reported with the others; from
+0.40 to 0.60 it carries an explicit caveat; below 0.40 it moves to a
+secondary analysis, these being the conventional boundaries of moderate and
+substantial agreement \cite{landis1977measurement}. The judge scored all
+3{,}583 eligible answers, reaching $\kappa = 0.42$ [0.23, 0.59] against the
+first author's blind scores and 0.40 [0.27, 0.52] against
+\texttt{gpt-5-mini}, which agrees with the first author at 0.74 [0.60, 0.86].
+The family therefore carries the caveat and is reported separately.
+
+\subsection{Baselines, metrics and statistics}
+\label{sec:setup-stats}
+
+Routers are compared with the eight static policies that always use one cell,
+uniform random assignment, the oracle that always picks $\cstar(q)$, the four
+manual policies of Table~\ref{tab:policies} under both detection regimes, and
+the cascade of Section~\ref{sec:net}. We report cost--quality frontiers and
+the normalised area beneath them, the tax and its components from
+\eqref{eq:decomp}, net savings from \eqref{eq:netsaving}, cost per solved
+query in each unit, the over- and under-routing rates with their separate
+cost consequences, and router overhead per decision.
+
+Every headline figure carries a 95\% percentile bootstrap confidence interval
+from 10{,}000 resamples over prompts \cite{efron1993bootstrap}. All policies
+and routers evaluated on the same prompts share one matrix of resampled
+indices, so every comparison is paired by prompt and its interval is taken
+over resampled differences. Two-sided $p$-values are obtained by inverting
+the percentile interval, and the Holm--Bonferroni procedure
+\cite{holm1979simple} corrects within each family of comparisons that asks
+one question at a fixed cost unit, recovery rule and detection regime. For
+routers, $\tau$ is fixed on the validation split before the test split is
+resampled, so the intervals exclude the uncertainty of that choice. Each
+trainable router is trained with three seeds, with intervals reported for the
+first and the spread across seeds beside them.
+
+\subsection{Validation gates}
+\label{sec:setup-gates}
+
+Two assumptions were tested before any labelling, and both gates are reported
+in full in the supplementary material (Tables S2 and S3).
+
+\emph{Gate 1, power telemetry.} NVML does not expose board power on every
+laptop GPU. Recording 10\,s of idle, 8\,s of half-precision matrix
+multiplication at about 90\% utilisation and 8\,s of cool-down, sampled power
+behaved as expected: low at idle, following the step load within about a
+second, and never exceeding the enforced limit. The cumulative energy counter
+did not. It is reported as supported and increases monotonically, so a
+routine check accepts it, yet the power it implies is 88\,W with the GPU
+idle, 128\,W under load, above the enforced limit, and 257\,W during
+cool-down, higher than under load. A units error would scale all three
+windows by one factor and keep their order; these values do not follow real
+power draw at all. We therefore integrate sampled power only, and the lesson
+for other studies on laptop GPUs is that a supported, monotonic counter
+should still be cross-checked against sampled power and the enforced limit.
+
+\emph{Gate 2, separation of thinking modes.} The grid assumes a model's two
+modes are different operating points, which Wang et al.\ found only partly
+true of hybrid-thinking models \cite{wang2025demystifying}. On 60 prompts per
+size, run once per mode under a common 4{,}096-token cap, three criteria
+fixed in advance were all met at all four sizes: an area under the ROC curve
+of at least 0.90 for thinking outputs being longer (observed 0.928 to 0.964),
+at most 5\% of non-thinking responses containing a thinking trace or tag
+(observed zero), and reasoning-marker density in non-thinking answers no more
+than half that in thinking traces (observed 3--5\%). Marker counting is a
+lexical proxy, and 60 prompts per size cannot rule out leakage on task types
+we did not sample. The gate also showed that thinking dominates the compute
+budget, taking 88\% of the time of one sample across the eight cells, and
+that between 21\% and 32\% of thinking responses hit the cap, which is why
+the cap-sensitivity reruns of Section~\ref{sec:setup-hardware} are part of
+the design.
+
+\subsection{Public-benchmark and hosted-frontier arms}
+\label{sec:setup-arms}
+
+The local pool stops at 8B parameters, so two further arms test whether the
+analysis carries beyond it. The first applies the same policy and tax
+computations, without local inference, to the published per-model outcomes
+and costs of LLMRouterBench \cite{li2026llmrouterbench}, whose records store a
+score, prompt and completion token counts and the provider's dollar charge
+for one model on one query---which is what the resubmission term needs, since
+a re-asked query pays its prompt tokens again at the stronger model's price.
+We take the thirteen models of its performance--cost setting and the nine
+datasets every one of them was run on, keeping per dataset the largest subset
+all thirteen share, which leaves 12{,}168 queries. A pool of thirteen models
+has no natural order, so the ladder is the cost--accuracy frontier in cost
+order, whose top rung plays the part $c_8$ plays locally; P2 has no analogue
+without a mode axis, and the thinking and non-thinking releases of
+Qwen3-235B-A22B are compared separately in its place. Because the frontier is
+a subset of the pool, a policy climbing it can fail on a query some
+off-ladder model answers, so the tax is read alongside the success rate.
+Intervals here use 2{,}000 resamples, the prompt set being ten times the
+local corpus.
+
+The second arm restores the mode axis at frontier scale. Three hosted models,
+\texttt{gpt-5-nano}, \texttt{gpt-5-mini} and \texttt{gpt-5}, are crossed with
+two reasoning efforts, \texttt{minimal} and \texttt{high}, giving six cells
+$h_1 \dots h_6$ indexed as $c_1 \dots c_8$ are, priced at list prices
+published on 12 September 2026 and halved by the batch discount. Prompts come
+from those the local grid has already labelled, so every hosted $\cstar$ is
+paired with a local one. Each request carries exactly the prompt text the
+local pool saw, and the output caps mirror the local protocol; on a reasoning
+model the cap counts reasoning tokens, so a truncated response is a failure
+exactly as a local cap hit is. That rule falls hardest on high-effort cells,
+so each cell is reported twice: the headline accuracy, in which truncation is
+wrong, and the accuracy over generations that stopped on their own. Three
+limits are worth stating. The hosted models reject the temperature and
+nucleus parameters the local protocol sets, so the arm matches the prompt and
+the cap, not the decoding. Reasoning effort is not the local binary switch,
+though at \texttt{minimal} each model reported exactly zero reasoning tokens
+across all 120 pilot responses, so the cheap mode really is reasoning off.
+And the provider returns the number of reasoning tokens but not the trace,
+and no energy, so this arm reports dollars and tokens only. A prompt enters
+the analysis only when all six cells answered it, which two of 827 prompts
+failed through content-filter refusals, leaving 825.
+
+\subsection{Reproducibility}
+\label{sec:setup-repro}
+
+Each experiment is driven by a configuration file, and no experimental
+constant lives in code. Seeds are set and stored for every generation and
+training run, and each run writes a manifest with the code commit,
+configuration, package versions, driver version, GPU model and model digests.
+Raw generations are stored with their token counts, timings, seeds and
+energy. The hosted arm adds a spend ledger recording every batch with the
+worst case it was approved against and the cost finally settled from the
+provider's own token counts, so each dollar figure can be audited line by
+line; the total agrees to the cent with the provider's billed figure. Hosted
+models are still not reproducible artefacts in the way a pinned local
+checkpoint is, which is why the local grid carries the primary claims. The
+analysis code is archived as \cite{mondal2026arbiter}.
