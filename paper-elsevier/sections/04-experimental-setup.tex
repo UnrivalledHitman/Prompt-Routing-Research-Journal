@@ -101,7 +101,7 @@ position and verbosity biases documented for model judges
 The judge is validated from two sides before its labels are used. About 200
 judged answers, stratified by category and verdict, are re-scored with the
 same rubric by \texttt{gpt-5-mini} through a hosted API, a reference above
-the local judge in capability and outside its family; and the first author
+the local judge in capability and outside its family; and one of the authors
 scores about 100 of them blind to model, mode and judge score. Agreement is
 Cohen's $\kappa$ \cite{cohen1960kappa} on the success decision and
 quadratic-weighted $\kappa$ \cite{cohen1968weighted} on the scores. The rule
@@ -111,8 +111,8 @@ $\kappa \geq 0.60$ the open-ended family is reported with the others; from
 secondary analysis, these being the conventional boundaries of moderate and
 substantial agreement \cite{landis1977measurement}. The judge scored all
 3{,}583 eligible answers, reaching $\kappa = 0.42$ [0.23, 0.59] against the
-first author's blind scores and 0.40 [0.27, 0.52] against
-\texttt{gpt-5-mini}, which agrees with the first author at 0.74 [0.60, 0.86].
+blind human scores and 0.40 [0.27, 0.52] against \texttt{gpt-5-mini}, which
+agrees with the human rater at 0.74 [0.60, 0.86].
 The family therefore carries the caveat and is reported separately.
 
 \subsection{Baselines, metrics and statistics}
