@@ -183,6 +183,9 @@ README = """FGCS submission package -- The escalation tax
 
 Upload to Editorial Manager as follows.
 
+  Cover_letter.pdf          Cover letter. It states that both authors have
+                            approved the manuscript; make sure that is true
+                            before uploading.
   manuscript.tex            Manuscript (LaTeX source). Single file, 18 pages
                             when compiled. Upload together with the four
                             figures, which it includes by file name.
@@ -235,6 +238,9 @@ def main() -> None:
     supp_pages, _ = check_log(latex("supplementary-material", HERE), "supplementary-material")
     shutil.copy2(HERE / "supplementary-material.pdf", OUT / "Supplementary_material.pdf")
 
+    letter_pages, _ = check_log(latex("cover-letter", HERE), "cover-letter")
+    shutil.copy2(HERE / "cover-letter.pdf", OUT / "Cover_letter.pdf")
+
     longest = check_highlights()
     vitae = check_vitae()
     pandoc = find_pandoc()
@@ -262,7 +268,7 @@ def main() -> None:
         f"abstract: {words} words (limit {ABSTRACT_LIMIT}); "
         f"highlights: longest {longest} characters (limit {HIGHLIGHT_CHARS})"
     )
-    print(f"supplementary: {supp_pages} pages")
+    print(f"supplementary: {supp_pages} pages; cover letter: {letter_pages} page(s)")
     print(
         "vitae: "
         + ", ".join(f"{n} {c} words" for n, c in vitae.items())

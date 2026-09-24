@@ -11,6 +11,7 @@ tables. Both versions are kept: this directory does not replace `../paper/`.
 | `manuscript.tex` | The manuscript. Pulls in `sections/*.tex`, `tables/*.tex` and `figures/Figure_N.pdf`. **18 pages.** |
 | `highlights.tex` | Article highlights, submitted separately. 5 bullets, each ≤ 85 characters. |
 | `supplementary-material.tex` | Tables S1–S8 and Figures S1–S6, cited from the manuscript. 9 pages. |
+| `cover-letter.tex` | Cover letter to the editor, one page. Dated automatically on each build. Every figure it quotes is taken from the manuscript. |
 | `author-biographies.tex` | Vitae, submitted separately as the guide asks, with photographs to follow as `Photo_1`, `Photo_2`. |
 | `refs.bib`, `refs-methods.bib` | Bibliography. Local copies: edits here do not affect the IEEE version. |
 
