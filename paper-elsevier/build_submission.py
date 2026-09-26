@@ -56,7 +56,9 @@ def fail(msg: str) -> NoReturn:
 
 def run(cmd: list[str], cwd: pathlib.Path) -> None:
     """Run a command quietly; its log file, not its exit code, is checked."""
-    subprocess.run(cmd, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    subprocess.run(
+        cmd, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
+    )
 
 
 def is_miktex() -> bool:
@@ -105,7 +107,9 @@ def check_anonymous(text: str, name: str) -> None:
     """
     found = [s for s in IDENTIFYING if s.lower() in text.lower()]
     if found:
-        fail(f"{name} identifies the authors ({', '.join(found)}); ESWA review is anonymised")
+        fail(
+            f"{name} identifies the authors ({', '.join(found)}); ESWA review is anonymised"
+        )
 
 
 def inline_inputs(text: str, base: pathlib.Path) -> str:
@@ -139,7 +143,10 @@ def flatten_manuscript() -> str:
 
 def check_abstract(text: str) -> int:
     """Fail if the abstract exceeds the word limit; return its word count."""
-    body = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", text, re.S).group(1)
+    match = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", text, re.S)
+    if match is None:
+        fail("manuscript has no abstract environment")
+    body = match.group(1)
     body = body.replace("{,}", ",")  # 3{,}612 is one word
     body = re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?", " ", body)
     body = body.translate(str.maketrans("{}~$\\", "     "))
@@ -151,7 +158,10 @@ def check_abstract(text: str) -> int:
 
 def check_keywords(text: str) -> int:
     """Fail unless there are 1 to 7 keywords; return how many."""
-    block = re.search(r"\\begin\{keyword\}(.*?)\\end\{keyword\}", text, re.S).group(1)
+    match = re.search(r"\\begin\{keyword\}(.*?)\\end\{keyword\}", text, re.S)
+    if match is None:
+        fail("manuscript has no keyword environment")
+    block = match.group(1)
     count = len([k for k in block.split("\\sep") if k.strip()])
     if not 1 <= count <= KEYWORD_LIMIT:
         fail(f"{count} keywords, need 1 to {KEYWORD_LIMIT}")
@@ -178,7 +188,9 @@ def find_pandoc() -> str:
     """Return the path to pandoc, from PANDOC, PATH or a per-user install."""
     candidates = [os.environ.get("PANDOC"), shutil.which("pandoc")]
     local = os.environ.get("LOCALAPPDATA", "")
-    candidates += sorted(glob.glob(os.path.join(local, "Programs", "pandoc-*", "pandoc.exe")))
+    candidates += sorted(
+        glob.glob(os.path.join(local, "Programs", "pandoc-*", "pandoc.exe"))
+    )
     for c in candidates:
         if c and pathlib.Path(c).exists():
             return c
@@ -188,7 +200,18 @@ def find_pandoc() -> str:
 def to_docx(pandoc: str, src: pathlib.Path, dest: pathlib.Path) -> None:
     """Convert a LaTeX file to Word with British English spell-checking."""
     subprocess.run(
-        [pandoc, str(src), "-f", "latex", "-t", "docx", "-M", "lang=en-GB", "-o", str(dest)],
+        [
+            pandoc,
+            str(src),
+            "-f",
+            "latex",
+            "-t",
+            "docx",
+            "-M",
+            "lang=en-GB",
+            "-o",
+            str(dest),
+        ],
         cwd=HERE,
         check=True,
     )
@@ -258,8 +281,12 @@ def main() -> None:
 
     supplementary = (HERE / "supplementary-material.tex").read_text(encoding="utf-8")
     check_anonymous(supplementary, "supplementary-material.tex")
-    supp_pages = check_log(latex("supplementary-material", HERE), "supplementary-material")
-    shutil.copy2(HERE / "supplementary-material.pdf", OUT / "Supplementary_material.pdf")
+    supp_pages = check_log(
+        latex("supplementary-material", HERE), "supplementary-material"
+    )
+    shutil.copy2(
+        HERE / "supplementary-material.pdf", OUT / "Supplementary_material.pdf"
+    )
 
     letter_pages = check_log(latex("cover-letter", HERE), "cover-letter")
     shutil.copy2(HERE / "cover-letter.pdf", OUT / "Cover_letter.pdf")
