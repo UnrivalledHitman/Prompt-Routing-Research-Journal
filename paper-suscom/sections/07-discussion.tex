@@ -1,0 +1,212 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Why the effects occur}
+\label{sec:why}
+
+\emph{Stickiness is set by the cost distribution.} A policy that never moves
+pays the cost of its cell less the cost of $\cstar(q)$, so its relative tax
+is the ratio of the two costs less one. All three pools share a shape that
+makes that ratio large: the top rung combines the largest model with its
+costliest setting, while the mass of $\cstar(q)$ sits at the other end, among
+the cheapest one or two options. The tax therefore follows how far the top
+rung's price sits above the options that answer most prompts, which is 14
+times locally, nine on the public pool and five on the hosted ladder.
+
+\emph{Escalation is small when the ladder's cost order matches the order of
+sufficiency.} Each failed rung is paid in full, so a climb is cheap only if
+its early rungs are both cheap and likely to succeed. The local P1 ladder has
+that property: its first four rungs are the four cheapest cells, and they are
+$\cstar(q)$ for 89.2\% of prompts. P2 breaks it at its second rung, where
+thinking at 0.6B costs more than any larger non-thinking cell and answers
+fewer prompts than any of them. The same property explains the other pools:
+the hosted ladder's cheapest cell suffices for three queries in four, while
+on the public pool 29.8\% of queries are answered most cheaply by a model the
+frontier omits, so the climb cannot stop at $\cstar(q)$.
+
+\emph{The costliest configuration is not the most accurate.} This holds in
+every pool we measured on tasks with a checkable answer. Where we can see a
+mechanism, it is the generation budget: between 16\% and 20\% of local
+thinking generations, and 18.9\% of \texttt{gpt-5-nano}'s at high effort, run
+out of tokens before they answer, and a truncated answer fails. A budget is
+part of any deployed configuration, so sticky use of the top rung pays twice,
+once in cost and again in the answers it loses. Open-ended requests are the
+exception: there the cap rarely binds and $c_8$ is the most accurate cell,
+yet sticky use of it still pays 5.39 times the minimum sufficient energy.
+
+\emph{Thinking is priced by length, and length varies by family.} Energy per
+output token barely moves with the mode, so the mode premium is the ratio of
+output lengths, scaled by the change in accuracy. Plain mathematics answers
+already write out their working, so thinking lengthens them about five times
+and the energy ratio stays between 4.9 and 6.1, while plain code and
+multiple-choice answers are shorter, thinking lengthens them 7 to 25 times,
+and their ratios reach 15.8 and 15.2. The same accounting shows why a larger
+model beats thinking below 8B: a size step keeps the output about as long and
+raises energy per generation by 1.4 to 2.7 times, while a mode step keeps the
+model and makes the output seven or eight times longer.
+
+\emph{Routing too high is mostly a failure too.} Of the 968.6\,J premium for
+routing one tier too high, only 167.5\,J is the higher tier's own excess
+cost; the other 801.1\,J is recovery, because a step up in energy order is
+not always a step up in accuracy and the step up fails on 24.1\% of prompts.
+Against overshoot alone, routing too low would cost 15.7 times as much; the
+factor of 2.71 in Section~\ref{sec:results-asymmetry} is lower because the
+grid is not monotone, and it also depends on recovering at $c_8$.
+
+\emph{A router loses to the frugal climb in recovery, not in prediction
+alone.} P1's failures are cheap because its early rungs are the cheapest
+cells. A router's failure is expensive because it recovers at $c_8$, which
+costs eight times $c_7$ and answers fewer prompts. A router can avoid that
+only by routing high, and the selected threshold does: the best router sends
+three answerable prompts in four to a costlier cell than they need, so its
+tax is almost all stickiness. Recovering by climbing from the routed cell
+brings every router within 6\% of P1. The oracle's 32\% saving over P1
+therefore needs a router that is rarely wrong, and the best router we trained
+picks $\cstar(q)$ exactly for one prompt in seven.
+
+\emph{Router cost does not separate the families on this grid; training data
+does.} Every router's own energy is under 1\% of what it routes, so charging
+it leaves the energy ranking almost untouched, and the order comes instead
+from how well each family learns from 716 training prompts. A linear model on
+$n$-grams or frozen embeddings needs little data, and the fine-tuned encoders
+came close to it only when cost-sensitive weights focused training on the
+errors that cost most. A 0.6B language model prompted to name the cheapest
+sufficient configuration routes low, and on this grid routing low is the
+expensive error. Only in tokens, where R3 pays for reading its own prompt,
+does charging a router reorder the families. Generating first did not pay for
+the cascade either: its checks cost 9.7\,J each, so verification is not what
+makes it expensive; the information is weak, since a small model checking its
+own answer accepts a wrong one on a third of answerable prompts.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+\emph{The comparator is constructed.} The manual policies of
+Table~\ref{tab:policies} are not observed behaviour. We have no logs of how
+users of language-model services move between configurations, so the ladders,
+the starting distribution of P4 and the detection probabilities are all
+assumptions. We limit the damage by reporting a family of policies that
+ranges from frugal to wasteful, by quoting headline figures under oracle
+detection, in which the manual policies answer the most prompts, and by
+sweeping the detection probabilities instead of fixing them. The tax we
+report is therefore the tax these policies would pay, not a measurement of
+what real users pay, and it is the part of the study that most needs evidence
+from outside it. Two of these choices favour the frugal climb, the policy the
+routers fail to beat: oracle detection assumes a user who recognises every
+wrong answer, which is generous on mathematics and code and implausible on
+open-ended work, and the climb makes the most attempts at which such a user
+could be fooled, losing 12.3 points at the illustrative detection point.
+Model loading is also uncharged, and the climb changes model more often than
+any router.
+
+\emph{Attempts are independent single-turn requests, and loading is not
+charged.} Each rung is costed by \eqref{eq:policycost} as a fresh request
+carrying only the prompt, and succeeds or fails as that cell did during
+labelling. A user who escalates within one conversation also resends the
+earlier answers, which lengthens every retry, and the stronger configuration
+may be helped or misled by seeing a failed attempt; neither effect is
+modelled, and the first would make escalation more expensive than we report.
+On an 8\,GB GPU that holds one model at a time, a user who escalates across
+sizes, or a router that sends consecutive queries to different sizes, also
+pays the time and energy of loading a model, which our costs understate most
+for whichever policy or router changes size most often.
+
+\emph{Labels come from one sample under fixed caps.} With $k = 1$, each
+$s(q, c)$ is a single draw of a stochastic outcome, and $\cstar(q)$ inherits
+its noise: on the noise subset a cell's label differs between two samples
+8.9\% of the time, and the single-sample $\cstar(q)$ matches the majority of
+three for 84.0\% of prompts. The bootstrap resamples prompts with their
+labels held fixed, so its intervals do not include that uncertainty. The
+labels also depend on the caps. A thinking answer cut off at 4{,}096 tokens
+counts as a failure, which is the right rule for deployment but makes
+thinking cells look worse than they would with a longer budget. That budget
+is below what Qwen3's own guidance suggests for thinking mode, and it
+truncates 16 to 20\% of thinking generations, so it shapes three results that
+would otherwise read as properties of the models: that $c_8$ answers fewer
+prompts than $c_7$, that thinking is never the cheaper way to buy accuracy,
+and part of P3's tax. The rerun bounds the effect rather than removing it: a
+longer cap moved $\cstar(q)$ for 6.4\% of the capped generations rerun, and
+27.9\% of them reached the 8{,}192-token cap too. What the grid shows is how
+configurations behave under a deployment budget, not how the models behave
+without one.
+
+\emph{Grading is imperfect.} Mathematics answers are compared after
+extraction and normalisation, which can reject a correct answer written in an
+unusual form; an unparseable multiple-choice answer counts as a failure; and
+code is judged by the datasets' own unit tests, which can pass an incorrect
+function. The open-ended family depends on a judge that agrees with a human
+only moderately, at $\kappa = 0.42$, and passes more answers than either the
+human or \texttt{gpt-5-mini}; its results are reported separately and with
+that caveat, and every other result covers the gradable families.
+
+\emph{The energy boundary is the GPU board.} NVML reports GPU board power, so
+our joules exclude the processor, system memory, storage and display, all of
+which draw power while a query is served. Each query's energy is also
+apportioned rather than measured, and CPU routers are charged an upper bound
+rather than a measurement, which works against R1 in any comparison with a
+router measured on the GPU.
+
+\emph{Scope.} Every cell is a Q4\_K\_M quantisation of a Qwen3 model, so size
+comparisons are between quantised models; the largest cell has 8B parameters;
+thinking is either on or off, although Qwen3 also accepts a budget; and all
+measurements come from one laptop and one GPU, so we do not claim the figures
+transfer to other hardware. The gradable families come from public
+benchmarks, in English and single-turn, which may appear in the models'
+training data and are more uniform than live traffic---one reason the corpus
+includes an open-ended family. The hosted arm is priced rather than metered,
+from one provider's list prices on one date. The comparators are also
+simplified: the cascade follows AutoMix without its meta-verifier and climbs
+only the P1 ladder, and the prompted R3 routers read their choice from
+next-token probabilities without training. Finally, the data are thin for the
+comparison between router families---716 training prompts, 243 test prompts
+and labels from one sample per cell---so their ranking should be read as what
+these families achieve at this scale, not as a general ordering.
+
+\subsection{Implications}
+\label{sec:implications}
+
+\emph{Defaults decide most of the tax.} Stickiness is between 74\% and all of
+the tax for the policies that often start high, and in all three pools most
+prompts are answered by the cheapest options. A service that opens on its
+smallest adequate model, with extended reasoning off and a one-step-up
+control in view, puts its users on the frugal climb, which spends 1.5 times
+the oracle's energy per solved prompt against 5.7 times for leaving the
+largest thinking cell selected. Turning reasoning on by default is the harder
+choice to defend: within the cap it lost accuracy at 4B and 8B and was never
+the cheaper way to buy accuracy on the gradable families, and at
+\texttt{gpt-5} high effort answered 4.1\% of queries that minimal effort
+missed, at 7.26 times the price, moving overall accuracy by a tenth of a
+point. Reasoning is worth paying for on a minority of prompts, which argues
+for choosing it per prompt rather than leaving it selected. The default moves
+carbon as well as cost.
+
+\emph{A user without a router should change size before mode.} The cheapest
+habit on this evidence is to start small with thinking off, move up a size
+when an answer fails, and turn thinking on only when the largest size without
+it has failed. That advice depends on recognising a wrong answer: a user who
+accepts one wrong answer in five keeps the climb's low cost but loses the
+extra answers it buys. Prompts the user cannot check are therefore where a
+one-shot router has most to offer, since its choice does not depend on their
+judgment of the output.
+
+\emph{Cost should be reported in the unit that is paid, per solved prompt.}
+Output tokens price the mode axis to within about 15\% but miss the factor of
+6.6 in energy per token between 0.6B and 8B, so in tokens P3 looks cheaper
+than P2 and routing too low looks cheaper than routing too high, and energy
+reverses both; a study that prices a mixed pool in tokens can therefore
+favour exactly the misallocations that cost most. The wider pools also show
+negative taxes for static policies that underpay by failing, so a tax, like a
+cost, means little without the solved rate beside it.
+
+\emph{Deploy a one-shot router against habits, not against a disciplined
+climb.} Charged for its own energy, the best router spends 61\% less per
+prompt than leaving the 8B thinking cell selected and 29\% less than users
+who start at a uniformly random cell, answering more prompts than the first
+and about as many as the second. It does not beat a user who climbs sizes
+with thinking off and recognises every failure. Two conditions favour it:
+when failures are not always recognised it answers 7.1 points more than the
+climb, because it makes fewer attempts at which to accept a wrong answer, and
+when its failures are recovered by climbing rather than by jumping to the
+largest cell it comes within 6\% of the climb's energy. A service that routes
+should therefore recover by climbing, and it gains most for users who cannot
+check answers.

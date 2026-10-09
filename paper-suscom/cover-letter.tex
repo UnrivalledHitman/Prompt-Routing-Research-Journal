@@ -1,0 +1,102 @@
+% =====================================================================
+%  COVER LETTER -- submitted as a separate file.
+%  Every figure quoted here is taken from the manuscript and must stay
+%  identical to it.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[a4paper,hmargin=2.2cm,vmargin=1.25cm]{geometry}
+\usepackage{times}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+
+% British date format, to match the manuscript's spelling.
+\renewcommand{\today}{\number\day\space\ifcase\month\or January\or February\or
+  March\or April\or May\or June\or July\or August\or September\or October\or
+  November\or December\fi\space\number\year}
+
+\begin{document}
+
+\begin{flushright}
+Suseta Datta, Assistant Professor\\
+Department of Computer Application, Narula Institute of Technology\\
+81 Nilgunj Road, Agarpara, Kolkata 700109, India\\
+suseta.datta@nit.ac.in\\[0.4em]
+\today
+\end{flushright}
+
+The Editor-in-Chief\\
+\emph{Sustainable Computing: Informatics and Systems}
+
+{\raggedright\textbf{Submission of a research article: ``The escalation tax:
+measuring what manual model and reasoning-mode selection costs, and whether a
+one-shot router recovers it''}\par}
+
+Dear Editor,
+
+We submit the above manuscript for consideration for publication in
+\emph{Sustainable Computing: Informatics and Systems}.
+
+Language-model services are now sold in tiers, and a growing number expose a
+second control beside model size: whether the model should reason before it
+answers. Users allocate by trial and error: some start small and move up after
+every wrong answer, paying for each discarded attempt, while others leave a
+large reasoning configuration selected and pay its premium on prompts that
+never needed it. None of the routing work we located measures what this manual
+behaviour costs, or charges a router for its own energy.
+
+We define the \emph{escalation tax}, the cost a policy pays beyond the cheapest
+configuration that would have answered, and split it into escalation and
+stickiness. We measure it on eight Qwen3 configurations (0.6B to 8B parameters,
+reasoning on and off), running each of 1{,}200 gradable prompts through every
+configuration on a laptop GPU with metered board power, and on two further
+pools: thirteen public models priced by their providers, and six hosted
+configurations with paid reasoning effort. Classical, encoder and
+language-model routers are compared with manual policies and a self-verifying
+cascade, net of each router's own tokens, latency and energy. The main findings
+are:
+\begin{itemize}\setlength{\itemsep}{0.15em}
+  \item Leaving the largest reasoning configuration selected pays 12.96 times
+        the minimum sufficient energy, while a frugal climb that moves up in
+        size before turning reasoning on pays 0.89 times. The same ordering
+        holds on the public pool (7.96 against 2.69) and the hosted pool (4.35
+        against 0.22).
+  \item Below 8B, a larger model buys accuracy for 3.8 to 5.5 times less energy
+        per solved prompt than turning reasoning on. Energy per token rises
+        6.6-fold from 0.6B to 8B, which token counts cannot see.
+  \item Whether a one-shot router beats the frugal climb depends on how a failed
+        route is recovered. Resent to the largest configuration, the best router
+        spends 1.30 times the climb's energy per solved prompt, though 64\% less
+        than the sticky default; recovered by climbing, every router comes
+        within 6\% of the climb and four are cheaper. Where users miss wrong
+        answers, the router answers 7.1 points more.
+\end{itemize}
+
+The work suits \emph{Sustainable Computing: Informatics and Systems} because
+its subject is the energy cost of a computing service and how to manage it. The
+journal's scope names energy-aware management of computing resources, resource
+management that balances performance and power, and monitoring of power and
+performance. The study measures the energy of a reasoning-mode axis that
+earlier routing work reports only in tokens and latency; it expresses cost as
+joules per solved prompt, which charges a cheap failure for the retry it
+causes; it subtracts each router's own measured energy from the saving it
+produces; and it converts the tax to carbon across a bracket of grid
+intensities. It also leads to a practical guideline for operators and users of
+tiered services: open on a small configuration with reasoning off, and recover
+a failed route by climbing rather than jumping to the largest one.
+
+The manuscript is original, has not been published, and is not under
+consideration elsewhere. Both authors have approved it and agree to its
+submission. We have no competing interests, the work received no specific
+funding, and the use of generative AI is declared in the manuscript.
+Supplementary material accompanies it, and the corresponding author is
+Indrajeet Mondal (indrajeetmondal120703@gmail.com). Thank you for
+considering our submission.
+
+Yours sincerely,
+
+Suseta Datta\\
+On behalf of both authors\\
+ORCID: 0000-0002-1661-1821
+
+\end{document}

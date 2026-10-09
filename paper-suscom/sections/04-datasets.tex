@@ -1,0 +1,179 @@
+\section{Datasets}
+\label{sec:datasets}
+
+The study uses three bodies of data: a corpus of prompts that we run through
+all eight local cells, a published table of per-query outcomes for thirteen
+public models, and the same prompts re-run on six hosted cells. This section
+describes where each comes from, how it was selected, what was recorded and
+under what terms it can be reused. The experimental procedure that produces
+the labels is in Section~\ref{sec:setup}.
+
+\subsection{Local labelling corpus}
+\label{sec:data-corpus}
+
+The corpus holds 1{,}600 prompts in four task families of 400
+(Table~\ref{tab:corpus}). Three families have a checkable answer: mathematics
+from GSM8K \cite{cobbe2021gsm8k}, a set of grade-school word problems, and
+MATH-500 \cite{hendrycks2021math,lightman2024verify}, a 500-problem subset of
+competition mathematics; code from HumanEval \cite{chen2021humaneval} and
+MBPP \cite{austin2021mbpp}, which pair a Python task with unit tests; and
+multiple choice from MMLU \cite{hendrycks2021mmlu} and ARC-Challenge
+\cite{clark2018arc}. The fourth family, open-ended requests from Dolly-15k
+\cite{conover2023dolly}, consists of instruction-following prompts written by
+people, in categories such as brainstorming, summarisation and open
+question answering, each with a human-written reference response. It has no
+checkable answer and is graded by a model judge
+(Section~\ref{sec:setup-judge}). We include it because the other three
+families are more uniform than live traffic.
+
+\begin{table*}[ht]
+\centering
+\small
+\caption{The local labelling corpus. \emph{Rows} is the size of the source
+split and \emph{Used} the number of prompts drawn from it. Prompt length is
+the median and maximum in Qwen3 tokens of the prompt as the model sees it.
+Licences are those listed on each dataset's card. Each prompt is graded as
+described in Section~\ref{sec:setup-labels}.}
+\label{tab:corpus}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\textwidth}{@{}l l r r r l >{\raggedright\arraybackslash}X@{}}
+\toprule
+Family & Source (split) & Rows & Used & Prompt tokens & Licence & Success criterion \\
+\midrule
+Mathematics & GSM8K (test)          &  1{,}319 & 200 & 68 (199)   & MIT & Normalised final answer matches \\
+            & MATH-500 (test)       &      500 & 200 & 55 (708)   & MIT & Normalised final answer matches \\
+Code        & HumanEval (test)      &      164 & 154 & 139 (412)  & MIT & Every unit test passes \\
+            & MBPP (test)           &      500 & 246 & 104 (862)  & CC BY 4.0 & Every unit test passes \\
+Multiple choice & MMLU (test)       & 14{,}042 & 200 & 86 (458)   & MIT & Selected option is correct \\
+            & ARC-Challenge (test)  &  1{,}172 & 200 & 80 (212)   & CC BY-SA 4.0 & Selected option is correct \\
+Open-ended  & Dolly-15k (train)     & 15{,}011 & 400 & 24 (1{,}299) & CC BY-SA 3.0 & Judge score of at least 4 of 5 \\
+\midrule
+Total       &                       &          & 1{,}600 & & & \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+Selection is seeded and recorded. Each source is walked in a random order
+that is balanced over strata of an a-priori difficulty proxy where one
+exists: the MATH difficulty level, the MMLU subject, the MBPP task-number
+band and the Dolly category. GSM8K, HumanEval and ARC-Challenge have none and
+are sampled uniformly. The 60 prompts used in the mode-separation gate
+(Section~\ref{sec:setup-gates}) are excluded in advance, prompts that
+duplicate an earlier one after text normalisation are skipped across sources
+as well as within them, and prompts longer than 2{,}048 tokens are dropped so
+that context length does not vary with model size. HumanEval has only 154
+eligible problems after the exclusion, so code takes all of them and fills the
+rest from MBPP. The 100 prompts per family that come first in selection order
+form a nested pilot, and the first 25 of them form the noise subset that
+receives two extra samples per cell. A manifest lists every prompt's
+identifier, source, subset, token count and stratum without its text, and
+records the data fingerprint of each source, so the selection can be audited
+and rebuilt.
+
+The three gradable families, 1{,}200 prompts, are split 60/20/20 by prompt
+into 716 training, 241 validation and 243 test prompts, stratified by family
+and by the minimum sufficient cell computed in tokens
+(Table~\ref{tab:splits}). Routers are fitted on the training prompts, choose
+$\tau$ on the validation prompts and are evaluated once on the test prompts.
+The open-ended family is not split: it is analysed separately and used to
+compare policies, not to train routers.
+
+\begin{table}[ht]
+\centering
+\caption{Split of the 1{,}200 gradable prompts. The same split serves every
+cost unit.}
+\label{tab:splits}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Family & Train & Validation & Test & Total \\
+\midrule
+Mathematics     & 239 & 80 & 81 & 400 \\
+Code            & 240 & 79 & 81 & 400 \\
+Multiple choice & 237 & 82 & 81 & 400 \\
+\midrule
+All             & 716 & 241 & 243 & 1{,}200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Records collected and label statistics}
+\label{sec:data-records}
+
+Running the corpus through the grid gives 9{,}600 generations for the
+gradable families (1{,}200 prompts in eight cells) and 3{,}200 for the
+open-ended one. The noise subset adds 1{,}600 (100 prompts, eight cells, two
+extra samples), the cap-sensitivity stage 219 reruns at a longer cap, and the
+router and cascade probes 9{,}200 short generations whose first-token
+probabilities are the result. Each generation is stored with its prompt
+identifier, family, source, cell, sample index and seed, the reason it
+stopped, prompt and generated token counts with the thinking trace counted
+separately, wall time, the measurement window it ran in, the energy
+attributed to it as board and dynamic joules, and the grade. For open-ended
+answers the grade also carries the judge's score. Raw generation text is kept
+alongside but is not part of the tabulated records.
+
+Joining the grades with the energy gives, for every prompt, the success
+vector $s(q, c_1), \dots, s(q, c_8)$ and the cost of every cell in tokens,
+seconds and joules, from which $\cstar(q)$ follows by \eqref{eq:cstar}. Four
+properties of these labels matter for what follows. First, 7.25\% of the
+gradable prompts are unservable, answered by no cell: 12.5\% of code, 6.25\%
+of mathematics and 3.0\% of multiple choice. Second, 9.6\% of the gradable
+generations reached their token cap, and a capped generation counts as a
+failure. Third, labels come from one sample per prompt and cell: on the noise
+subset a cell's outcome differs between two samples 8.9\% of the time, and
+the single-sample $\cstar(q)$ matches the majority of three for 84.0\% of
+prompts. Fourth, the distribution of $\cstar(q)$ is concentrated at the cheap
+end of the grid (Section~\ref{sec:results-labels}), which is what makes
+stickiness expensive. Accuracy by cell and family is in Table~S5 of the
+supplementary material.
+
+\subsection{Public and hosted pools}
+\label{sec:data-pools}
+
+The two wider pools are described in Table~\ref{tab:pools}. The public pool
+is the released per-query outcomes of LLMRouterBench
+\cite{li2026llmrouterbench}, read at a pinned revision of the release and
+never regenerated. We keep the thirteen models of its performance--cost
+setting and the nine datasets they were all run on, namely AIME (60
+queries), ArenaHard (750), GPQA (198), HLE (2{,}158), LiveCodeBench
+(1{,}055), LiveMathBench (121), MMLU-Pro (3{,}000), SimpleQA (4{,}326) and
+SWE-bench (500), which gives 12{,}168 queries and 158{,}184 records. Each
+record holds a score, the prompt and completion token counts and the
+provider's dollar charge. The hosted pool is the local main subset sent to
+six hosted configurations; its 825 prompts split into 278 mathematics, 274
+code and 273 multiple-choice prompts, each answered in all six cells, and the
+4{,}960 responses carry token counts, reasoning-token counts and a cost
+computed from the provider's reported usage.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{The two wider pools. Cost units are those the sources provide;
+neither pool has latency or energy per query.}
+\label{tab:pools}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+ & Public pool & Hosted pool \\
+\midrule
+Source & LLMRouterBench release, MIT licence & Local main subset, re-run through a batch API \\
+Models or cells & 13 models & 6 cells: 3 models $\times$ 2 efforts \\
+Queries & 12{,}168 over 9 datasets & 825 prompts, 3 families \\
+Records & 158{,}184 & 4{,}960 responses \\
+Cost & Provider dollars, tokens & Dollars from reported usage, tokens \\
+Role & Tax on a mixed pool & Tax with paid reasoning effort \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Licences and availability}
+\label{sec:data-availability}
+
+Every source dataset is under a licence that permits redistribution with
+attribution (Table~\ref{tab:corpus}), and the LLMRouterBench release is
+under the MIT licence. The prompts can therefore be rebuilt from the public
+sources with the recorded seed and fingerprints, and the derived tables,
+meaning the corpus manifest, the per-cell grades, the per-generation energy,
+the per-prompt labels and the analysis outputs behind every table and figure,
+contain no prompt text. The availability of these files is stated in the Data
+availability section.

@@ -63,3 +63,17 @@ paper-elsevier/submission/
 paper-elsevier/FGCS_submission.zip
 paper-elsevier/photos/
 paper-elsevier/ESWA_submission.zip
+
+# SUSCOM submission package build outputs (figures/*.pdf stay tracked)
+paper-suscom/*.aux
+paper-suscom/*.bbl
+paper-suscom/*.blg
+paper-suscom/*.log
+paper-suscom/*.out
+paper-suscom/*.spl
+paper-suscom/*.pdf
+paper-suscom/submission/
+paper-suscom/SUSCOM_submission.zip
+paper-suscom/figures-src/*.aux
+paper-suscom/figures-src/*.log
+paper-suscom/figures-src/*.pdf

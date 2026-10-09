@@ -1,0 +1,99 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Anyone who uses a tiered language-model service makes an allocation decision
+before typing a word. Providers sell families of models that trade
+capability against price and latency, and a growing number also expose a
+second control: whether, and how much, the model should reason before it
+answers \cite{openai_reasoning,anthropic_effort,google_thinking}. Open-weight
+families ship the same two axes; Qwen3 offers dense models from 0.6B to 14B
+parameters with a switch between thinking and non-thinking modes and a
+controllable thinking budget \cite{qwen3}. Reasoning traces raise accuracy on
+hard problems \cite{wei2022cot,deepseek2025r1}, but they multiply the number
+of generated tokens, and the choice of when to pay for them is left to the
+person holding the keyboard.
+
+People get that choice wrong in two opposite directions. The first is
+under-provisioning: start with a small, cheap configuration, notice a wrong
+answer, and move up. Every failed attempt is billed in full, and so is the
+prompt, which has to be resent at each step. The second is
+over-provisioning: a heavyweight configuration chosen for yesterday's hard
+task stays selected, and today's trivial prompts pay its premium. Reasoning
+models make the second failure worse because they tend to produce long traces
+for questions that need none, a pattern the efficient-reasoning literature
+calls overthinking \cite{sui2025stopoverthinking,alomrani2025reasoningbudget}.
+Both failures waste tokens, time and energy, and neither has been measured
+against the configuration that would have been sufficient.
+
+Model routing is the obvious remedy, and there is a large literature on it
+\cite{moslem2026routingsurvey}. Cascades query models in order of cost and
+stop when a scorer accepts an answer \cite{chen2023frugalgpt,aggarwal2024automix}.
+Predictive routers pick a model from the query alone
+\cite{ding2024hybridllm,ong2024routellm}. More recent work routes over
+reasoning mode \cite{zhang2025synapseroute,lee2026dart} and over model and
+reasoning strategy jointly \cite{pan2026routetoreason}. These systems are
+evaluated against static single-model policies, random assignment, an oracle,
+or an automated cascade. None of the work we located evaluates them against
+the policy people actually follow, which is manual escalation with the prompt
+resent at every step. Energy-aware routers do measure power, but they route
+over model choice or processing pipeline rather than reasoning mode, and they
+report savings gross of the router's own consumption
+\cite{ziller2026greenserv,li2026ecothink}. Routers that control reasoning
+effort report tokens and latency, not joules \cite{lee2026dart}.
+
+This paper studies one-shot selection of the \emph{minimum sufficient
+configuration}: the cheapest cell of a model-size by reasoning-mode grid that
+still answers a prompt correctly, predicted before any generation. We define
+the \emph{escalation tax} as the cost a policy incurs beyond that
+configuration, and split it into an escalation component, paid for attempts
+that failed, and a stickiness component, paid for finishing on a
+configuration more expensive than necessary. The study runs on hardware most
+practitioners own: a laptop with an 8\,GB consumer GPU, where quantisation is
+forced, one model fits in memory at a time, and every joule is measured from
+board power rather than estimated from rated power.
+
+The contributions are as follows.
+\begin{itemize}
+  \item A formal definition of the escalation tax and its decomposition, with
+        a family of manual escalation policies evaluated under both perfect
+        and imperfect failure detection (Section~\ref{sec:methodology}).
+  \item An oracle-labelled corpus in which every prompt is run through all
+        eight cells of a Qwen3 size-by-mode grid, recording per-cell success,
+        token counts, latency and measured energy
+        (Sections~\ref{sec:datasets} and \ref{sec:setup}).
+  \item A comparison of three router families---classical classifiers,
+        fine-tuned encoders and a small language model used as a
+        router---under \emph{net} accounting, in which each router's own
+        tokens, latency and energy are subtracted from the saving it
+        produces.
+  \item A measured characterisation of the energy cost of the reasoning-mode
+        axis, reported as joules per \emph{solved} query, so that a cheap
+        configuration that fails and forces a retry is not flattered.
+  \item The same tax measured on two pools the laptop cannot host: thirteen
+        public models and six hosted cells in which reasoning effort is a
+        paid setting (Section~\ref{sec:results}).
+\end{itemize}
+
+The tax is large, and most of it comes from where a user stays rather than
+how they climb. Leaving the 8B thinking cell selected pays 12.96 times the
+minimum sufficient energy and answers 79.8\% of prompts; a frugal climb with
+thinking off pays 0.89 times and answers 92.2\%. On gradable tasks, moving up
+a size below 8B without thinking answers more prompts than turning thinking
+on, for 3.8 to 5.5 times less energy per solved prompt; on open-ended
+requests, graded by a model judge that agrees with a human only moderately,
+thinking is far cheaper, yet the frugal climb still pays the least tax. How a
+router compares with that climb turns on how a failed route is recovered.
+Sent to the largest cell, the best router spends 1.30 times the climb's
+energy per solved prompt, though 64\% less than the sticky default;
+recovering by climbing from the routed cell instead, every router comes
+within 6\% of the climb and four are cheaper than it. Detection matters as
+much: when users accept 15\% of wrong answers, the router answers 7.1 points
+more than the climb, because it makes fewer attempts at which to be fooled.
+
+Section~\ref{sec:related} reviews the three literatures the problem sits
+between and compares the closest systems with this study.
+Section~\ref{sec:methodology} gives the architecture of the framework and
+formalises the tax and the routers, Section~\ref{sec:datasets} describes the
+datasets, Section~\ref{sec:setup} gives the experimental setup, and
+Sections~\ref{sec:results} to \ref{sec:conclusion} present, interpret and
+conclude from the results.

@@ -1,0 +1,107 @@
+% =====================================================================
+%  THE ESCALATION TAX -- submission to Sustainable Computing:
+%  Informatics and Systems (SUSCOM, Elsevier).
+%
+%  SUSCOM follows a SINGLE anonymised review: reviewers do not see who
+%  they are, but the authors are named on the manuscript. Author details,
+%  acknowledgements, CRediT, competing interests and the generative-AI
+%  declaration are therefore part of this file.
+%
+%  Built on the ESWA package in ../paper-elsevier/ with three additions
+%  asked for in this version: an architecture diagram (Figure 1, drawn
+%  from figures-src/architecture.tex), a table comparing the closest prior
+%  work (Table 1) and a Datasets section (Section 4).
+%
+%  Build: python build_submission.py (or pdflatex, bibtex, pdflatex x2)
+% =====================================================================
+\documentclass[final,5p,times,twocolumn]{elsarticle}
+
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{xurl}
+
+\graphicspath{{figures/}}
+
+\newcommand{\cells}{\mathcal{C}}
+\newcommand{\cstar}{c^{*}}
+\newcommand{\cost}{\mathrm{cost}}
+\newcommand{\Tax}{\mathrm{Tax}}
+\newcommand{\Esc}{\mathrm{Esc}}
+\newcommand{\Stk}{\mathrm{Stk}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\journal{Sustainable Computing: Informatics and Systems}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{The escalation tax: measuring what manual model and
+reasoning-mode selection costs, and whether a one-shot router recovers it}
+
+\author[a]{Suseta Datta}
+\author[a]{Indrajeet Mondal\corref{cor1}}
+\ead{indrajeetmondal120703@gmail.com}
+\cortext[cor1]{Corresponding author.}
+
+\affiliation[a]{organization={Department of Computer Application, Narula
+  Institute of Technology},
+  addressline={81 Nilgunj Road, Agarpara},
+  city={Kolkata},
+  postcode={700109},
+  state={West Bengal},
+  country={India}}
+
+\begin{abstract}
+Tiered language-model services leave users to choose a model size and,
+increasingly, whether the model should reason before answering. Users
+misallocate in two directions: escalating after each failure, paying for
+every discarded attempt, or leaving a heavyweight configuration selected and
+overpaying on prompts that never needed it. We call the excess over the
+cheapest configuration that would have succeeded the escalation tax and
+split it into escalation and stickiness. We ask whether a small router in
+front of eight Qwen3 configurations (0.6 to 8 billion parameters, thinking
+on and off) can pick that minimum sufficient configuration before generation
+net of its own tokens, latency and energy. Every prompt of a
+stratified corpus runs through all eight on a laptop GPU with metered board
+power. We compare classical, encoder and language-model routers against
+manual escalation policies and a self-verifying cascade, and measure the tax
+on two further pools: thirteen public models and six hosted configurations
+with paid reasoning effort. Leaving the largest thinking configuration
+selected pays 12.96 times the minimum sufficient energy and a frugal climb
+0.89 times, at 3{,}612 and 946\,J per solved prompt against the oracle's
+635\,J. Whether routers beat that climb depends on how a failed route is
+recovered. Recovering at the largest configuration, the best router spends
+1.30 times the climb's energy per solved prompt, though 64\% less than the
+sticky default; recovering by climbing instead, routers match it and four
+beat it. Where users miss wrong answers, the router answers 7.1 points more.
+\end{abstract}
+
+\begin{keyword}
+energy efficiency \sep hybrid thinking \sep inference cost \sep
+large language models \sep model routing \sep reasoning effort \sep
+test-time compute
+\end{keyword}
+
+\end{frontmatter}
+
+\input{sections/01-introduction}
+\input{sections/02-related-work}
+\input{sections/03-methodology}
+\input{sections/04-datasets}
+\input{sections/05-experimental-setup}
+\input{sections/06-results}
+\input{sections/07-discussion}
+\input{sections/08-conclusion}
+\input{sections/09-back-matter}
+
+{\footnotesize
+\setlength{\bibsep}{0pt plus 0.3ex}
+\bibliographystyle{elsarticle-num}
+\bibliography{refs,refs-methods}}
+
+\end{document}
