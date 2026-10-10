@@ -65,7 +65,18 @@ The contributions are as follows.
         fine-tuned encoders and a small language model used as a
         router---under \emph{net} accounting, in which each router's own
         tokens, latency and energy are subtracted from the saving it
-        produces.
+        produces. The predictors are standard by design, and the
+        procedure that fits, selects and costs them is specified in full
+        (Algorithms~\ref{alg:router} and \ref{alg:cost}, the
+        cost-sensitive loss of Eq.~\eqref{eq:csweight}, and the settings of
+        Table~\ref{tab:hyper}).
+  \item Two formal results that explain the measurements: the tax of a
+        policy that never moves is the ratio of its cell's mean cost to that
+        of the minimum sufficient configuration, less one, and a router's
+        break-even confidence for routing down rises with the cost of
+        recovering from a failure (Propositions~\ref{prop:sticky} and
+        \ref{prop:tau}, with the check against the data in
+        Section~\ref{sec:discussion}).
   \item A measured characterisation of the energy cost of the reasoning-mode
         axis, reported as joules per \emph{solved} query, so that a cheap
         configuration that fails and forces a retry is not flattered.

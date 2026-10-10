@@ -22,8 +22,26 @@
 \usepackage{amssymb}
 \usepackage{tabularx}
 \usepackage{xurl}
+\usepackage{amsthm}
+\usepackage{algpseudocode}
 
 \graphicspath{{figures/}}
+
+% A floating algorithm environment built on the figure float, so that it needs
+% no package beyond the ones already loaded; it counts and captions as
+% "Algorithm N".
+\makeatletter
+\newcounter{algorithm}
+\def\fnum@algorithm{Algorithm~\thealgorithm}
+\def\ext@algorithm{loa}
+\newenvironment{algorithm}[1][tbp]{\begin{figure}[#1]\def\@captype{algorithm}}%
+  {\end{figure}}
+\makeatother
+
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
 
 \newcommand{\cells}{\mathcal{C}}
 \newcommand{\cstar}{c^{*}}
@@ -43,9 +61,9 @@
 \title{The escalation tax: measuring what manual model and
 reasoning-mode selection costs, and whether a one-shot router recovers it}
 
-\author[a]{Suseta Datta}
-\author[a]{Indrajeet Mondal\corref{cor1}}
-\ead{indrajeetmondal120703@gmail.com}
+\author[a]{Suseta Datta\corref{cor1}}
+\ead{suseta.datta@nit.ac.in}
+\author[a]{Indrajeet Mondal}
 \cortext[cor1]{Corresponding author.}
 
 \affiliation[a]{organization={Department of Computer Application, Narula

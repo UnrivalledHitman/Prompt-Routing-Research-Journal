@@ -24,8 +24,8 @@ selection costs, and whether a one-shot router recovers it''}
 \maketitle
 
 This file collects the material referred to from the manuscript: the two validation
-gates (Tables~\ref{tab:gate1} and \ref{tab:gate2}), router overhead
-(Table~\ref{tab:overhead}), the carbon bracket (Table~\ref{tab:carbon}),
+gates (Tables~\ref{tab:gate1} and \ref{tab:gate2}), the carbon bracket
+(Table~\ref{tab:carbon}),
 per-family accuracy (Table~\ref{tab:family-accuracy}), the two wider pools in
 cost order (Tables~\ref{tab:public-pool} and \ref{tab:hosted-cells}), and six
 figures (Figures~\ref{fig:detection} to \ref{fig:hosted-frontier}). Every
@@ -68,18 +68,6 @@ Size & AUC & Tokens (think / no) & Ratio (95\% CI) & Leak & Marker \\
 8B   & 0.953 & 1814 / 180 & 9.7 (7.7--17.0)  & 0 & 0.045 \\
 \bottomrule
 \end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\small
-\caption{Router overhead per decision, averaged over seeds and both training
-objectives. CPU energy is an upper bound, decision time multiplied by
-54\,W; GPU energy is metered. The LoRA router is charged the zero-shot
-probe's cost. Cascade figures are per verification check, and a query may
-need several.}
-\label{tab:overhead}
-\input{tables/overhead}
 \end{table}
 
 \begin{table}[ht]

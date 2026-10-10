@@ -231,7 +231,46 @@ instead continues up the P1 ladder from the routed cell. The tax is then
 computed with \eqref{eq:tax} exactly as for $\pi$. For each cost unit,
 recovery rule and detection regime, $\tau$ is chosen on the validation split
 to minimise net cost per solved prompt, router cost included, and the test
-split is evaluated once at that value.
+split is evaluated once at that value. Algorithm~\ref{alg:router} gives the
+procedure, and Algorithm~\ref{alg:cost} the expected cost of one routed query
+that it calls.
+
+\begin{algorithm}[t]
+\caption{Fitting a router and choosing its threshold.}
+\label{alg:router}
+\small
+\begin{algorithmic}[1]
+\Require training, validation and test prompts with labels $s$ and costs;
+  thresholds $\mathcal{G} = \{0, 0.02, \dots, 1\}$; hyperparameter grid
+  $\Theta$; recovery rules $\{\mathrm{top}, \mathrm{climb}\}$; detection
+  models; training seeds
+\State $\bar{\kappa}_c \gets$ mean cost of cell $c$ over the training prompts
+\For{$\theta \in \Theta$}
+  \State fit $f_\theta$ on the training prompts, with $\tilde{w}$ if
+    cost-sensitive
+  \State $J(\theta) \gets \min_{\tau \in \mathcal{G}}$ net cost per solved
+    prompt on the validation prompts (top recovery, oracle detection, no
+    router cost)
+\EndFor
+\State $\theta^{*} \gets \arg\min_{\theta} J(\theta)$
+\For{each seed}
+  \State fit $f$ at $\theta^{*}$ on the training prompts
+  \State time or meter one decision at a time, giving the router cost
+    $\kappa(q)$
+  \For{each cost unit, recovery rule and detection model}
+    \For{$\tau \in \mathcal{G}$}
+      \State $\hat{c}_\tau(q) \gets$ Eq.~\eqref{eq:selection} from
+        $f(q)$ and $\bar{\kappa}$ for each validation prompt
+      \State $N(\tau) \gets$ net cost per solved prompt, summing
+        Algorithm~\ref{alg:cost} over validation prompts
+    \EndFor
+    \State $\tau^{*} \gets \arg\min_{\tau} N(\tau)$, ties to the larger
+      $\tau$
+    \State evaluate once on the test prompts at $\tau^{*}$
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
 Three router families span four orders of magnitude in their own cost.
 \emph{R1, classical classifiers:} logistic regression on TF-IDF word and
@@ -254,9 +293,52 @@ success as monotone in mean cost, $\hat{p}_i(q)$ in \eqref{eq:router} is the
 mass on configurations whose mean cost does not exceed that of $c_i$. A third
 variant adds LoRA adapters \cite{hu2022lora} trained to name the $\cstar$ of
 each training prompt. A router larger than the models it routes between
-defeats its own purpose, so we deliberately use the smallest pool member.
-Because misrouting costs are asymmetric, a cost-sensitive variant of each R1
-and R2 router weights errors by their realised cost consequence.
+defeats its own purpose, so we deliberately use the smallest pool member. The
+predictors are standard on purpose: what is under test is the accounting in
+which routers are compared, not a new learning method, and the three families
+differ in their own cost by orders of magnitude, which gives that accounting
+something to show.
+
+Because misrouting costs are asymmetric, each R1 and R2 router also has a
+cost-sensitive variant. Training example $(q, c)$ is weighted by what a wrong
+prediction for it would cost. If cell $c$ fails on $q$, predicting success
+sends the prompt on to $c_8$ for a retry; if it succeeds, predicting failure
+forgoes a cell cheaper than $c_8$ by the difference. With costs in the label
+unit (joules) and $\varepsilon = 10^{-6}$,
+\begin{equation}
+  \begin{split}
+    w(q, c) = \varepsilon &+ s(q, c)\,\max\{\cost(c_8, q) - \cost(c, q),\, 0\}\\
+    &+ \bigl(1 - s(q, c)\bigr)\,\cost(c_8, q),
+  \end{split}
+  \label{eq:csweight}
+\end{equation}
+normalised so that the weights of each cell average one over the training set
+$\mathcal{T}$,
+\begin{equation}
+  \tilde{w}(q, c) = w(q, c) \Big/ \Bigl(\tfrac{1}{|\mathcal{T}|}
+  \textstyle\sum_{q' \in \mathcal{T}} w(q', c)\Bigr).
+  \label{eq:csnorm}
+\end{equation}
+The classifier for cell $c$ minimises the weighted log-loss
+$\sum_{q} \tilde{w}(q, c)\, \ell\bigl(s(q, c), \hat{p}_c(q)\bigr)$; logistic
+regression and boosted trees receive $\tilde{w}$ as sample weights. The
+encoders train all eight outputs jointly. With $\mathcal{K}$ the cells whose
+training labels contain both outcomes (the others are predicted as a
+constant), $B$ a mini-batch and $z_c$ the logit of cell $c$, their loss is
+\begin{equation}
+  \begin{split}
+    \mathcal{L}(B) = \frac{1}{|B|\,|\mathcal{K}|}
+    &\sum_{q \in B} \sum_{c \in \mathcal{K}}
+    b(q, c)\, \tilde{w}(q, c)\\
+    &\qquad\cdot\,\mathrm{BCE}\bigl(s(q, c),\, \sigma(z_c(q))\bigr),
+  \end{split}
+  \label{eq:encloss}
+\end{equation}
+where $b(q, c) = |\mathcal{T}| / (2 n_{c}^{s(q,c)})$ balances the two outcomes
+of each cell, $n_c^{1}$ and $n_c^{0}$ counting the training prompts on which
+$c$ succeeds and fails, and $\tilde{w} \equiv 1$ for the cost-neutral variant.
+The R3 variant trained with LoRA has no cost-sensitive form, because the
+weights above are defined per cell and it is trained to name one.
 
 \subsection{Net-of-router accounting and the cascade baseline}
 \label{sec:net}
@@ -279,6 +361,40 @@ the probe decodes up to eight tokens where the variant needs one forward
 pass. R1 and R2 decide on the CPU, which NVML cannot see, so their energy per
 decision is bounded above by decision time multiplied by the upper end of the
 processor's configurable power range (54\,W), and that bound is charged.
+Algorithm~\ref{alg:cost} computes the expected cost of one routed query under
+a recovery rule and a detection model, as an exact expectation over the user's
+accept-or-reject decisions; manual policies use the same routine with their
+own ladders, so every policy is priced by one function.
+
+\begin{algorithm}[t]
+\caption{Expected cost and solve probability of one routed query.}
+\label{alg:cost}
+\small
+\begin{algorithmic}[1]
+\Require query $q$; routed cell $r$; recovery rule; $p_{\mathrm{acc}}$,
+  $p_{\mathrm{rej}}$; router cost $\kappa(q)$
+\Ensure net cost $C$ and solve probability $S$
+\If{recovery is top}
+  \State $\mathcal{L} \gets (r)$ if $r = c_8$, else $(r, c_8)$
+\Else
+  \State $\mathcal{L} \gets (r)$ followed by the rungs of P1 above $r$
+\EndIf
+\State $\mathrm{reach} \gets 1$; $C \gets \kappa(q)$; $S \gets 0$
+\For{$j = 1, \dots, |\mathcal{L}|$}
+  \State $a \gets \mathcal{L}_j$; $C \gets C + \mathrm{reach}\cdot
+    \cost(a, q)$
+  \If{$j = |\mathcal{L}|$}
+    \State $S \gets S + \mathrm{reach}\cdot s(q, a)$; \textbf{stop}
+    \Comment{last rung is kept}
+  \EndIf
+  \State $\mathrm{accept} \gets s(q, a)(1 - p_{\mathrm{rej}}) +
+    (1 - s(q, a))\,p_{\mathrm{acc}}$
+  \State $S \gets S + \mathrm{reach}\cdot s(q, a)(1 - p_{\mathrm{rej}})$
+  \State $\mathrm{reach} \gets \mathrm{reach}\cdot(1 - \mathrm{accept})$
+\EndFor
+\State \Return $C$, $S$
+\end{algorithmic}
+\end{algorithm}
 
 The strongest published alternative to predicting in advance is to try the
 cheap configuration and check. We implement a cascade in the style of AutoMix

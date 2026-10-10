@@ -11,7 +11,32 @@ makes that ratio large: the top rung combines the largest model with its
 costliest setting, while the mass of $\cstar(q)$ sits at the other end, among
 the cheapest one or two options. The tax therefore follows how far the top
 rung's price sits above the options that answer most prompts, which is 14
-times locally, nine on the public pool and five on the hosted ladder.
+times locally, nine on the public pool and five on the hosted ladder. The
+statement is exact, and follows from the decomposition \eqref{eq:decomp}.
+
+\begin{proposition}[Stickiness of a fixed configuration]
+\label{prop:sticky}
+Let a policy use one cell $c$ for every prompt and never move, as P3 does with
+$c = c_8$, and let $\mathcal{Q}$ be the servable prompts. Then, for every
+$q \in \mathcal{Q}$, $\Esc(\pi, q) = 0$ and
+$\Tax(\pi, q) = \Stk(\pi, q) = \cost(c, q) - \cost(\cstar(q), q)$, so that
+\[
+  \frac{\mathbb{E}_{\mathcal{Q}}\,[\Tax(\pi, q)]}
+       {\mathbb{E}_{\mathcal{Q}}\,[\cost(\cstar(q), q)]}
+  \;=\; \frac{\mathbb{E}_{\mathcal{Q}}\,[\cost(c, q)]}
+             {\mathbb{E}_{\mathcal{Q}}\,[\cost(\cstar(q), q)]} \;-\; 1 .
+\]
+\end{proposition}
+\begin{proof}
+The policy makes one attempt, so $m = 1$ in \eqref{eq:decomp}: the sum in
+$\Esc$ is empty and $a_m = c$. Taking means over $\mathcal{Q}$ and dividing by
+the mean cost of $\cstar(q)$ gives the ratio.
+\end{proof}
+The relative tax of a policy that never moves is therefore the ratio of its
+cell's mean cost to that of the minimum sufficient configuration, less one,
+whatever the success rate of the cell. The relative taxes measured for P3,
+12.96, 7.96 and 4.35 on the three pools, correspond to ratios of 13.96, 8.96
+and 5.35, which are the figures above.
 
 \emph{Escalation is small when the ladder's cost order matches the order of
 sufficiency.} Each failed rung is paid in full, so a climb is cheap only if
@@ -62,7 +87,46 @@ three answerable prompts in four to a costlier cell than they need, so its
 tax is almost all stickiness. Recovering by climbing from the routed cell
 brings every router within 6\% of P1. The oracle's 32\% saving over P1
 therefore needs a router that is rarely wrong, and the best router we trained
-picks $\cstar(q)$ exactly for one prompt in seven.
+picks $\cstar(q)$ exactly for one prompt in seven. The dependence of the
+threshold on the recovery rule can be stated exactly.
+
+\begin{proposition}[Break-even threshold]
+\label{prop:tau}
+Let a router choose between a cheap cell $a$ and a safer cell $b$ with
+$\cost(a, q) < \cost(b, q)$, and let $p_a$ and $p_b$ be their success
+probabilities for $q$. Let $R_x > 0$ be the cost the recovery rule adds when
+$x$ fails, and $\Delta = \cost(b, q) - \cost(a, q)$. Under oracle detection,
+routing to $a$ has the lower expected cost if and only if
+\[
+  p_a \;\geq\; 1 - \frac{\Delta + (1 - p_b)\,R_b}{R_a}.
+\]
+When $b$ is certain to succeed, the break-even probability is
+$\tau^{*}_a = 1 - \Delta / R_a$, which increases with $R_a$.
+\end{proposition}
+\begin{proof}
+Routing to $x$ costs $\cost(x, q) + (1 - p_x) R_x$ in expectation. The cost of
+$a$ is at most that of $b$ exactly when
+$(1 - p_a) R_a \leq \Delta + (1 - p_b) R_b$; dividing by $R_a$ gives the
+condition, and setting $p_b = 1$ gives $\tau^{*}_a$.
+\end{proof}
+A router should therefore demand more confidence before routing down the
+dearer its recovery is, which is the sense in which the threshold belongs to
+the recovery rule and not to the router. Given a failure, recovery at $c_8$
+costs 3{,}432, 3{,}726 and 4{,}486\,J on average after a failure at $c_1$,
+$c_3$ and $c_5$, over the 1{,}200 gradable prompts, while climbing the P1
+ladder costs 1{,}367, 1{,}933 and 3{,}422\,J; after a failure at $c_7$ the two
+coincide, at 4{,}834\,J. Climbing is the cheaper recovery wherever the two
+differ, so the proposition predicts a lower threshold under climbing. The
+selected thresholds agree: in all 46 runs, one per router and seed with the
+cascade included, the energy threshold chosen on validation was lower under
+climbing than under recovery at $c_8$, by a median of 0.55, and the same held
+for latency; in tokens, where $c_8$ costs little more than the cells below it,
+it fell in 28 runs, was unchanged in 15 and rose in 3. The proposition fixes
+the direction and the dependence on $R_a$ but not the size of the shift, which
+also reflects how well the router's probabilities are calibrated: taking the
+safer cell to be certain, the break-even between adjacent non-thinking cells
+is at least 0.93 under either rule, above every threshold selected for the
+climbing rule.
 
 \emph{Router cost does not separate the families on this grid; training data
 does.} Every router's own energy is under 1\% of what it routes, so charging

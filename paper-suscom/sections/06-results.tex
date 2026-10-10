@@ -239,8 +239,19 @@ configuration, the 0.6B model routes low, and the few-shot prompt sends
 cell also beats classifying $\cstar(q)$ directly, by 480.3\,J per prompt with
 the same TF-IDF features [241.6, 723.8]. The linear routers give the same
 result with every training seed, while the gradient-boosted and fine-tuned
-ones vary with standard deviations of up to 128.5\,J. Table~S3 of the
-supplementary material gives each router's overhead per decision.
+ones vary with standard deviations of up to 128.5\,J. Table~\ref{tab:overhead} gives each router's overhead per decision.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Router overhead per decision, averaged over seeds and both training
+objectives. CPU energy is an upper bound, decision time multiplied by
+54\,W; GPU energy is metered. The LoRA router is charged the zero-shot
+probe's cost. Cascade figures are per verification check, and a query may
+need several.}
+\label{tab:overhead}
+\input{tables/overhead}
+\end{table}
 
 \subsection{Energy of the reasoning-mode axis}
 \label{sec:results-mode}
@@ -300,7 +311,22 @@ just below its $\cstar(q)$ and to the tier just above, with a failed answer
 recovered at $c_8$ as a router's would be. Tiers are the cells in order of
 mean energy, $c_1, c_3, c_5, c_7, c_2, c_4, c_6, c_8$, so a step up in energy
 is not always a step up in accuracy: the tier above $c_7$ is 0.6B with
-thinking. One tier too low fails on 79.8\% of the 663 prompts that have a
+thinking. Formally, let $c^{-}(q)$ and $c^{+}(q)$ be the tiers just below and
+just above $\cstar(q)$, defined when they exist. Routing $q$ to a cell $c$
+costs its own cost plus, if it fails and is not already $c_8$, a retry at
+$c_8$, so the excess over the minimum sufficient configuration is
+\begin{equation}
+  \begin{split}
+    \Delta^{\pm}(q) = \cost\bigl(c^{\pm}, q\bigr)
+    &+ \mathbb{1}\bigl[s(q, c^{\pm}) = 0,\; c^{\pm} \neq c_8\bigr]\,
+      \cost(c_8, q)\\
+    &- \cost\bigl(\cstar(q), q\bigr).
+  \end{split}
+  \label{eq:asym}
+\end{equation}
+The asymmetry is the ratio $\mathbb{E}[\Delta^{-}] / \mathbb{E}[\Delta^{+}]$,
+each mean taken over the prompts for which that tier exists, and it is
+reported in each cost unit. One tier too low fails on 79.8\% of the 663 prompts that have a
 lower tier and costs 2{,}625.9\,J more than $\cstar(q)$ [2{,}461.8,
 2{,}790.1], 13.8 times its mean cost. One tier too high fails on 24.1\% of
 the 1{,}104 prompts that have a higher tier and costs 968.6\,J more [861.4,
@@ -498,5 +524,5 @@ grid. Per 1{,}000 queries, P3's tax is 34\,g of CO$_2$e on a grid at
 largest model selected on a low-carbon grid therefore emits about as much
 excess carbon as the frugal climb on a coal-heavy one, the tax differing by a
 factor of 14.6 between the two policies where the bracket spans a factor of
-14. These are board-level figures for one laptop GPU, and Table~S4 of the
+14. These are board-level figures for one laptop GPU, and Table~S3 of the
 supplementary material gives the full bracket.

@@ -97,6 +97,50 @@ blind human scores and 0.40 [0.27, 0.52] against \texttt{gpt-5-mini}, which
 agrees with the human rater at 0.74 [0.60, 0.86].
 The family therefore carries the caveat and is reported separately.
 
+\subsection{Router implementation and training}
+\label{sec:setup-routers}
+
+Table~\ref{tab:hyper} lists every router's input, model and training settings.
+All routers are trained on the 716 training prompts. Each trainable router
+has a small grid, searched on the validation split with the first seed by the
+procedure of Algorithm~\ref{alg:router}: the grid point with the lowest
+validation net cost per solved prompt, minimised over $\tau$, is kept, and
+the router is then retrained with three seeds. Cost-sensitive weights
+(Eq.~\ref{eq:csweight}) are computed in joules, the label unit, for R1a, R1b,
+R1c and R2. The threshold $\tau$ runs over 51 values from 0 to 1 in steps of
+0.02 and is chosen afresh for every cost unit, recovery rule and detection
+model; the cascade's confidence threshold uses the same grid with 0.99,
+0.995 and 0.999 added. R2 and R3-LoRA train on the GPU, which the harness
+waits to find otherwise idle with 5\,GB free, and R1 and R2 decide on the CPU.
+Pretrained weights are read from a local cache at pinned revisions, so no
+router changes between runs.
+
+\begin{table*}[ht]
+\centering
+\footnotesize
+\caption{Router inputs, models and training settings. Grids are searched on
+the validation split. LR is logistic regression with an $L_2$ penalty, and
+$\eta$ is the peak learning rate. All sampling for the prompted R3 probes is
+at temperature 1 with no truncation, so the first-token distribution is the
+model's own.}
+\label{tab:hyper}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{3.7cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{3.5cm}@{}}
+\toprule
+Router & Input & Model and training & Validation grid \\
+\midrule
+R1a & TF-IDF: word 1--2-grams and character 3--5-grams, minimum document frequency 2, sublinear term frequency, at most 30{,}000 features each & One LR per cell, at most 2{,}000 iterations & $C \in \{0.1, 1, 10\}$ \\
+R1b & 14 hand-built features: length in characters, words and lines, mean word length, digit ratio, operator density, LaTeX commands, code fences, code keywords, question marks, option lines, uppercase ratio, imperative start, reading ease & One LightGBM or XGBoost model per cell: 200 trees, learning rate 0.05, depth 4, row and column subsampling 0.8 (LightGBM: 15 leaves, at least 10 samples per leaf) & None \\
+R1c & Frozen all-MiniLM-L6-v2 sentence embeddings, $L_2$-normalised & One LR per cell & $C \in \{0.1, 1, 10\}$ \\
+R1 direct & The R1a features & One eight-class LR for $\cstar(q)$, unservable prompts labelled $c_8$ & $C \in \{0.1, 1, 10\}$ \\
+R2 & DistilBERT or DeBERTa-v3-small, first-token pooling, at most 512 tokens & Eight sigmoid outputs, dropout 0.1, loss Eq.~\eqref{eq:encloss}; AdamW, weight decay 0.01, 10\% linear warm-up then linear decay, gradient-norm clip 1, batch 16, bfloat16 autocast & $\eta$ and epochs: $2{\cdot}10^{-5}$ and 4; $5{\cdot}10^{-5}$ and 4; $5{\cdot}10^{-5}$ and 8 \\
+R3 zero- and few-shot & Qwen3-0.6B, request listing the eight configurations as A to H; few-shot adds worked examples & No training: the first-token distribution over the eight letters, from the top 20 log-probabilities & None \\
+R3-LoRA & Qwen3-0.6B, the zero-shot request, at most 768 tokens & LoRA rank 16, $\alpha = 32$, dropout 0.05 on the query, key, value, output, gate, up and down projections; cross-entropy over the eight letters; AdamW without weight decay, 5\% warm-up, batch 8, gradient checkpointing, bfloat16 & $\eta$ and epochs: $10^{-4}$ and 2; $2{\cdot}10^{-4}$ and 3 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
 \subsection{Baselines, metrics and statistics}
 \label{sec:setup-stats}
 

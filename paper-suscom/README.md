@@ -14,7 +14,7 @@ package in `../paper-elsevier/`, which is left unchanged.
 | Author statements | Separate title page | CRediT, competing interests, generative-AI declaration and acknowledgements in the manuscript, before the references |
 | Build checks | Anonymity scan | No anonymity scan; checks for vertical rules in tables and for missing figures |
 | Figures | `Figure_1`–`4` | `Figure_1`–`5`; Figure 1 is the new architecture diagram, the old figures shift up by one |
-| Supplementary tables | S1 is the prior-work comparison | That comparison moved into the manuscript as Table 1, so the other tables shift: gates S1–S2, overhead S3, carbon S4, family accuracy S5, public pool S6, hosted cells S7 |
+| Supplementary tables | S1 is the prior-work comparison | The prior-work comparison and the router-overhead table moved into the manuscript, so the rest shift: gates S1–S2, carbon S3, family accuracy S4, public pool S5, hosted cells S6 |
 | Data | Statement offers data on request | Option C applies: deposit in a repository and link, or explain why not (see below) |
 
 ## Additions
@@ -26,6 +26,35 @@ package in `../paper-elsevier/`, which is left unchanged.
 - **Datasets** — new Section 4: corpus table, splits, records collected, label
   statistics, the public and hosted pools, licences. The duplicated corpus text
   in Section 5 now points to it.
+
+## Technical content added in response to the review comment
+
+The earlier draft was judged not technical enough. These additions are drawn
+from the code and the committed results, not written from the old text.
+
+- **Training detail** — Table 7 (Section 5.4): every router's input, model,
+  optimiser, grid and selected settings, from `configs/analysis.yaml` and
+  `src/arbiter/routers/`.
+- **Cost-sensitive training** — Eqs. 11–13 (Section 3.4): the per-example
+  weight, its per-cell normalisation and the encoder loss, matching
+  `cost_sensitive_weights` and `EncoderRouter.fit`.
+- **Pseudocode** — Algorithm 1 (fit, select hyperparameters and τ) and
+  Algorithm 2 (expected cost and solve probability of a routed query, with
+  recovery and router cost), matching `select_params`, `run_router`, `choose_tau`
+  and `ladder_outcome`.
+- **Formal statements outside Methodology** — Eq. 15 (the asymmetry measure,
+  Section 6.5), Proposition 1 (stickiness of a fixed configuration) and
+  Proposition 2 (break-even threshold depends on recovery cost), both in
+  Section 7.1. Proposition 2 is checked against the data: the validation
+  threshold fell under climbing in all 46 router-and-seed runs (energy and
+  latency); in tokens it fell in 28, tied in 15 and rose in 3, which the text
+  reports.
+- **Router overhead** — now Table 11 in the main text (Section 6.3).
+
+What this does not change: the routers are standard predictors, and the paper
+says so. A reviewer who wants a new learning method would not be satisfied by
+this; a recovery-aware decision rule is the obvious candidate and needs new
+experiments.
 
 ## Rules taken from the guide for authors
 

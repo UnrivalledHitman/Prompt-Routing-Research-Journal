@@ -253,14 +253,14 @@ Upload to Editorial Manager as follows.
   highlights.docx           Highlights (5 bullets, each <= 85 characters),
                             a separate editable file with "highlights" in
                             its name.
-  Supplementary_material.pdf  Supplementary material (Tables S1-S7,
+  Supplementary_material.pdf  Supplementary material (Tables S1-S6,
                             Figures S1-S6), cited from the manuscript.
   manuscript.pdf            For checking only: the PDF this source builds.
                             Editorial Manager builds its own from the .tex.
 
 In the submission system, not as files:
-  - the authors in this order: Suseta Datta, then Indrajeet Mondal, who is
-    the corresponding author; the order must match the manuscript;
+  - the authors in this order: Suseta Datta, who is the corresponding
+    author, then Indrajeet Mondal; the order must match the manuscript;
   - the data statement. For this journal Option C of Elsevier's research data
     guidelines applies: deposit the research data in a repository and link it
     here, or state why it cannot be shared. The manuscript's Data availability
