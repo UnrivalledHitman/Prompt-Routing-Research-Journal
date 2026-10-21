@@ -1,0 +1,297 @@
+\relax 
+\emailauthor{suseta.datta@nit.ac.in}{Suseta Datta\corref {cor1}}
+\Newlabel{cor1}{1}
+\citation{openai_reasoning,anthropic_effort,google_thinking}
+\citation{qwen3}
+\citation{wei2022cot,deepseek2025r1}
+\citation{sui2025stopoverthinking,alomrani2025reasoningbudget}
+\citation{moslem2026routingsurvey}
+\citation{chen2023frugalgpt,aggarwal2024automix}
+\citation{ding2024hybridllm,ong2024routellm}
+\citation{zhang2025synapseroute,lee2026dart}
+\citation{pan2026routetoreason}
+\citation{ziller2026greenserv,li2026ecothink}
+\citation{lee2026dart}
+\Newlabel{a}{a}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{}{section.1}{}}
+\citation{moslem2026routingsurvey}
+\citation{chen2023frugalgpt}
+\citation{aggarwal2024automix}
+\citation{ding2024hybridllm}
+\citation{ong2024routellm}
+\citation{chen2024routerdc}
+\citation{jitkrittum2025universal}
+\citation{tran2025archrouter}
+\citation{zhang2025routerr1}
+\citation{li2026llmrouterbench}
+\citation{wei2022cot}
+\citation{deepseek2025r1}
+\citation{qwen3}
+\citation{sui2025stopoverthinking}
+\citation{alomrani2025reasoningbudget}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related work}{2}{}\protected@file@percent }
+\newlabel{sec:related}{{2}{2}{}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Routing and cascading across models}{2}{}\protected@file@percent }
+\newlabel{sec:related-routing}{{2.1}{2}{}{subsection.2.1}{}}
+\citation{zhang2025synapseroute}
+\citation{guo2026thinkwhenneeded}
+\citation{lee2026dart}
+\citation{kassenaar2026learningwhentothink}
+\citation{ning2026hrbench}
+\citation{pan2026routetoreason}
+\citation{wang2025demystifying}
+\citation{strubell2019energy}
+\citation{schwartz2020greenai}
+\citation{lacoste2019quantifying}
+\citation{patterson2021carbon}
+\citation{luccioni2024powerhungry}
+\citation{xu2025camel}
+\citation{kwon2023vllm}
+\citation{ziller2026greenserv}
+\citation{li2026ecothink}
+\citation{yang2025qosrouting}
+\citation{zheng2023judging}
+\citation{chen2023frugalgpt}
+\citation{aggarwal2024automix}
+\citation{ding2024hybridllm}
+\citation{ong2024routellm}
+\citation{zhang2025routerr1}
+\citation{zhang2025synapseroute}
+\citation{lee2026dart}
+\citation{kassenaar2026learningwhentothink}
+\citation{pan2026routetoreason}
+\citation{ziller2026greenserv}
+\citation{li2026ecothink}
+\citation{yang2025qosrouting}
+\citation{pan2026routetoreason}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Reasoning effort and test-time compute}{3}{}\protected@file@percent }
+\newlabel{sec:related-reasoning}{{2.2}{3}{}{subsection.2.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Energy, carbon and energy-aware routing}{3}{}\protected@file@percent }
+\newlabel{sec:related-energy}{{2.3}{3}{}{subsection.2.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Comparison with related work and positioning}{3}{}\protected@file@percent }
+\newlabel{sec:related-gap}{{2.4}{3}{}{subsection.2.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology}{3}{}\protected@file@percent }
+\newlabel{sec:methodology}{{3}{3}{}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Architecture of the framework}{3}{}\protected@file@percent }
+\newlabel{sec:architecture}{{3.1}{3}{}{subsection.3.1}{}}
+\citation{qwen3}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces The closest prior systems compared with this study. \emph  {Routes over} is what the system selects, \emph  {decides} is when it commits, and the last four columns record what each work reports. The saving is the headline figure its authors quote against their own baselines, which differ from system to system and from ours. A dash means the quantity does not apply or is not part of the work's reported results.}}{4}{}\protected@file@percent }
+\newlabel{tab:prior-work}{{1}{4}{}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Configuration grid and cost}{4}{}\protected@file@percent }
+\newlabel{sec:grid}{{3.2}{4}{}{subsection.3.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces The eight-cell configuration grid. Sizes on disk are for the Q4\_K\_M weights used in all experiments.}}{4}{}\protected@file@percent }
+\newlabel{tab:grid}{{2}{4}{}{table.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Architecture of the study. Prompts from four task families (1) run through the eight-cell grid under metered board power and are graded (2). The grades and costs form a label table, from which routers learn the probability that each cell succeeds and a threshold $\tau $ selects a cell (3). Manual and routed policies are then charged by one cost function, the router's own cost included, and yield the escalation tax and its companions (4). The public and hosted pools reuse the policy and tax code without local inference (5).}}{5}{}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{5}{}{figure.1}{}}
+\newlabel{eq:tokcost}{{1}{5}{}{equation.1}{}}
+\newlabel{eq:latcost}{{2}{5}{}{equation.2}{}}
+\newlabel{eq:energycost}{{3}{5}{}{equation.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Minimum sufficient configuration and the escalation tax}{5}{}\protected@file@percent }
+\newlabel{sec:tax}{{3.3}{5}{}{subsection.3.3}{}}
+\newlabel{eq:cstar}{{4}{5}{}{equation.4}{}}
+\newlabel{eq:policycost}{{5}{5}{}{equation.5}{}}
+\newlabel{eq:tax}{{6}{5}{}{equation.6}{}}
+\newlabel{eq:decomp}{{7}{5}{}{equation.7}{}}
+\citation{ding2024hybridllm}
+\citation{chen2016xgboost,ke2017lightgbm}
+\citation{reimers2019sbert}
+\citation{sanh2019distilbert}
+\citation{he2023debertav3}
+\citation{hu2022lora}
+\newlabel{eq:persolved}{{8}{6}{}{equation.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Routers as per-cell success predictors}{6}{}\protected@file@percent }
+\newlabel{sec:routers}{{3.4}{6}{}{subsection.3.4}{}}
+\newlabel{eq:router}{{9}{6}{}{equation.9}{}}
+\newlabel{eq:selection}{{10}{6}{}{equation.10}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Fitting a router and choosing its threshold.}}{6}{}\protected@file@percent }
+\newlabel{alg:router}{{1}{6}{}{algorithm.1}{}}
+\citation{aggarwal2024automix}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Manual escalation policies. Cells as in Table~\ref {tab:grid}.}}{7}{}\protected@file@percent }
+\newlabel{tab:policies}{{3}{7}{}{table.3}{}}
+\newlabel{eq:csweight}{{11}{7}{}{equation.11}{}}
+\newlabel{eq:csnorm}{{12}{7}{}{equation.12}{}}
+\newlabel{eq:encloss}{{13}{7}{}{equation.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Net-of-router accounting and the cascade baseline}{7}{}\protected@file@percent }
+\newlabel{sec:net}{{3.5}{7}{}{subsection.3.5}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Expected cost and solve probability of one routed query.}}{7}{}\protected@file@percent }
+\newlabel{alg:cost}{{2}{7}{}{algorithm.2}{}}
+\newlabel{eq:netsaving}{{14}{7}{}{equation.14}{}}
+\citation{nvidia_nvml}
+\citation{lacoste2019quantifying}
+\citation{luccioni2024powerhungry}
+\citation{cobbe2021gsm8k}
+\citation{hendrycks2021math,lightman2024verify}
+\citation{chen2021humaneval}
+\citation{austin2021mbpp}
+\citation{hendrycks2021mmlu}
+\citation{clark2018arc}
+\citation{conover2023dolly}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Energy measurement}{8}{}\protected@file@percent }
+\newlabel{sec:energy}{{3.6}{8}{}{subsection.3.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Datasets}{8}{}\protected@file@percent }
+\newlabel{sec:datasets}{{4}{8}{}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Local labelling corpus}{8}{}\protected@file@percent }
+\newlabel{sec:data-corpus}{{4.1}{8}{}{subsection.4.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Records collected and label statistics}{8}{}\protected@file@percent }
+\newlabel{sec:data-records}{{4.2}{8}{}{subsection.4.2}{}}
+\citation{li2026llmrouterbench}
+\citation{ollama}
+\citation{gerganov2023llamacpp}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces The local labelling corpus. \emph  {Rows} is the size of the source split and \emph  {Used} the number of prompts drawn from it. Prompt length is the median and maximum in Qwen3 tokens of the prompt as the model sees it. Licences are those listed on each dataset's card. Each prompt is graded as described in Section~\ref {sec:setup-labels}.}}{9}{}\protected@file@percent }
+\newlabel{tab:corpus}{{4}{9}{}{table.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Split of the 1{,}200 gradable prompts. The same split serves every cost unit.}}{9}{}\protected@file@percent }
+\newlabel{tab:splits}{{5}{9}{}{table.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Public and hosted pools}{9}{}\protected@file@percent }
+\newlabel{sec:data-pools}{{4.3}{9}{}{subsection.4.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces The two wider pools. Cost units are those the sources provide; neither pool has latency or energy per query.}}{9}{}\protected@file@percent }
+\newlabel{tab:pools}{{6}{9}{}{table.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Licences and availability}{9}{}\protected@file@percent }
+\newlabel{sec:data-availability}{{4.4}{9}{}{subsection.4.4}{}}
+\citation{qwen2025modelcard}
+\citation{grattafiori2024llama3}
+\citation{zheng2023judging}
+\citation{cohen1960kappa}
+\citation{cohen1968weighted}
+\citation{landis1977measurement}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Experimental setup}{10}{}\protected@file@percent }
+\newlabel{sec:setup}{{5}{10}{}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Hardware, software and decoding}{10}{}\protected@file@percent }
+\newlabel{sec:setup-hardware}{{5.1}{10}{}{subsection.5.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Labelling and grading}{10}{}\protected@file@percent }
+\newlabel{sec:setup-labels}{{5.2}{10}{}{subsection.5.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Judging open-ended answers}{10}{}\protected@file@percent }
+\newlabel{sec:setup-judge}{{5.3}{10}{}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Router implementation and training}{10}{}\protected@file@percent }
+\newlabel{sec:setup-routers}{{5.4}{10}{}{subsection.5.4}{}}
+\citation{efron1993bootstrap}
+\citation{holm1979simple}
+\citation{wang2025demystifying}
+\citation{li2026llmrouterbench}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Baselines, metrics and statistics}{11}{}\protected@file@percent }
+\newlabel{sec:setup-stats}{{5.5}{11}{}{subsection.5.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Validation gates}{11}{}\protected@file@percent }
+\newlabel{sec:setup-gates}{{5.6}{11}{}{subsection.5.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Public-benchmark and hosted-frontier arms}{11}{}\protected@file@percent }
+\newlabel{sec:setup-arms}{{5.7}{11}{}{subsection.5.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Router inputs, models and training settings. Grids are searched on the validation split. LR is logistic regression with an $L_2$ penalty, and $\eta $ is the peak learning rate. All sampling for the prompted R3 probes is at temperature 1 with no truncation, so the first-token distribution is the model's own.}}{12}{}\protected@file@percent }
+\newlabel{tab:hyper}{{7}{12}{}{table.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Reproducibility}{12}{}\protected@file@percent }
+\newlabel{sec:setup-repro}{{5.8}{12}{}{subsection.5.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Results}{12}{}\protected@file@percent }
+\newlabel{sec:results}{{6}{12}{}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Oracle labels on the local grid}{12}{}\protected@file@percent }
+\newlabel{sec:results-labels}{{6.1}{12}{}{subsection.6.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces The eight cells over the 1{,}200 gradable prompts, one sample per prompt and cell. Accuracy counts a capped generation as a failure, and Capped is the share of generations that reached the token cap. Tokens are input plus output, reasoning included. Latency and energy are means per generation; energy is dynamic board energy, and J per solved divides it by accuracy.}}{13}{}\protected@file@percent }
+\newlabel{tab:cells}{{8}{13}{}{table.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The minimum sufficient cell $c^{*}(q)$, in joules, over all prompts and per family. ``None'' marks prompts that no cell answers.}}{13}{}\protected@file@percent }
+\newlabel{fig:cstar}{{2}{13}{}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}The escalation tax on the local grid}{13}{}\protected@file@percent }
+\newlabel{sec:results-tax}{{6.2}{13}{}{subsection.6.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces The escalation tax per prompt, in joules, split into escalation and stickiness, under oracle detection (solid) and imperfect detection (hatched). Error bars are 95\% bootstrap intervals on the total. P4 starts uniformly over the cells.}}{13}{}\protected@file@percent }
+\newlabel{fig:tax}{{3}{13}{}{figure.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Escalation policies on the local grid over the 1{,}200 gradable prompts, in joules. Cost per solved divides a policy's mean energy per prompt by its solved rate, as in \eqref  {eq:persolved}. The tax and its two components are means over servable prompts, and the last column divides the tax by the mean cost of $c^{*}(q)$, 190.6\,J. Imperfect detection is the illustrative point $p_{\mathrm  {acc}} = 0.15$, $p_{\mathrm  {rej}} = 0.05$.}}{14}{}\protected@file@percent }
+\newlabel{tab:tax}{{9}{14}{}{table.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Routing on the local grid}{14}{}\protected@file@percent }
+\newlabel{sec:results-routing}{{6.3}{14}{}{subsection.6.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Routers on the 243 test prompts, in joules, with a failed routed answer recovered at $c_8$ and every failure detected. Net cost is the mean energy per prompt with the router's own energy included; its interval is for the first training seed, and the standard deviation across three seeds follows in parentheses. Saving and the change in solved rate are paired differences against P1, positive when the router is cheaper or solves more, with Holm-corrected $p$-values. Area is the normalised area under the router's cost--quality frontier as $\tau $ varies. For the cascade, $\tau $ is its verification threshold.}}{15}{}\protected@file@percent }
+\newlabel{tab:routers}{{10}{15}{}{table.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Router overhead per decision, averaged over seeds and both training objectives. CPU energy is an upper bound, decision time multiplied by 54\,W; GPU energy is metered. The LoRA router is charged the zero-shot probe's cost. Cascade figures are per verification check, and a query may need several.}}{15}{}\protected@file@percent }
+\newlabel{tab:overhead}{{11}{15}{}{table.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Energy of the reasoning-mode axis}{15}{}\protected@file@percent }
+\newlabel{sec:results-mode}{{6.4}{15}{}{subsection.6.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Solved rate against net mean energy per prompt on the test split: each router as $\tau $ varies (dashed for cost-sensitive training), the cascade as its threshold varies, the eight cells used alone, the manual policies and the oracle. Cost is logarithmic.}}{16}{}\protected@file@percent }
+\newlabel{fig:frontier}{{4}{16}{}{figure.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Asymmetry of misallocation}{16}{}\protected@file@percent }
+\newlabel{sec:results-asymmetry}{{6.5}{16}{}{subsection.6.5}{}}
+\newlabel{eq:asym}{{15}{16}{}{equation.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Energy per solved prompt with thinking, relative to the same size without thinking and to the next size up without thinking. Error bars are 95\% bootstrap intervals, and the dashed line marks parity. 8B has no next size.}}{16}{}\protected@file@percent }
+\newlabel{fig:mode}{{5}{16}{}{figure.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Open-ended requests}{16}{}\protected@file@percent }
+\newlabel{sec:results-open}{{6.6}{16}{}{subsection.6.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}The escalation tax on a public benchmark}{17}{}\protected@file@percent }
+\newlabel{sec:results-public}{{6.7}{17}{}{subsection.6.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8}The escalation tax on a hosted frontier ladder}{17}{}\protected@file@percent }
+\newlabel{sec:results-hosted}{{6.8}{17}{}{subsection.6.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Escalation policies on the public pool under oracle detection, in US dollars per 1{,}000 queries. P1 climbs the cost--accuracy frontier, P3 uses its top rung once, P4 starts uniformly over the pool and then climbs, and Random picks a model uniformly and recovers at the top rung. A policy that answers fewer queries can show a negative tax, underpaying by failing, so the tax is read beside the solved column.}}{18}{}\protected@file@percent }
+\newlabel{tab:public}{{12}{18}{}{table.12}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Escalation policies on the hosted ladder under oracle detection, in US dollars per 1{,}000 queries. The static rows are the ladder rungs used alone. As on the public pool, a policy that answers fewer queries can show a negative tax by underpaying through failure, so the tax is read beside the solved column.}}{18}{}\protected@file@percent }
+\newlabel{tab:hosted}{{13}{18}{}{table.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.9}Carbon of the escalation tax}{18}{}\protected@file@percent }
+\newlabel{sec:results-carbon}{{6.9}{18}{}{subsection.6.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{18}{}\protected@file@percent }
+\newlabel{sec:discussion}{{7}{18}{}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Why the effects occur}{18}{}\protected@file@percent }
+\newlabel{sec:why}{{7.1}{18}{}{subsection.7.1}{}}
+\newlabel{prop:sticky}{{1}{18}{}{proposition.1}{}}
+\newlabel{prop:tau}{{2}{19}{}{proposition.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Limitations}{20}{}\protected@file@percent }
+\newlabel{sec:limitations}{{7.2}{20}{}{subsection.7.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Implications}{20}{}\protected@file@percent }
+\newlabel{sec:implications}{{7.3}{20}{}{subsection.7.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion and future work}{21}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{8}{21}{}{section.8}{}}
+\bibstyle{elsarticle-num}
+\bibdata{refs,refs-methods}
+\bibcite{openai_reasoning}{{1}{}{{}}{{}}}
+\bibcite{anthropic_effort}{{2}{}{{}}{{}}}
+\bibcite{google_thinking}{{3}{}{{}}{{}}}
+\bibcite{qwen3}{{4}{}{{}}{{}}}
+\bibcite{wei2022cot}{{5}{}{{}}{{}}}
+\bibcite{deepseek2025r1}{{6}{}{{}}{{}}}
+\bibcite{sui2025stopoverthinking}{{7}{}{{}}{{}}}
+\bibcite{alomrani2025reasoningbudget}{{8}{}{{}}{{}}}
+\bibcite{moslem2026routingsurvey}{{9}{}{{}}{{}}}
+\bibcite{chen2023frugalgpt}{{10}{}{{}}{{}}}
+\bibcite{aggarwal2024automix}{{11}{}{{}}{{}}}
+\bibcite{ding2024hybridllm}{{12}{}{{}}{{}}}
+\bibcite{ong2024routellm}{{13}{}{{}}{{}}}
+\bibcite{zhang2025synapseroute}{{14}{}{{}}{{}}}
+\bibcite{lee2026dart}{{15}{}{{}}{{}}}
+\bibcite{pan2026routetoreason}{{16}{}{{}}{{}}}
+\bibcite{ziller2026greenserv}{{17}{}{{}}{{}}}
+\bibcite{li2026ecothink}{{18}{}{{}}{{}}}
+\bibcite{chen2024routerdc}{{19}{}{{}}{{}}}
+\bibcite{jitkrittum2025universal}{{20}{}{{}}{{}}}
+\bibcite{tran2025archrouter}{{21}{}{{}}{{}}}
+\bibcite{zhang2025routerr1}{{22}{}{{}}{{}}}
+\bibcite{li2026llmrouterbench}{{23}{}{{}}{{}}}
+\bibcite{guo2026thinkwhenneeded}{{24}{}{{}}{{}}}
+\bibcite{kassenaar2026learningwhentothink}{{25}{}{{}}{{}}}
+\bibcite{ning2026hrbench}{{26}{}{{}}{{}}}
+\bibcite{wang2025demystifying}{{27}{}{{}}{{}}}
+\bibcite{strubell2019energy}{{28}{}{{}}{{}}}
+\bibcite{schwartz2020greenai}{{29}{}{{}}{{}}}
+\bibcite{lacoste2019quantifying}{{30}{}{{}}{{}}}
+\bibcite{patterson2021carbon}{{31}{}{{}}{{}}}
+\bibcite{luccioni2024powerhungry}{{32}{}{{}}{{}}}
+\bibcite{xu2025camel}{{33}{}{{}}{{}}}
+\bibcite{kwon2023vllm}{{34}{}{{}}{{}}}
+\bibcite{yang2025qosrouting}{{35}{}{{}}{{}}}
+\bibcite{zheng2023judging}{{36}{}{{}}{{}}}
+\bibcite{chen2016xgboost}{{37}{}{{}}{{}}}
+\bibcite{ke2017lightgbm}{{38}{}{{}}{{}}}
+\bibcite{reimers2019sbert}{{39}{}{{}}{{}}}
+\bibcite{sanh2019distilbert}{{40}{}{{}}{{}}}
+\bibcite{he2023debertav3}{{41}{}{{}}{{}}}
+\bibcite{hu2022lora}{{42}{}{{}}{{}}}
+\bibcite{nvidia_nvml}{{43}{}{{}}{{}}}
+\bibcite{cobbe2021gsm8k}{{44}{}{{}}{{}}}
+\bibcite{hendrycks2021math}{{45}{}{{}}{{}}}
+\bibcite{lightman2024verify}{{46}{}{{}}{{}}}
+\bibcite{chen2021humaneval}{{47}{}{{}}{{}}}
+\bibcite{austin2021mbpp}{{48}{}{{}}{{}}}
+\bibcite{hendrycks2021mmlu}{{49}{}{{}}{{}}}
+\bibcite{clark2018arc}{{50}{}{{}}{{}}}
+\bibcite{conover2023dolly}{{51}{}{{}}{{}}}
+\bibcite{ollama}{{52}{}{{}}{{}}}
+\bibcite{gerganov2023llamacpp}{{53}{}{{}}{{}}}
+\bibcite{qwen2025modelcard}{{54}{}{{}}{{}}}
+\bibcite{grattafiori2024llama3}{{55}{}{{}}{{}}}
+\bibcite{cohen1960kappa}{{56}{}{{}}{{}}}
+\bibcite{cohen1968weighted}{{57}{}{{}}{{}}}
+\bibcite{landis1977measurement}{{58}{}{{}}{{}}}
+\bibcite{efron1993bootstrap}{{59}{}{{}}{{}}}
+\bibcite{holm1979simple}{{60}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{23}

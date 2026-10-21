@@ -1,0 +1,67 @@
+This is BibTeX, Version 0.99e
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: manuscript.aux
+Reallocating 'name_of_file' (item size: 1) to 15 items.
+The style file: elsarticle-num.bst
+Reallocating 'name_of_file' (item size: 1) to 5 items.
+Reallocating 'name_of_file' (item size: 1) to 13 items.
+Database file #1: refs.bib
+Database file #2: refs-methods.bib
+Warning--empty pages in wei2022cot
+Warning--empty pages in aggarwal2024automix
+Warning--empty pages in ding2024hybridllm
+Warning--empty pages in lee2026dart
+Warning--empty pages in li2026ecothink
+Warning--empty pages in chen2024routerdc
+Warning--empty pages in zhang2025routerr1
+Warning--empty pages in guo2026thinkwhenneeded
+Warning--empty pages in kwon2023vllm
+Warning--empty pages in zheng2023judging
+Warning--empty pages in reimers2019sbert
+Warning--empty pages in he2023debertav3
+Warning--empty pages in hu2022lora
+Warning--empty pages in hendrycks2021math
+Warning--empty pages in lightman2024verify
+Warning--empty pages in hendrycks2021mmlu
+You've used 60 entries,
+            2952 wiz_defined-function locations,
+            1000 strings with 18941 characters,
+and the built_in function-call counts, 19438 in all, are:
+= -- 1658
+> -- 1041
+< -- 6
++ -- 387
+- -- 327
+* -- 1390
+:= -- 2708
+add.period$ -- 88
+call.type$ -- 60
+change.case$ -- 99
+chr.to.int$ -- 0
+cite$ -- 76
+duplicate$ -- 612
+empty$ -- 2141
+format.name$ -- 376
+if$ -- 5008
+int.to.chr$ -- 0
+int.to.str$ -- 60
+missing$ -- 32
+newline$ -- 225
+num.names$ -- 60
+pop$ -- 525
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 1266
+stack$ -- 0
+substring$ -- 388
+swap$ -- 156
+text.length$ -- 6
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 16
+while$ -- 87
+width$ -- 62
+write$ -- 577
+(There were 16 warnings)

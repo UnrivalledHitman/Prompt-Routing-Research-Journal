@@ -1,0 +1,354 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{openai_reasoning}
+{OpenAI},
+  \href{https://developers.openai.com/api/docs/guides/reasoning}{Reasoning
+  models}, API documentation, accessed: Sep. 11, 2026 (2026).
+\newline\urlprefix\url{https://developers.openai.com/api/docs/guides/reasoning}
+
+\bibitem{anthropic_effort}
+{Anthropic},
+  \href{https://platform.claude.com/docs/en/build-with-claude/effort}{Effort},
+  Claude API documentation, accessed: Sep. 11, 2026 (2026).
+\newline\urlprefix\url{https://platform.claude.com/docs/en/build-with-claude/effort}
+
+\bibitem{google_thinking}
+{Google}, \href{https://ai.google.dev/gemini-api/docs/thinking}{Gemini
+  thinking}, Gemini API documentation, accessed: Sep. 11, 2026 (2026).
+\newline\urlprefix\url{https://ai.google.dev/gemini-api/docs/thinking}
+
+\bibitem{qwen3}
+{Qwen Team}, {Qwen3} technical report, arXiv:2505.09388 (2025).
+\newblock \href {http://arxiv.org/abs/2505.09388} {\path{arXiv:2505.09388}}.
+
+\bibitem{wei2022cot}
+J.~Wei, X.~Wang, D.~Schuurmans, M.~Bosma, B.~Ichter, F.~Xia, E.~Chi, Q.~V. Le,
+  D.~Zhou, Chain-of-thought prompting elicits reasoning in large language
+  models, in: Advances in Neural Information Processing Systems 35 (NeurIPS
+  2022), 2022, arXiv:2201.11903.
+
+\bibitem{deepseek2025r1}
+{DeepSeek-AI}, {DeepSeek-R1} incentivizes reasoning in {LLMs} through
+  reinforcement learning, Nature 645~(8081) (2025) 633--638.
+\newblock \href {https://doi.org/10.1038/s41586-025-09422-z}
+  {\path{doi:10.1038/s41586-025-09422-z}}.
+
+\bibitem{sui2025stopoverthinking}
+Y.~Sui, Y.-N. Chuang, G.~Wang, J.~Zhang, T.~Zhang, J.~Yuan, H.~Liu, A.~Wen,
+  S.~Zhong, N.~Zou, H.~Chen, X.~Hu, Stop overthinking: A survey on efficient
+  reasoning for large language models, Transactions on Machine Learning
+  Research (TMLR)ArXiv:2503.16419; accepted by TMLR 2025 (2025).
+
+\bibitem{alomrani2025reasoningbudget}
+M.~A. Alomrani, Y.~Zhang, D.~Li, Q.~Sun, S.~Pal, Z.~Zhang, Y.~Hu, R.~D. Ajwani,
+  A.~Valkanas, R.~Karimi, P.~Cheng, Y.~Wang, P.~Liao, H.~Huang, B.~Wang,
+  J.~Hao, M.~Coates, Reasoning on a budget: A survey of adaptive and
+  controllable test-time compute in {LLMs}, arXiv:2507.02076 (2025).
+\newblock \href {http://arxiv.org/abs/2507.02076} {\path{arXiv:2507.02076}}.
+
+\bibitem{moslem2026routingsurvey}
+Y.~Moslem, J.~D. Kelleher, Dynamic model routing and cascading for efficient
+  {LLM} inference: A survey, Transactions on Machine Learning Research
+  (TMLR)ArXiv:2603.04445; accepted by TMLR 2026 (2026).
+
+\bibitem{chen2023frugalgpt}
+L.~Chen, M.~Zaharia, J.~Zou, {FrugalGPT}: How to use large language models
+  while reducing cost and improving performance, arXiv:2305.05176 (2023).
+\newblock \href {http://arxiv.org/abs/2305.05176} {\path{arXiv:2305.05176}},
+  \href {https://doi.org/10.48550/arXiv.2305.05176}
+  {\path{doi:10.48550/arXiv.2305.05176}}.
+
+\bibitem{aggarwal2024automix}
+P.~Aggarwal, A.~Madaan, A.~Anand, S.~P. Potharaju, S.~Mishra, P.~Zhou,
+  A.~Gupta, D.~Rajagopal, K.~Kappaganthu, Y.~Yang, S.~Upadhyay, M.~Faruqui,
+  Mausam, {AutoMix}: Automatically mixing language models, in: Advances in
+  Neural Information Processing Systems 37 (NeurIPS 2024), 2024,
+  arXiv:2310.12963.
+
+\bibitem{ding2024hybridllm}
+D.~Ding, A.~Mallick, C.~Wang, R.~Sim, S.~Mukherjee, V.~R{\"u}hle, L.~V.~S.
+  Lakshmanan, A.~H. Awadallah, Hybrid {LLM}: Cost-efficient and quality-aware
+  query routing, in: Proceedings of the Twelfth International Conference on
+  Learning Representations (ICLR), 2024, arXiv:2404.14618.
+
+\bibitem{ong2024routellm}
+I.~Ong, A.~Almahairi, V.~Wu, W.-L. Chiang, T.~Wu, J.~E. Gonzalez, M.~W. Kadous,
+  I.~Stoica, {RouteLLM}: Learning to route {LLMs} with preference data,
+  arXiv:2406.18665 (2024).
+\newblock \href {http://arxiv.org/abs/2406.18665} {\path{arXiv:2406.18665}}.
+
+\bibitem{zhang2025synapseroute}
+W.~Zhang, S.~Qiao, L.~Luo, Y.~Li, C.~Zheng, Q.~Xu, M.~Li, Y.~Gui, Y.~He,
+  J.~Qiu, J.~Hong, J.~Sun, {SynapseRoute}: An auto-route switching framework on
+  dual-state large language model, arXiv:2507.02822 (2025).
+\newblock \href {http://arxiv.org/abs/2507.02822} {\path{arXiv:2507.02822}}.
+
+\bibitem{lee2026dart}
+J.~Lee, S.~Hong, S.~Lee, J.~Seo, J.~Son, S.~Eo, C.~Park, H.~Park, H.~Moon,
+  H.~Lim, {DART}: Draft-agreement routing for training-free adaptive thinking
+  budgets in hybrid reasoning models, in: Findings of the Association for
+  Computational Linguistics: EMNLP 2026, 2026, arXiv:2606.23181.
+
+\bibitem{pan2026routetoreason}
+Z.~Pan, K.~Zhang, Y.~Zhao, Y.~Han, Route to reason: Adaptive routing for {LLM}
+  and reasoning strategy selection, in: Proceedings of the ACM Web Conference
+  2026 (WWW '26), 2026, pp. 5568--5578, arXiv:2505.19435.
+
+\bibitem{ziller2026greenserv}
+T.~Ziller, S.~Ilager, A.~Tundo, E.~Bartocci, L.~Mariani, I.~Brandic,
+  {GreenServ}: Energy-efficient context-aware dynamic routing for multi-model
+  {LLM} inference, arXiv:2601.17551 (2026).
+\newblock \href {http://arxiv.org/abs/2601.17551} {\path{arXiv:2601.17551}}.
+
+\bibitem{li2026ecothink}
+L.~Li, Z.~Lu, {EcoThink}: A green adaptive inference framework for sustainable
+  and accessible agents, in: Proceedings of the ACM Web Conference 2026 (WWW
+  '26), 2026, arXiv:2603.25498.
+
+\bibitem{chen2024routerdc}
+S.~Chen, W.~Jiang, B.~Lin, J.~T. Kwok, Y.~Zhang, {RouterDC}: Query-based router
+  by dual contrastive learning for assembling large language models, in:
+  Advances in Neural Information Processing Systems 37 (NeurIPS 2024), 2024,
+  arXiv:2409.19886.
+
+\bibitem{jitkrittum2025universal}
+W.~Jitkrittum, H.~Narasimhan, A.~S. Rawat, J.~Juneja, C.~Wang, Z.~Wang, A.~Go,
+  C.-Y. Lee, P.~Shenoy, R.~Panigrahy, A.~K. Menon, S.~Kumar, Universal model
+  routing for efficient {LLM} inference, arXiv:2502.08773 (2025).
+\newblock \href {http://arxiv.org/abs/2502.08773} {\path{arXiv:2502.08773}}.
+
+\bibitem{tran2025archrouter}
+C.~Tran, S.~Paracha, A.~Hafeez, S.~Chen, {Arch-Router}: Aligning {LLM} routing
+  with human preferences, arXiv:2506.16655 (2025).
+\newblock \href {http://arxiv.org/abs/2506.16655} {\path{arXiv:2506.16655}}.
+
+\bibitem{zhang2025routerr1}
+H.~Zhang, T.~Feng, J.~You, {Router-R1}: Teaching {LLMs} multi-round routing and
+  aggregation via reinforcement learning, in: Advances in Neural Information
+  Processing Systems 38 (NeurIPS 2025), 2025, arXiv:2506.09033.
+
+\bibitem{li2026llmrouterbench}
+H.~Li, Y.~Zhang, Z.~Guo, C.~Wang, S.~Tang, Q.~Zhang, Y.~Chen, B.~Qi, P.~Ye,
+  L.~Bai, Z.~Wang, S.~Hu, {LLMRouterBench}: A massive benchmark and unified
+  framework for {LLM} routing, arXiv:2601.07206 (2026).
+\newblock \href {http://arxiv.org/abs/2601.07206} {\path{arXiv:2601.07206}}.
+
+\bibitem{guo2026thinkwhenneeded}
+H.~Guo, T.~Wei, D.~Wang, Y.~Du, Z.~Wang, J.~Zhang, Z.~Sun, Think when needed:
+  Model-aware reasoning routing for {LLM}-based ranking, in: Proceedings of the
+  49th International ACM SIGIR Conference on Research and Development in
+  Information Retrieval (SIGIR '26), 2026, arXiv:2601.18146.
+\newblock \href {https://doi.org/10.1145/3805712.3809709}
+  {\path{doi:10.1145/3805712.3809709}}.
+
+\bibitem{kassenaar2026learningwhentothink}
+G.~Kassenaar, Z.~Yang, V.~Fran{\c{c}}ois-Lavet, Learning when to think:
+  Adaptive reasoning for test-time compute allocation, arXiv:2608.20256 (2026).
+\newblock \href {http://arxiv.org/abs/2608.20256} {\path{arXiv:2608.20256}}.
+
+\bibitem{ning2026hrbench}
+Y.~Ning, M.~Liu, J.~Ye, W.~Zhang, H.~Liu, {HRBench}: Benchmarking and
+  understanding thinking-mode switch strategies in hybrid-reasoning {LLMs},
+  arXiv:2605.28398 (2026).
+\newblock \href {http://arxiv.org/abs/2605.28398} {\path{arXiv:2605.28398}}.
+
+\bibitem{wang2025demystifying}
+S.~Wang, W.~Yang, X.~Long, Q.~Wang, V.~Chaudhary, X.~Han, Demystifying hybrid
+  thinking: Can {LLMs} truly switch between think and no-think?,
+  arXiv:2510.12680 (2025).
+\newblock \href {http://arxiv.org/abs/2510.12680} {\path{arXiv:2510.12680}}.
+
+\bibitem{strubell2019energy}
+E.~Strubell, A.~Ganesh, A.~McCallum,
+  \href{https://aclanthology.org/P19-1355/}{Energy and policy considerations
+  for deep learning in {NLP}}, in: Proceedings of the 57th Annual Meeting of
+  the Association for Computational Linguistics, Association for Computational
+  Linguistics, Florence, Italy, 2019, pp. 3645--3650.
+\newline\urlprefix\url{https://aclanthology.org/P19-1355/}
+
+\bibitem{schwartz2020greenai}
+R.~Schwartz, J.~Dodge, N.~A. Smith, O.~Etzioni, Green {AI}, Communications of
+  the ACM 63~(12) (2020) 54--63, arXiv:1907.10597.
+
+\bibitem{lacoste2019quantifying}
+A.~Lacoste, A.~Luccioni, V.~Schmidt, T.~Dandres, Quantifying the carbon
+  emissions of machine learning, arXiv:1910.09700 (2019).
+\newblock \href {http://arxiv.org/abs/1910.09700} {\path{arXiv:1910.09700}}.
+
+\bibitem{patterson2021carbon}
+D.~Patterson, J.~Gonzalez, Q.~Le, C.~Liang, L.-M. Munguia, D.~Rothchild, D.~So,
+  M.~Texier, J.~Dean, Carbon emissions and large neural network training,
+  arXiv:2104.10350 (2021).
+\newblock \href {http://arxiv.org/abs/2104.10350} {\path{arXiv:2104.10350}}.
+
+\bibitem{luccioni2024powerhungry}
+S.~Luccioni, Y.~Jernite, E.~Strubell, Power hungry processing: Watts driving
+  the cost of {AI} deployment?, in: Proceedings of the 2024 ACM Conference on
+  Fairness, Accountability, and Transparency (FAccT '24), Rio de Janeiro,
+  Brazil, 2024, pp. 85--99.
+\newblock \href {https://doi.org/10.1145/3630106.3658542}
+  {\path{doi:10.1145/3630106.3658542}}.
+
+\bibitem{xu2025camel}
+H.~Xu, L.~Peng, S.~Song, X.~Liu, M.~Jun, S.~Li, J.~Yu, X.~Mao, {Camel}:
+  Energy-aware {LLM} inference on resource-constrained devices,
+  arXiv:2508.09173 (2025).
+\newblock \href {http://arxiv.org/abs/2508.09173} {\path{arXiv:2508.09173}}.
+
+\bibitem{kwon2023vllm}
+W.~Kwon, Z.~Li, S.~Zhuang, Y.~Sheng, L.~Zheng, C.~H. Yu, J.~E. Gonzalez,
+  H.~Zhang, I.~Stoica, Efficient memory management for large language model
+  serving with {PagedAttention}, in: Proceedings of the 29th ACM Symposium on
+  Operating Systems Principles (SOSP '23), 2023, arXiv:2309.06180.
+
+\bibitem{yang2025qosrouting}
+J.~Yang, Q.~Wu, Z.~Feng, Z.~Zhou, D.~Guo, X.~Chen, Quality-of-service aware
+  {LLM} routing for edge computing with multiple experts, IEEE Transactions on
+  Mobile ComputingArXiv:2508.00234; accepted to IEEE TMC (2025).
+
+\bibitem{zheng2023judging}
+L.~Zheng, W.-L. Chiang, Y.~Sheng, S.~Zhuang, Z.~Wu, Y.~Zhuang, Z.~Lin, Z.~Li,
+  D.~Li, E.~P. Xing, H.~Zhang, J.~E. Gonzalez, I.~Stoica, Judging
+  {LLM}-as-a-judge with {MT-Bench} and {Chatbot Arena}, in: Advances in Neural
+  Information Processing Systems 36 (NeurIPS 2023) Datasets and Benchmarks
+  Track, 2023, arXiv:2306.05685.
+
+\bibitem{chen2016xgboost}
+T.~Chen, C.~Guestrin, {XGBoost}: A scalable tree boosting system, in: Proc.
+  22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining (KDD), 2016,
+  pp. 785--794.
+\newblock \href {https://doi.org/10.1145/2939672.2939785}
+  {\path{doi:10.1145/2939672.2939785}}.
+
+\bibitem{ke2017lightgbm}
+G.~Ke, Q.~Meng, T.~Finley, T.~Wang, W.~Chen, W.~Ma, Q.~Ye, T.-Y. Liu,
+  {LightGBM}: A highly efficient gradient boosting decision tree, in: Advances
+  in Neural Information Processing Systems 30 (NIPS), 2017, pp. 3146--3154.
+
+\bibitem{reimers2019sbert}
+N.~Reimers, I.~Gurevych, {Sentence-BERT}: Sentence embeddings using siamese
+  {BERT}-networks, in: Proceedings of the 2019 Conference on Empirical Methods
+  in Natural Language Processing and the 9th International Joint Conference on
+  Natural Language Processing (EMNLP-IJCNLP), Association for Computational
+  Linguistics, Hong Kong, China, 2019.
+
+\bibitem{sanh2019distilbert}
+V.~Sanh, L.~Debut, J.~Chaumond, T.~Wolf, {DistilBERT}, a distilled version of
+  {BERT}: Smaller, faster, cheaper and lighter, arXiv:1910.01108 (2019).
+\newblock \href {http://arxiv.org/abs/1910.01108} {\path{arXiv:1910.01108}}.
+
+\bibitem{he2023debertav3}
+P.~He, J.~Gao, W.~Chen, {DeBERTaV3}: Improving {DeBERTa} using {ELECTRA}-style
+  pre-training with gradient-disentangled embedding sharing, in: Proc. Int.
+  Conf. Learning Representations (ICLR), 2023.
+
+\bibitem{hu2022lora}
+E.~J. Hu, Y.~Shen, P.~Wallis, Z.~Allen-Zhu, Y.~Li, S.~Wang, L.~Wang, W.~Chen,
+  {LoRA}: Low-rank adaptation of large language models, in: Proc. Int. Conf.
+  Learning Representations (ICLR), 2022.
+
+\bibitem{nvidia_nvml}
+{NVIDIA Corporation},
+  \href{https://developer.nvidia.com/management-library-nvml}{{NVIDIA}
+  management library ({NVML})}, Developer documentation (2026).
+\newline\urlprefix\url{https://developer.nvidia.com/management-library-nvml}
+
+\bibitem{cobbe2021gsm8k}
+K.~Cobbe, V.~Kosaraju, M.~Bavarian, M.~Chen, H.~Jun, L.~Kaiser, M.~Plappert,
+  J.~Tworek, J.~Hilton, R.~Nakano, C.~Hesse, J.~Schulman, Training verifiers to
+  solve math word problems, arXiv:2110.14168 (2021).
+\newblock \href {http://arxiv.org/abs/2110.14168} {\path{arXiv:2110.14168}}.
+
+\bibitem{hendrycks2021math}
+D.~Hendrycks, C.~Burns, S.~Kadavath, A.~Arora, S.~Basart, E.~Tang, D.~Song,
+  J.~Steinhardt, Measuring mathematical problem solving with the {MATH}
+  dataset, in: Advances in Neural Information Processing Systems 34 (NeurIPS
+  2021) Datasets and Benchmarks Track, 2021, arXiv:2103.03874.
+
+\bibitem{lightman2024verify}
+H.~Lightman, V.~Kosaraju, Y.~Burda, H.~Edwards, B.~Baker, T.~Lee, J.~Leike,
+  J.~Schulman, I.~Sutskever, K.~Cobbe, Let's verify step by step, in: Proc.
+  Int. Conf. Learning Representations (ICLR), 2024.
+
+\bibitem{chen2021humaneval}
+M.~Chen, et~al., Evaluating large language models trained on code,
+  arXiv:2107.03374 (2021).
+\newblock \href {http://arxiv.org/abs/2107.03374} {\path{arXiv:2107.03374}}.
+
+\bibitem{austin2021mbpp}
+J.~Austin, A.~Odena, M.~Nye, M.~Bosma, H.~Michalewski, D.~Dohan, E.~Jiang,
+  C.~Cai, M.~Terry, Q.~Le, C.~Sutton, Program synthesis with large language
+  models, arXiv:2108.07732 (2021).
+\newblock \href {http://arxiv.org/abs/2108.07732} {\path{arXiv:2108.07732}}.
+
+\bibitem{hendrycks2021mmlu}
+D.~Hendrycks, C.~Burns, S.~Basart, A.~Zou, M.~Mazeika, D.~Song, J.~Steinhardt,
+  Measuring massive multitask language understanding, in: Proceedings of the
+  Ninth International Conference on Learning Representations (ICLR), 2021,
+  arXiv:2009.03300.
+
+\bibitem{clark2018arc}
+P.~Clark, I.~Cowhey, O.~Etzioni, T.~Khot, A.~Sabharwal, C.~Schoenick,
+  O.~Tafjord, Think you have solved question answering? try {ARC}, the {AI2}
+  reasoning challenge, arXiv:1803.05457 (2018).
+\newblock \href {http://arxiv.org/abs/1803.05457} {\path{arXiv:1803.05457}}.
+
+\bibitem{conover2023dolly}
+M.~Conover, et~al.,
+  \href{https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm}{Free
+  {Dolly}: Introducing the world's first truly open instruction-tuned {LLM}},
+  Databricks blog (2023).
+\newline\urlprefix\url{https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm}
+
+\bibitem{ollama}
+{Ollama}, \href{https://github.com/ollama/ollama}{Ollama}, Software, version
+  0.34.0 (2026).
+\newline\urlprefix\url{https://github.com/ollama/ollama}
+
+\bibitem{gerganov2023llamacpp}
+G.~Gerganov, et~al., \href{https://github.com/ggml-org/llama.cpp}{llama.cpp:
+  {LLM} inference in {C/C++}}, Software (2023).
+\newline\urlprefix\url{https://github.com/ggml-org/llama.cpp}
+
+\bibitem{qwen2025modelcard}
+{Qwen Team}, \href{https://huggingface.co/Qwen/Qwen3-8B}{{Qwen3-8B} model
+  card}, Hugging Face (2025).
+\newline\urlprefix\url{https://huggingface.co/Qwen/Qwen3-8B}
+
+\bibitem{grattafiori2024llama3}
+A.~Grattafiori, et~al., The {Llama} 3 herd of models (2024).
+\newblock \href {http://arxiv.org/abs/2407.21783} {\path{arXiv:2407.21783}}.
+
+\bibitem{cohen1960kappa}
+J.~Cohen, A coefficient of agreement for nominal scales, Educational and
+  Psychological Measurement 20~(1) (1960) 37--46.
+\newblock \href {https://doi.org/10.1177/001316446002000104}
+  {\path{doi:10.1177/001316446002000104}}.
+
+\bibitem{cohen1968weighted}
+J.~Cohen, Weighted kappa: Nominal scale agreement with provision for scaled
+  disagreement or partial credit, Psychological Bulletin 70~(4) (1968)
+  213--220.
+\newblock \href {https://doi.org/10.1037/h0026256}
+  {\path{doi:10.1037/h0026256}}.
+
+\bibitem{landis1977measurement}
+J.~R. Landis, G.~G. Koch, The measurement of observer agreement for categorical
+  data, Biometrics 33~(1) (1977) 159--174.
+\newblock \href {https://doi.org/10.2307/2529310} {\path{doi:10.2307/2529310}}.
+
+\bibitem{efron1993bootstrap}
+B.~Efron, R.~J. Tibshirani, An Introduction to the Bootstrap, no.~57 in
+  Monographs on Statistics and Applied Probability, Chapman \& Hall, New York,
+  NY, USA, 1993.
+
+\bibitem{holm1979simple}
+S.~Holm, A simple sequentially rejective multiple test procedure, Scandinavian
+  Journal of Statistics 6~(2) (1979) 65--70.
+
+\end{thebibliography}
